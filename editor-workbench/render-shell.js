@@ -27,6 +27,10 @@
     return Math.min(max, Math.max(min, value));
   }
 
+  function formatZoom(scale) {
+    return Math.round(scale * 100) + "%";
+  }
+
   function displaySvgResult(result) {
     output.textContent = "";
 
@@ -37,10 +41,16 @@
     toolbar.className = "svg-panzoom-toolbar";
     var zoomOutButton = createButton("-", "Zoom out");
     var zoomInButton = createButton("+", "Zoom in");
-    var resetButton = createButton("Reset", "Reset pan and zoom");
+    var fitButton = createButton("Fit", "Fit to view");
+    var actualSizeButton = createButton("100%", "Show at 100% zoom");
+    var zoomLabel = document.createElement("span");
+    zoomLabel.className = "svg-panzoom-zoom";
+    zoomLabel.setAttribute("aria-live", "polite");
     toolbar.appendChild(zoomOutButton);
     toolbar.appendChild(zoomInButton);
-    toolbar.appendChild(resetButton);
+    toolbar.appendChild(fitButton);
+    toolbar.appendChild(actualSizeButton);
+    toolbar.appendChild(zoomLabel);
 
     var viewport = document.createElement("div");
     viewport.className = "svg-panzoom-viewport";
@@ -57,6 +67,10 @@
       scale: 1,
       x: 0,
       y: 0,
+      naturalWidth: 1,
+      naturalHeight: 1,
+      boundsX: 0,
+      boundsY: 0,
       dragging: false,
       startX: 0,
       startY: 0,
@@ -65,11 +79,84 @@
     };
 
     function applyTransform() {
-      content.style.transform = "translate(" + state.x + "px, " + state.y + "px) scale(" + state.scale + ")";
+      content.style.transform = "translate(" + state.x + "px, " + state.y + "px) scale(" + state.scale + ") translate(" + -state.boundsX + "px, " + -state.boundsY + "px)";
+      zoomLabel.textContent = formatZoom(state.scale);
     }
 
-    function zoomBy(multiplier) {
-      state.scale = clamp(state.scale * multiplier, 0.1, 8);
+    function isValidBounds(bounds) {
+      return bounds
+        && Number.isFinite(bounds.width)
+        && bounds.width > 0
+        && Number.isFinite(bounds.height)
+        && bounds.height > 0;
+    }
+
+    function getSvgBounds() {
+      var svg = content.querySelector("svg");
+      if (!svg) {
+        return { x: 0, y: 0, width: 1, height: 1 };
+      }
+
+      try {
+        var box = svg.getBBox();
+        if (isValidBounds(box)) {
+          return {
+            x: Number.isFinite(box.x) ? box.x : 0,
+            y: Number.isFinite(box.y) ? box.y : 0,
+            width: box.width,
+            height: box.height
+          };
+        }
+      } catch (error) {
+        // Fall back to declared SVG bounds below.
+      }
+
+      var viewBox = svg.viewBox && svg.viewBox.baseVal;
+      if (viewBox && viewBox.width > 0 && viewBox.height > 0) {
+        return { x: viewBox.x || 0, y: viewBox.y || 0, width: viewBox.width, height: viewBox.height };
+      }
+
+      var width = Number.parseFloat(svg.getAttribute("width"));
+      var height = Number.parseFloat(svg.getAttribute("height"));
+      if (Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0) {
+        return { x: 0, y: 0, width: width, height: height };
+      }
+
+      return { x: 0, y: 0, width: 1, height: 1 };
+    }
+
+    function fitToView() {
+      var rect = viewport.getBoundingClientRect();
+      var padding = 24;
+      var availableWidth = Math.max(1, rect.width - padding * 2);
+      var availableHeight = Math.max(1, rect.height - padding * 2);
+      state.scale = clamp(Math.min(availableWidth / state.naturalWidth, availableHeight / state.naturalHeight), 0.05, 8);
+      state.x = Math.round((rect.width - state.naturalWidth * state.scale) / 2);
+      state.y = Math.round((rect.height - state.naturalHeight * state.scale) / 2);
+      applyTransform();
+    }
+
+    function setZoom(nextScale, anchorClientX, anchorClientY) {
+      var rect = viewport.getBoundingClientRect();
+      var anchorX = typeof anchorClientX === "number" ? anchorClientX - rect.left : rect.width / 2;
+      var anchorY = typeof anchorClientY === "number" ? anchorClientY - rect.top : rect.height / 2;
+      var contentX = (anchorX - state.x) / state.scale;
+      var contentY = (anchorY - state.y) / state.scale;
+      state.scale = clamp(nextScale, 0.05, 8);
+      state.x = anchorX - contentX * state.scale;
+      state.y = anchorY - contentY * state.scale;
+      applyTransform();
+    }
+
+    function zoomBy(multiplier, anchorClientX, anchorClientY) {
+      setZoom(state.scale * multiplier, anchorClientX, anchorClientY);
+    }
+
+    function showActualSize() {
+      var rect = viewport.getBoundingClientRect();
+      state.scale = 1;
+      state.x = Math.round((rect.width - state.naturalWidth) / 2);
+      state.y = Math.round((rect.height - state.naturalHeight) / 2);
       applyTransform();
     }
 
@@ -79,19 +166,22 @@
     zoomInButton.addEventListener("click", function () {
       zoomBy(1.25);
     });
-    resetButton.addEventListener("click", function () {
-      state.scale = 1;
-      state.x = 0;
-      state.y = 0;
-      applyTransform();
+    fitButton.addEventListener("click", function () {
+      fitToView();
+    });
+    actualSizeButton.addEventListener("click", function () {
+      showActualSize();
     });
 
     viewport.addEventListener("wheel", function (event) {
       event.preventDefault();
-      zoomBy(event.deltaY < 0 ? 1.1 : 0.9);
+      zoomBy(event.deltaY < 0 ? 1.1 : 0.9, event.clientX, event.clientY);
     }, { passive: false });
 
     viewport.addEventListener("mousedown", function (event) {
+      if (event.button !== 0) {
+        return;
+      }
       state.dragging = true;
       state.startX = event.clientX;
       state.startY = event.clientY;
@@ -114,7 +204,14 @@
       viewport.classList.remove("is-dragging");
     });
 
-    applyTransform();
+    requestAnimationFrame(function () {
+      var bounds = getSvgBounds();
+      state.boundsX = bounds.x;
+      state.boundsY = bounds.y;
+      state.naturalWidth = bounds.width;
+      state.naturalHeight = bounds.height;
+      fitToView();
+    });
   }
 
   async function loadPluginPaths(paths) {

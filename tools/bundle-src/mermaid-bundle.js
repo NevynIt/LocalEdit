@@ -18,7 +18,12 @@ function initialize() {
 
   mermaid.initialize({
     startOnLoad: false,
-    securityLevel: "strict"
+    securityLevel: "strict",
+    htmlLabels: false,
+    flowchart: {
+      htmlLabels: false,
+      useMaxWidth: false
+    }
   });
   initialized = true;
 }

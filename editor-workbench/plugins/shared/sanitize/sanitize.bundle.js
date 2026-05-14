@@ -320,7 +320,7 @@ var EditorWorkbenchSanitizeBundle = (() => {
     let document = window2.document;
     const originalDocument = document;
     const currentScript = originalDocument.currentScript;
-    const DocumentFragment = window2.DocumentFragment, HTMLTemplateElement = window2.HTMLTemplateElement, Node = window2.Node, Element = window2.Element, NodeFilter = window2.NodeFilter, _window$NamedNodeMap = window2.NamedNodeMap, NamedNodeMap = _window$NamedNodeMap === void 0 ? window2.NamedNodeMap || window2.MozNamedAttrMap : _window$NamedNodeMap, HTMLFormElement = window2.HTMLFormElement, DOMParser = window2.DOMParser, trustedTypes = window2.trustedTypes;
+    const DocumentFragment = window2.DocumentFragment, HTMLTemplateElement = window2.HTMLTemplateElement, Node = window2.Node, Element = window2.Element, NodeFilter = window2.NodeFilter, _window$NamedNodeMap = window2.NamedNodeMap, NamedNodeMap = _window$NamedNodeMap === void 0 ? window2.NamedNodeMap || window2.MozNamedAttrMap : _window$NamedNodeMap, HTMLFormElement = window2.HTMLFormElement, DOMParser2 = window2.DOMParser, trustedTypes = window2.trustedTypes;
     const ElementPrototype = Element.prototype;
     const cloneNode = lookupGetter(ElementPrototype, "cloneNode");
     const remove = lookupGetter(ElementPrototype, "remove");
@@ -672,7 +672,7 @@ var EditorWorkbenchSanitizeBundle = (() => {
       const dirtyPayload = trustedTypesPolicy ? trustedTypesPolicy.createHTML(dirty) : dirty;
       if (NAMESPACE === HTML_NAMESPACE) {
         try {
-          doc = new DOMParser().parseFromString(dirtyPayload, PARSER_MEDIA_TYPE);
+          doc = new DOMParser2().parseFromString(dirtyPayload, PARSER_MEDIA_TYPE);
         } catch (_) {
         }
       }
@@ -1095,7 +1095,6 @@ var EditorWorkbenchSanitizeBundle = (() => {
     ALLOW_DATA_ATTR: false,
     FORBID_TAGS: [
       "script",
-      "style",
       "iframe",
       "object",
       "embed",
@@ -1125,7 +1124,6 @@ var EditorWorkbenchSanitizeBundle = (() => {
     ALLOW_DATA_ATTR: false,
     FORBID_TAGS: [
       "script",
-      "style",
       "foreignObject",
       "image",
       "iframe",
@@ -1164,14 +1162,42 @@ var EditorWorkbenchSanitizeBundle = (() => {
       }
     });
   });
+  function hasUnsafeCss(css) {
+    const value = String(css || "");
+    return /@import/i.test(value) || /(?:javascript:|vbscript:|data:|file:|https?:)/i.test(value) || /url\s*\(\s*['"]?(?!#)/i.test(value);
+  }
+  function removeUnsafeStyleElements(root) {
+    if (!root || !root.querySelectorAll) {
+      return;
+    }
+    Array.from(root.querySelectorAll("style")).forEach((styleNode) => {
+      if (!styleNode.closest("svg") || hasUnsafeCss(styleNode.textContent || "")) {
+        styleNode.remove();
+      }
+    });
+  }
+  function cleanHtmlStyles(html2) {
+    const documentModel = new DOMParser().parseFromString(String(html2 || ""), "text/html");
+    removeUnsafeStyleElements(documentModel.body);
+    return documentModel.body.innerHTML;
+  }
+  function cleanSvgStyles(svg2) {
+    const documentModel = new DOMParser().parseFromString(String(svg2 || ""), "image/svg+xml");
+    const parserError = documentModel.querySelector("parsererror");
+    if (parserError || !documentModel.documentElement) {
+      return svg2 || "";
+    }
+    removeUnsafeStyleElements(documentModel);
+    return new XMLSerializer().serializeToString(documentModel.documentElement);
+  }
   function escapeHtml(value) {
     return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
   function sanitizeHtml(html2) {
-    return purify.sanitize(html2, sanitizeOptions);
+    return cleanHtmlStyles(purify.sanitize(html2, sanitizeOptions));
   }
   function sanitizeSvg(svg2) {
-    return purify.sanitize(svg2 || "", svgSanitizeOptions);
+    return cleanSvgStyles(purify.sanitize(svg2 || "", svgSanitizeOptions));
   }
   window.EditorWorkbenchSanitize = {
     DOMPurify: purify,

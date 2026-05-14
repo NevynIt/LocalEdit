@@ -5,7 +5,6 @@ const sanitizeOptions = {
   ALLOW_DATA_ATTR: false,
   FORBID_TAGS: [
     "script",
-    "style",
     "iframe",
     "object",
     "embed",
@@ -36,7 +35,6 @@ const svgSanitizeOptions = {
   ALLOW_DATA_ATTR: false,
   FORBID_TAGS: [
     "script",
-    "style",
     "foreignObject",
     "image",
     "iframe",
@@ -79,6 +77,43 @@ DOMPurify.addHook("afterSanitizeAttributes", (node) => {
   });
 });
 
+function hasUnsafeCss(css) {
+  const value = String(css || "");
+  return (
+    /@import/i.test(value) ||
+    /(?:javascript:|vbscript:|data:|file:|https?:)/i.test(value) ||
+    /url\s*\(\s*['"]?(?!#)/i.test(value)
+  );
+}
+
+function removeUnsafeStyleElements(root) {
+  if (!root || !root.querySelectorAll) {
+    return;
+  }
+
+  Array.from(root.querySelectorAll("style")).forEach((styleNode) => {
+    if (!styleNode.closest("svg") || hasUnsafeCss(styleNode.textContent || "")) {
+      styleNode.remove();
+    }
+  });
+}
+
+function cleanHtmlStyles(html) {
+  const documentModel = new DOMParser().parseFromString(String(html || ""), "text/html");
+  removeUnsafeStyleElements(documentModel.body);
+  return documentModel.body.innerHTML;
+}
+
+function cleanSvgStyles(svg) {
+  const documentModel = new DOMParser().parseFromString(String(svg || ""), "image/svg+xml");
+  const parserError = documentModel.querySelector("parsererror");
+  if (parserError || !documentModel.documentElement) {
+    return svg || "";
+  }
+  removeUnsafeStyleElements(documentModel);
+  return new XMLSerializer().serializeToString(documentModel.documentElement);
+}
+
 function escapeHtml(value) {
   return String(value == null ? "" : value)
     .replace(/&/g, "&amp;")
@@ -89,11 +124,11 @@ function escapeHtml(value) {
 }
 
 function sanitizeHtml(html) {
-  return DOMPurify.sanitize(html, sanitizeOptions);
+  return cleanHtmlStyles(DOMPurify.sanitize(html, sanitizeOptions));
 }
 
 function sanitizeSvg(svg) {
-  return DOMPurify.sanitize(svg || "", svgSanitizeOptions);
+  return cleanSvgStyles(DOMPurify.sanitize(svg || "", svgSanitizeOptions));
 }
 
 window.EditorWorkbenchSanitize = {
