@@ -116,9 +116,14 @@
    */
 
   /**
+   * @typedef {Object} CustomRenderContent
+   * @property {(container: HTMLElement) => void | (() => void)} mount
+   */
+
+  /**
    * @typedef {Object} RenderResult
    * @property {"html" | "svg" | "text" | "image" | "custom"} kind
-   * @property {string | Blob} content
+   * @property {string | Blob | CustomRenderContent} content
    * @property {string=} mimeType
    */
 

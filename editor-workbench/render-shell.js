@@ -2,14 +2,24 @@
   "use strict";
 
   var output = document.getElementById("render-output");
+  var activeRenderCleanup = null;
   var host = global.chrome && global.chrome.runtime ? new ExtensionHostAdapter() : new LocalHostAdapter();
   var registry = new PluginRegistry();
   var runtime = new RuntimeLoader(host);
   var loader = new PluginLoader(host, registry);
   var loadedPaths = new Set();
 
-  function setText(message) {
+  function clearOutput() {
+    if (activeRenderCleanup) {
+      var cleanup = activeRenderCleanup;
+      activeRenderCleanup = null;
+      cleanup();
+    }
     output.textContent = "";
+  }
+
+  function setText(message) {
+    clearOutput();
     var pre = document.createElement("pre");
     pre.textContent = message;
     output.appendChild(pre);
@@ -32,7 +42,7 @@
   }
 
   function displaySvgResult(result) {
-    output.textContent = "";
+    clearOutput();
 
     var shell = document.createElement("div");
     shell.className = "svg-panzoom-shell";
@@ -214,6 +224,18 @@
     });
   }
 
+  function displayCustomResult(result) {
+    if (!result.content || typeof result.content.mount !== "function") {
+      throw new Error("Custom renderer returned invalid content.");
+    }
+
+    clearOutput();
+    var cleanup = result.content.mount(output);
+    if (typeof cleanup === "function") {
+      activeRenderCleanup = cleanup;
+    }
+  }
+
   async function loadPluginPaths(paths) {
     var pluginPaths = Array.isArray(paths) ? paths : [];
     for (var index = 0; index < pluginPaths.length; index += 1) {
@@ -256,8 +278,6 @@
   }
 
   function displayResult(result) {
-    output.textContent = "";
-
     if (!result) {
       setText("Renderer returned no result.");
       return;
@@ -269,6 +289,7 @@
     }
 
     if (result.kind === "html") {
+      clearOutput();
       var wrapper = document.createElement("div");
       wrapper.innerHTML = typeof result.content === "string" ? result.content : "";
       output.appendChild(wrapper);
@@ -276,6 +297,7 @@
     }
 
     if (result.kind === "image") {
+      clearOutput();
       var image = document.createElement("img");
       image.alt = "Rendered output";
       if (result.content instanceof Blob) {
@@ -287,10 +309,20 @@
       return;
     }
 
+    if (result.kind === "custom") {
+      displayCustomResult(result);
+      return;
+    }
+
+    clearOutput();
     var pre = document.createElement("pre");
     pre.textContent = typeof result.content === "string" ? result.content : String(result.content);
     output.appendChild(pre);
   }
+
+  global.addEventListener("beforeunload", function () {
+    clearOutput();
+  });
 
   global.addEventListener("message", async function (event) {
     var message = event.data;

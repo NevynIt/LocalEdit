@@ -405,6 +405,47 @@ input[type="text"] {
   overflow-wrap: anywhere;
 }
 
+.cytoscape-tree-shell {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 8px;
+  height: calc(100vh - 32px);
+  min-height: 0;
+}
+
+.cytoscape-tree-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cytoscape-tree-title-group {
+  display: grid;
+  gap: 2px;
+}
+
+.cytoscape-tree-title {
+  font-size: 14px;
+}
+
+.cytoscape-tree-summary,
+.cytoscape-tree-hint {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.cytoscape-tree-hint {
+  margin: 0;
+}
+
+.cytoscape-tree-viewport {
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
 .csv-table-wrap {
   max-width: 100%;
   max-height: calc(100vh - 48px);
