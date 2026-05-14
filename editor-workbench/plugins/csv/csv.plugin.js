@@ -106,26 +106,47 @@
     return diagnostics;
   }
 
-  function renderTable(result) {
+  function renderColumnTitle(value, column) {
+    var title = String(value == null ? "" : value).trim();
+    return title || "Column " + (column + 1);
+  }
+
+  function renderTable(result, options) {
+    var tableOptions = options || {};
     var rows = result.data || [];
+    var bodyRows = tableOptions.firstRowAsHeader ? rows.slice(1) : rows;
     var columnCount = rows.reduce(function (max, row) {
       return Math.max(max, row ? row.length : 0);
     }, 0);
     var head = "<thead><tr><th>#</th>";
+    var headers = tableOptions.firstRowAsHeader && rows.length > 0 ? rows[0] : [];
     for (var column = 0; column < columnCount; column += 1) {
-      head += "<th>Column " + (column + 1) + "</th>";
+      head += "<th>" + escapeHtml(tableOptions.firstRowAsHeader ? renderColumnTitle(headers[column], column) : "Column " + (column + 1)) + "</th>";
     }
     head += "</tr></thead>";
 
-    var body = rows.map(function (row, rowIndex) {
-      var cells = "<th>" + (rowIndex + 1) + "</th>";
+    var body = bodyRows.map(function (row, rowIndex) {
+      var sourceRowNumber = tableOptions.firstRowAsHeader ? rowIndex + 2 : rowIndex + 1;
+      var cells = "<th>" + sourceRowNumber + "</th>";
       for (var column = 0; column < columnCount; column += 1) {
         cells += "<td>" + escapeHtml(row && row[column] != null ? row[column] : "") + "</td>";
       }
       return "<tr>" + cells + "</tr>";
     }).join("");
 
-    return "<div class=\"csv-table-wrap\"><table class=\"csv-table\">" + head + "<tbody>" + body + "</tbody></table></div>";
+    var className = "csv-table-wrap" + (tableOptions.className ? " " + tableOptions.className : "");
+    return "<div class=\"" + className + "\"><table class=\"csv-table\">" + head + "<tbody>" + body + "</tbody></table></div>";
+  }
+
+  function renderViewer(result) {
+    return [
+      "<section class=\"csv-viewer\">",
+      "<input class=\"csv-header-checkbox\" id=\"csv-first-row-header\" type=\"checkbox\">",
+      "<label class=\"csv-viewer-options\" for=\"csv-first-row-header\">Interpret first row as titles</label>",
+      renderTable(result, { className: "csv-default-table" }),
+      renderTable(result, { className: "csv-header-table", firstRowAsHeader: true }),
+      "</section>"
+    ].join("");
   }
 
   global.EditorPlugins = global.EditorPlugins || [];
@@ -177,7 +198,7 @@
           var result = await parseCsv(documentModel, context);
           return {
             kind: "html",
-            content: renderTable(result),
+            content: renderViewer(result),
             mimeType: "text/html"
           };
         }

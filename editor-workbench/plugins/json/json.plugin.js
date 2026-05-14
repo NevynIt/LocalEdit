@@ -3,8 +3,65 @@
 
   var RUNTIME_PATHS = {
     codeMirror: "plugins/json/runtime/codemirror-json.bundle.js",
-    cytoscape: "plugins/mermaid/runtime/mermaid.bundle.js"
+    cytoscape: "plugins/mermaid/runtime/mermaid.bundle.js",
+    viewer: "plugins/shared/cytoscape-viewer/cytoscape-viewer.js"
   };
+
+  var JSON_CYTOSCAPE_STYLE = [
+    {
+      selector: "node",
+      style: {
+        "background-color": "#dbeafe",
+        "border-color": "#60a5fa",
+        "border-width": 1,
+        "color": "#0f172a",
+        "font-family": "Consolas, Courier New, monospace",
+        "font-size": 11,
+        "height": "label",
+        "label": "data(label)",
+        "padding": "10px",
+        "shape": "round-rectangle",
+        "text-halign": "center",
+        "text-max-width": 180,
+        "text-valign": "center",
+        "text-wrap": "wrap",
+        "width": "label"
+      }
+    },
+    {
+      selector: "node[kind = 'root']",
+      style: {
+        "background-color": "#c7d2fe",
+        "border-color": "#6366f1",
+        "font-weight": 700
+      }
+    },
+    {
+      selector: "node[kind = 'branch']",
+      style: {
+        "background-color": "#dcfce7",
+        "border-color": "#34d399"
+      }
+    },
+    {
+      selector: "node[kind = 'leaf']",
+      style: {
+        "background-color": "#f8fafc",
+        "border-color": "#cbd5e1"
+      }
+    },
+    {
+      selector: "edge",
+      style: {
+        "curve-style": "bezier",
+        "line-color": "#94a3b8",
+        "opacity": 0.9,
+        "target-arrow-color": "#94a3b8",
+        "target-arrow-shape": "triangle",
+        "width": 1.5
+      }
+    }
+  ];
 
   function requireRuntime(context) {
     if (!context || !context.runtime || typeof context.runtime.ensureScripts !== "function") {
@@ -36,6 +93,13 @@
       return tools.getCytoscape();
     }
     throw new Error("Cytoscape runtime bundle is not loaded.");
+  }
+
+  function requireCytoscapeViewer() {
+    if (!global.EditorWorkbenchCytoscapeViewer || typeof global.EditorWorkbenchCytoscapeViewer.mount !== "function") {
+      throw new Error("Cytoscape viewer runtime is not loaded.");
+    }
+    return global.EditorWorkbenchCytoscapeViewer;
   }
 
   function escapeHtml(value) {
@@ -162,135 +226,6 @@
     return graph.stats.nodes + " nodes \u2022 " + graph.stats.edges + " edges \u2022 depth " + graph.stats.depth;
   }
 
-  function mountCytoscapeTree(target, cytoscapeFactory, graph) {
-    var documentRef = target.ownerDocument;
-    var shell = documentRef.createElement("section");
-    shell.className = "cytoscape-tree-shell";
-
-    var header = documentRef.createElement("div");
-    header.className = "cytoscape-tree-header";
-
-    var titleGroup = documentRef.createElement("div");
-    titleGroup.className = "cytoscape-tree-title-group";
-
-    var title = documentRef.createElement("strong");
-    title.className = "cytoscape-tree-title";
-    title.textContent = "JSON tree graph";
-
-    var summary = documentRef.createElement("span");
-    summary.className = "cytoscape-tree-summary";
-    summary.textContent = createSummaryText(graph);
-
-    titleGroup.appendChild(title);
-    titleGroup.appendChild(summary);
-
-    var fitButton = documentRef.createElement("button");
-    fitButton.type = "button";
-    fitButton.textContent = "Fit";
-    fitButton.title = "Fit graph to view";
-
-    header.appendChild(titleGroup);
-    header.appendChild(fitButton);
-
-    var hint = documentRef.createElement("p");
-    hint.className = "cytoscape-tree-hint";
-    hint.textContent = "Pan by dragging the canvas and zoom with the mouse wheel.";
-
-    var viewport = documentRef.createElement("div");
-    viewport.className = "cytoscape-tree-viewport";
-
-    shell.appendChild(header);
-    shell.appendChild(hint);
-    shell.appendChild(viewport);
-    target.appendChild(shell);
-
-    var cy = cytoscapeFactory({
-      container: viewport,
-      elements: graph.elements,
-      layout: {
-        name: "breadthfirst",
-        directed: true,
-        animate: false,
-        padding: 32,
-        spacingFactor: 1.1
-      },
-      minZoom: 0.15,
-      maxZoom: 3,
-      wheelSensitivity: 0.15,
-      style: [
-        {
-          selector: "node",
-          style: {
-            "background-color": "#dbeafe",
-            "border-color": "#60a5fa",
-            "border-width": 1,
-            "color": "#0f172a",
-            "font-family": "Consolas, Courier New, monospace",
-            "font-size": 11,
-            "height": "label",
-            "label": "data(label)",
-            "padding": "10px",
-            "shape": "round-rectangle",
-            "text-halign": "center",
-            "text-max-width": 180,
-            "text-valign": "center",
-            "text-wrap": "wrap",
-            "width": "label"
-          }
-        },
-        {
-          selector: "node[kind = 'root']",
-          style: {
-            "background-color": "#c7d2fe",
-            "border-color": "#6366f1",
-            "font-weight": 700
-          }
-        },
-        {
-          selector: "node[kind = 'branch']",
-          style: {
-            "background-color": "#dcfce7",
-            "border-color": "#34d399"
-          }
-        },
-        {
-          selector: "node[kind = 'leaf']",
-          style: {
-            "background-color": "#f8fafc",
-            "border-color": "#cbd5e1"
-          }
-        },
-        {
-          selector: "edge",
-          style: {
-            "curve-style": "bezier",
-            "line-color": "#94a3b8",
-            "opacity": 0.9,
-            "target-arrow-color": "#94a3b8",
-            "target-arrow-shape": "triangle",
-            "width": 1.5
-          }
-        }
-      ]
-    });
-
-    function fitGraph() {
-      cy.fit(cy.elements(), 32);
-    }
-
-    fitButton.addEventListener("click", fitGraph);
-    if (typeof global.requestAnimationFrame === "function") {
-      global.requestAnimationFrame(fitGraph);
-    } else {
-      fitGraph();
-    }
-
-    return function () {
-      fitButton.removeEventListener("click", fitGraph);
-      cy.destroy();
-    };
-  }
-
   function renderNode(label, value) {
     var safeLabel = escapeHtml(label);
     if (value && typeof value === "object") {
@@ -322,13 +257,27 @@
   async function renderJsonCytoscapeTree(documentModel, context) {
     var value = parseJson(documentModel.text || "");
     var graph = buildCytoscapeGraph(value);
-    await requireRuntime(context).ensureScripts(RUNTIME_PATHS.cytoscape);
+    await requireRuntime(context).ensureScripts([RUNTIME_PATHS.cytoscape, RUNTIME_PATHS.viewer]);
     var cytoscapeFactory = resolveCytoscapeFactory();
+    var viewer = requireCytoscapeViewer();
     return {
       kind: "custom",
       content: {
         mount: function (target) {
-          return mountCytoscapeTree(target, cytoscapeFactory, graph);
+          return viewer.mount(target, cytoscapeFactory, graph, {
+            title: "JSON tree graph",
+            summary: createSummaryText(graph),
+            layout: {
+              name: "breadthfirst",
+              directed: true,
+              animate: false,
+              padding: 32,
+              spacingFactor: 1.1
+            },
+            minZoom: 0.15,
+            maxZoom: 3,
+            style: JSON_CYTOSCAPE_STYLE
+          });
         }
       },
       mimeType: "application/x.editor-workbench.custom+json-tree"

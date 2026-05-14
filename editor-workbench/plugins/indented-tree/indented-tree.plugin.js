@@ -2,7 +2,8 @@
   "use strict";
 
   var RUNTIME_PATHS = {
-    cytoscape: "plugins/mermaid/runtime/mermaid.bundle.js"
+    cytoscape: "plugins/mermaid/runtime/mermaid.bundle.js",
+    viewer: "plugins/shared/cytoscape-viewer/cytoscape-viewer.js"
   };
 
   var ID_PATTERN = /^[A-Za-z][A-Za-z0-9_-]*$/;
@@ -103,6 +104,13 @@
       return global.EditorWorkbenchMermaid.getCytoscape();
     }
     throw new Error("Cytoscape runtime bundle is not loaded.");
+  }
+
+  function requireCytoscapeViewer() {
+    if (!global.EditorWorkbenchCytoscapeViewer || typeof global.EditorWorkbenchCytoscapeViewer.mount !== "function") {
+      throw new Error("Cytoscape viewer runtime is not loaded.");
+    }
+    return global.EditorWorkbenchCytoscapeViewer;
   }
 
   function escapeHtml(value) {
@@ -1105,10 +1113,6 @@
     };
   }
 
-  function graphElementList(graph) {
-    return (graph.elements.nodes || []).concat(graph.elements.edges || []);
-  }
-
   function renderMetadata(parsed) {
     var keys = Object.keys(parsed.metadata || {});
     if (keys.length === 0) {
@@ -1172,84 +1176,20 @@
     ].join("");
   }
 
-  function mountCytoscapeTree(target, cytoscapeFactory, graph) {
-    var documentRef = target.ownerDocument;
-    var shell = documentRef.createElement("section");
-    shell.className = "cytoscape-graph-shell";
-
-    var header = documentRef.createElement("div");
-    header.className = "cytoscape-graph-header";
-
-    var titleGroup = documentRef.createElement("div");
-    titleGroup.className = "cytoscape-graph-title-group";
-
-    var title = documentRef.createElement("strong");
-    title.className = "cytoscape-graph-title";
-    title.textContent = "Indented tree graph";
-
-    var summary = documentRef.createElement("span");
-    summary.className = "cytoscape-graph-summary";
-    summary.textContent = (graph.elements.nodes || []).length + " nodes, " + (graph.elements.edges || []).length + " edges";
-
-    titleGroup.appendChild(title);
-    titleGroup.appendChild(summary);
-
-    var controls = documentRef.createElement("div");
-    controls.className = "cytoscape-graph-controls";
-
-    var fitButton = documentRef.createElement("button");
-    fitButton.type = "button";
-    fitButton.textContent = "Fit";
-    fitButton.title = "Fit graph to view";
-
-    controls.appendChild(fitButton);
-    header.appendChild(titleGroup);
-    header.appendChild(controls);
-
-    var viewport = documentRef.createElement("div");
-    viewport.className = "cytoscape-graph-viewport";
-
-    shell.appendChild(header);
-    shell.appendChild(viewport);
-    target.appendChild(shell);
-
-    var cy = cytoscapeFactory({
-      container: viewport,
-      elements: graphElementList(graph),
-      layout: graph.layout || CYTOSCAPE_LAYOUT,
-      minZoom: 0.1,
-      maxZoom: 4,
-      wheelSensitivity: 0.15,
-      style: CYTOSCAPE_STYLE
-    });
-
-    function fitGraph() {
-      cy.fit(cy.elements(), 32);
-    }
-
-    fitButton.addEventListener("click", fitGraph);
-    if (typeof global.requestAnimationFrame === "function") {
-      global.requestAnimationFrame(fitGraph);
-    } else {
-      fitGraph();
-    }
-
-    return function () {
-      fitButton.removeEventListener("click", fitGraph);
-      cy.destroy();
-    };
-  }
-
   async function renderCytoscapePreview(documentModel, context) {
     var parsed = parseIndentedTree(documentModel.text || "");
     var graph = buildCytoscapeDocument(parsed);
-    await requireRuntime(context).ensureScripts(RUNTIME_PATHS.cytoscape);
+    await requireRuntime(context).ensureScripts([RUNTIME_PATHS.cytoscape, RUNTIME_PATHS.viewer]);
     var cytoscapeFactory = requireCytoscapeTools();
+    var viewer = requireCytoscapeViewer();
     return {
       kind: "custom",
       content: {
         mount: function (target) {
-          return mountCytoscapeTree(target, cytoscapeFactory, graph);
+          return viewer.mount(target, cytoscapeFactory, graph, {
+            title: "Indented tree graph",
+            style: CYTOSCAPE_STYLE
+          });
         }
       },
       mimeType: "application/x.editor-workbench.custom+indented-tree-graph"

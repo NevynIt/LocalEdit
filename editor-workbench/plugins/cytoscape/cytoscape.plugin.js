@@ -3,7 +3,8 @@
 
   var RUNTIME_PATHS = {
     codeMirror: "plugins/json/runtime/codemirror-json.bundle.js",
-    cytoscape: "plugins/mermaid/runtime/mermaid.bundle.js"
+    cytoscape: "plugins/mermaid/runtime/mermaid.bundle.js",
+    viewer: "plugins/shared/cytoscape-viewer/cytoscape-viewer.js"
   };
 
   var DEFAULT_LAYOUT = {
@@ -100,6 +101,13 @@
       return global.EditorWorkbenchMermaid.getCytoscape();
     }
     throw new Error("Cytoscape runtime bundle is not loaded.");
+  }
+
+  function requireCytoscapeViewer() {
+    if (!global.EditorWorkbenchCytoscapeViewer || typeof global.EditorWorkbenchCytoscapeViewer.mount !== "function") {
+      throw new Error("Cytoscape viewer runtime is not loaded.");
+    }
+    return global.EditorWorkbenchCytoscapeViewer;
   }
 
   function parseJson(text) {
@@ -326,145 +334,18 @@
     };
   }
 
-  function createSummaryText(graph) {
-    return graph.elements.nodes.length + " nodes, " + graph.elements.edges.length + " edges";
-  }
-
-  function sanitizeLayoutName(name) {
-    var allowed = ["breadthfirst", "cose", "circle", "grid", "concentric"];
-    return allowed.indexOf(name) === -1 ? "breadthfirst" : name;
-  }
-
-  function createLayoutOptions(name, baseLayout) {
-    var layoutName = sanitizeLayoutName(name);
-    var options = Object.assign({}, baseLayout || {}, {
-      name: layoutName,
-      animate: false,
-      padding: 32
-    });
-    if (layoutName === "breadthfirst") {
-      options.directed = true;
-      options.spacingFactor = options.spacingFactor || 1.1;
-    }
-    return options;
-  }
-
-  function mountCytoscapeGraph(target, cytoscapeFactory, graph) {
-    var documentRef = target.ownerDocument;
-    var shell = documentRef.createElement("section");
-    shell.className = "cytoscape-graph-shell";
-
-    var header = documentRef.createElement("div");
-    header.className = "cytoscape-graph-header";
-
-    var titleGroup = documentRef.createElement("div");
-    titleGroup.className = "cytoscape-graph-title-group";
-
-    var title = documentRef.createElement("strong");
-    title.className = "cytoscape-graph-title";
-    title.textContent = "Cytoscape graph";
-
-    var summary = documentRef.createElement("span");
-    summary.className = "cytoscape-graph-summary";
-    summary.textContent = createSummaryText(graph);
-
-    titleGroup.appendChild(title);
-    titleGroup.appendChild(summary);
-
-    var controls = documentRef.createElement("div");
-    controls.className = "cytoscape-graph-controls";
-
-    var layoutSelect = documentRef.createElement("select");
-    ["breadthfirst", "cose", "circle", "grid", "concentric"].forEach(function (name) {
-      var option = documentRef.createElement("option");
-      option.value = name;
-      option.textContent = name;
-      layoutSelect.appendChild(option);
-    });
-    layoutSelect.value = sanitizeLayoutName(graph.layout && graph.layout.name);
-
-    var runLayoutButton = documentRef.createElement("button");
-    runLayoutButton.type = "button";
-    runLayoutButton.textContent = "Run";
-    runLayoutButton.title = "Run selected layout";
-
-    var fitButton = documentRef.createElement("button");
-    fitButton.type = "button";
-    fitButton.textContent = "Fit";
-    fitButton.title = "Fit graph to view";
-
-    var resetButton = documentRef.createElement("button");
-    resetButton.type = "button";
-    resetButton.textContent = "Reset";
-    resetButton.title = "Reset zoom and pan";
-
-    controls.appendChild(layoutSelect);
-    controls.appendChild(runLayoutButton);
-    controls.appendChild(fitButton);
-    controls.appendChild(resetButton);
-
-    header.appendChild(titleGroup);
-    header.appendChild(controls);
-
-    var viewport = documentRef.createElement("div");
-    viewport.className = "cytoscape-graph-viewport";
-
-    shell.appendChild(header);
-    shell.appendChild(viewport);
-    target.appendChild(shell);
-
-    var cy = cytoscapeFactory({
-      container: viewport,
-      elements: graph.elementList,
-      layout: createLayoutOptions(layoutSelect.value, graph.layout),
-      minZoom: 0.1,
-      maxZoom: 4,
-      wheelSensitivity: 0.15,
-      style: graph.style && graph.style.length ? graph.style : DEFAULT_STYLE
-    });
-
-    function fitGraph() {
-      cy.fit(cy.elements(), 32);
-    }
-
-    function resetGraph() {
-      cy.zoom(1);
-      cy.center(cy.elements());
-      fitGraph();
-    }
-
-    function runSelectedLayout() {
-      cy.layout(createLayoutOptions(layoutSelect.value, graph.layout)).run();
-      global.setTimeout(fitGraph, 60);
-    }
-
-    runLayoutButton.addEventListener("click", runSelectedLayout);
-    fitButton.addEventListener("click", fitGraph);
-    resetButton.addEventListener("click", resetGraph);
-
-    if (typeof global.requestAnimationFrame === "function") {
-      global.requestAnimationFrame(fitGraph);
-    } else {
-      fitGraph();
-    }
-
-    return function () {
-      runLayoutButton.removeEventListener("click", runSelectedLayout);
-      fitButton.removeEventListener("click", fitGraph);
-      resetButton.removeEventListener("click", resetGraph);
-      cy.destroy();
-    };
-  }
-
   async function renderCytoscape(documentModel, context) {
     var graph = normalizeForRender(documentModel);
-    await requireRuntime(context).ensureScripts(RUNTIME_PATHS.cytoscape);
+    await requireRuntime(context).ensureScripts([RUNTIME_PATHS.cytoscape, RUNTIME_PATHS.viewer]);
     var cytoscapeFactory = requireCytoscapeTools();
+    var viewer = requireCytoscapeViewer();
     return {
       kind: "custom",
       content: {
         mount: function (target) {
-          return mountCytoscapeGraph(target, cytoscapeFactory, graph);
+          return viewer.mount(target, cytoscapeFactory, graph, {
+            style: graph.style && graph.style.length ? graph.style : DEFAULT_STYLE
+          });
         }
       },
       mimeType: "application/x.editor-workbench.custom+cytoscape"
