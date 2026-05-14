@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Implementation completed for the v1 shell, plugin infrastructure, dependency vendoring workflow, CodeMirror editor integration, Markdown plugin, Mermaid plugin, Graphviz plugin, SVG plugin, Markdown inline diagram rendering, and lazy plugin-owned runtime bundles. Static checks and local Edge smoke verification passed on 2026-05-14. Manual unpacked extension testing remains pending.
+Implementation completed for the v1 shell, plugin infrastructure, dependency vendoring workflow, CodeMirror editor integration, Markdown plugin, Mermaid plugin, Graphviz plugin, SVG plugin, Markdown inline diagram rendering, lazy plugin-owned runtime bundles, JSON/XML/JavaScript/CSV/Python plugins, SVG PNG export, and standalone SVG pan/zoom. Static checks and local Edge smoke verification passed on 2026-05-14. Manual unpacked extension testing remains pending.
 
 ## Phase Checklist
 
@@ -23,6 +23,13 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - [x] Phase 15: Add packaged Mermaid, Graphviz, and SVG plugins with default auto-load entries.
 - [x] Phase 16: Extend Markdown preview/export to render Mermaid and Graphviz fenced diagrams inline.
 - [x] Phase 17: Verify diagram plugin security posture and local Edge smoke behavior.
+- [x] Phase 18: Add pinned dependencies for JSON, XML, JavaScript, CSV, Python, Prettier, XML Prettier, PapaParse, and Ruff WASM.
+- [x] Phase 19: Extend plugin-owned runtime bundling for the new language highlighters and formatter/parser runtimes.
+- [x] Phase 20: Add packaged JSON and XML plugins with linting, tree preview, prettify, and compact transforms.
+- [x] Phase 21: Add packaged JavaScript and Python plugins with syntax highlighting and prettifier transforms.
+- [x] Phase 22: Add packaged CSV plugin with row-width linting and scrollable table preview.
+- [x] Phase 23: Extend SVG plugin with sanitized PNG export and add SVG render pan/zoom controls.
+- [x] Phase 24: Verify structured language plugins, SVG PNG export, SVG pan/zoom, and security posture.
 
 ## Verification Log
 
@@ -66,6 +73,20 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - [x] SVG sanitizer smoke stripped `<script>`, event handlers, remote image references, and unsafe links while preserving safe SVG content.
 - [x] Markdown preview smoke rendered Mermaid and Graphviz fenced code blocks inline.
 - [x] Markdown HTML export smoke embedded sanitized inline SVG and did not add runtime scripts or remote assets.
+- [x] Additional exact dependencies installed: `@codemirror/lang-json@6.0.2`, `@codemirror/lang-xml@6.1.0`, `@codemirror/lang-javascript@6.2.5`, `@codemirror/lang-python@6.2.1`, `prettier@3.8.3`, `@prettier/plugin-xml@3.4.2`, `papaparse@5.5.3`, and `@astral-sh/ruff-wasm-web@0.15.13`.
+- [x] Additional plugin-owned runtime bundles generated for JSON, XML, JavaScript, CSV, and Python.
+- [x] `npm run verify:syntax` checked 70 JavaScript files after the structured language implementation.
+- [x] JSON parse checks passed for `manifest.json` and `package-lock.json`.
+- [x] HTML inline script/event/`javascript:` scan passed.
+- [x] App-code forbidden API scan passed outside vendored generated bundles.
+- [x] Remote-reference scan passed outside vendored generated bundles.
+- [x] Edge local smoke confirmed JSON lint, tree preview, prettify, compact, and lazy CodeMirror runtime loading.
+- [x] Edge local smoke confirmed XML lint, tree preview, Prettier XML formatting, compacting, and lazy CodeMirror runtime loading.
+- [x] Edge local smoke confirmed JavaScript Prettier formatting and invalid-input failure reporting.
+- [x] Edge local smoke confirmed CSV row-width linting and table preview.
+- [x] Edge local smoke confirmed Python Ruff WASM formatting and invalid-input failure reporting.
+- [x] Edge local smoke confirmed SVG PNG export returns a valid PNG blob signature.
+- [x] Render-shell smoke confirmed pan/zoom controls for SVG, Mermaid, and Graphviz standalone previews.
 - [ ] Manual extension test pending: load `editor-workbench/` as an unpacked Edge/Chrome extension.
 
 ## Implementation Notes
@@ -75,13 +96,15 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - Extension entry: `editor-workbench/editor.html`
 - Runtime style: plain local HTML, CSS, and JavaScript.
 - Editor v2: CodeMirror wrapped by `EditorCore`, with textarea fallback if the local CodeMirror bundle is unavailable.
-- Dependency workflow: npm is used only for development/build-time vendoring; runtime dependencies are local files under `editor-workbench/libs/`.
+- Dependency workflow: npm is used only for development/build-time vendoring; runtime dependencies are local files under `editor-workbench/libs/` and `editor-workbench/plugins/**/runtime/`.
 - First plugin: Markdown support is implemented in `plugins/markdown/markdown.plugin.js`.
 - Render refresh: the main toolbar includes a manual refresh button and an auto-refresh toggle that refreshes open render windows only after 3 seconds of stable source.
 - Uploaded plugins: local-file mode can load `.js` plugin files from the plugin manager via a file picker; extension mode keeps arbitrary uploaded plugin files disabled.
 - Packaged plugins: Markdown, Mermaid, Graphviz, and SVG are registered as default known plugins with `autoLoad: true`.
 - Markdown diagrams: Markdown preview and HTML export render `mermaid`, `mmd`, `dot`, `gv`, and `graphviz` fenced code blocks inline as sanitized SVG.
-- Plugin scope still excludes JSON/YAML-specific tooling, Markdown linting/formatting, Mermaid or Graphviz transforms, PDF, PNG, cloud, collaboration, and remote plugin marketplace features.
+- Packaged structured plugins: JSON, XML, JavaScript, CSV, and Python are registered as default known plugins with `autoLoad: true`.
+- SVG export/viewer: SVG source can export to sanitized PNG, and standalone SVG render results include pan/zoom controls.
+- Plugin scope still excludes YAML-specific tooling, Markdown linting/formatting, Mermaid or Graphviz transforms, Mermaid/Graphviz PNG export, PDF, cloud, collaboration, and remote plugin marketplace features.
 
 ## Dependency Vendoring Checklist
 
@@ -96,6 +119,8 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - [x] Build Mermaid and Graphviz runtime bundles under plugin runtime directories.
 - [x] Build plugin-owned CodeMirror language bundles for Markdown, DOT, and SVG/HTML.
 - [x] Keep runtime dependency loading local with no CDN, remote font, remote style, or remote script references.
+- [x] Add and pin `@codemirror/lang-json@6.0.2`, `@codemirror/lang-xml@6.1.0`, `@codemirror/lang-javascript@6.2.5`, `@codemirror/lang-python@6.2.1`, `prettier@3.8.3`, `@prettier/plugin-xml@3.4.2`, `papaparse@5.5.3`, and `@astral-sh/ruff-wasm-web@0.15.13`.
+- [x] Build JSON, XML, JavaScript, CSV, and Python plugin-owned runtime bundles under `editor-workbench/plugins/**/runtime/`.
 
 ## Markdown Plugin Checklist
 
@@ -123,6 +148,26 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - [x] Add SVG preview renderer and sanitized SVG exporter.
 - [x] Strip scriptable and external-reference SVG surfaces before display/export.
 
+## Structured Language Plugin Checklist
+
+- [x] Register JSON language and lazy CodeMirror JSON highlighter.
+- [x] Add JSON parse linter, tree preview, prettify transform, and compact transform.
+- [x] Register XML language and lazy CodeMirror XML highlighter.
+- [x] Add XML DOMParser linter, tree preview, Prettier XML transform, and compact transform.
+- [x] Register JavaScript language and lazy CodeMirror JavaScript highlighter.
+- [x] Add JavaScript Prettier transform using local standalone Prettier plus Babel/Estree plugins.
+- [x] Register CSV language and add PapaParse-backed row-width linter and scrollable table preview.
+- [x] Register Python language and lazy CodeMirror Python highlighter.
+- [x] Add Python formatter transform using local Ruff WASM.
+- [x] Add packaged plugin default auto-load entries for JSON, XML, JavaScript, CSV, and Python.
+
+## SVG Export And Viewer Checklist
+
+- [x] Add sanitized SVG source to PNG exporter for the SVG plugin.
+- [x] Rasterize SVG through local browser canvas with viewBox/dimension detection, fallback sizing, and max-side cap.
+- [x] Add pan/zoom controls for standalone SVG render results in `render-shell.js`.
+- [x] Verify pan/zoom with SVG, Mermaid, and Graphviz standalone previews.
+
 ## Acceptance Checklist
 
 ### Local Mode
@@ -143,6 +188,13 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - [x] Graphviz standalone preview/export renders sanitized SVG.
 - [x] SVG preview/export sanitizes script, event-handler, remote image, and unsafe-link content.
 - [x] Markdown preview/export renders Mermaid and Graphviz fenced diagrams inline.
+- [x] JSON plugin auto-loads and supports lint, tree preview, prettify, and compact transforms.
+- [x] XML plugin auto-loads and supports lint, tree preview, prettify, and compact transforms.
+- [x] JavaScript plugin auto-loads and supports Prettier formatting.
+- [x] CSV plugin auto-loads and supports row-width linting and scrollable table preview.
+- [x] Python plugin auto-loads and supports Ruff formatting.
+- [x] SVG plugin exports sanitized SVG source as PNG.
+- [x] Standalone SVG render windows support pan and zoom controls.
 - [x] No external network requests are made by app code.
 
 ### Extension Mode
@@ -167,3 +219,4 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - [x] Highlighter, linter, transformer, renderer, and exporter contracts are documented and represented in code.
 - [x] Uploaded plugin files are loaded via classic script injection from a local Blob URL, not by `eval`, `new Function`, or dynamic import.
 - [x] Packaged Markdown, Mermaid, Graphviz, and SVG plugin paths are included in the default known plugin list.
+- [x] Packaged JSON, XML, JavaScript, CSV, and Python plugin paths are included in the default known plugin list.

@@ -47,6 +47,31 @@
         path: "plugins/svg/svg.plugin.js",
         known: true,
         autoLoad: true
+      },
+      {
+        path: "plugins/json/json.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
+        path: "plugins/xml/xml.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
+        path: "plugins/javascript/javascript.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
+        path: "plugins/csv/csv.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
+        path: "plugins/python/python.plugin.js",
+        known: true,
+        autoLoad: true
       }
     ];
   }

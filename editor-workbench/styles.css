@@ -361,6 +361,125 @@ input[type="text"] {
   padding: 10px;
 }
 
+.tree-preview {
+  display: grid;
+  gap: 4px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.tree-node summary {
+  cursor: pointer;
+  user-select: none;
+}
+
+.tree-children {
+  margin-left: 18px;
+  border-left: 1px solid var(--border);
+  padding-left: 10px;
+}
+
+.tree-leaf {
+  display: flex;
+  gap: 8px;
+  margin-left: 18px;
+  min-width: 0;
+}
+
+.tree-key {
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.tree-meta {
+  color: var(--muted);
+}
+
+.tree-value {
+  overflow-wrap: anywhere;
+}
+
+.csv-table-wrap {
+  max-width: 100%;
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.csv-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.csv-table th,
+.csv-table td {
+  max-width: 360px;
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.csv-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-strong);
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.csv-table tbody th {
+  left: 0;
+  z-index: 2;
+}
+
+.svg-panzoom-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  min-height: calc(100vh - 32px);
+}
+
+.svg-panzoom-toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.svg-panzoom-viewport {
+  min-height: 60vh;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--code-bg);
+  cursor: grab;
+}
+
+.svg-panzoom-viewport.is-dragging {
+  cursor: grabbing;
+}
+
+.svg-panzoom-content {
+  display: inline-block;
+  min-width: 100%;
+  min-height: 100%;
+  padding: 16px;
+  transform-origin: 0 0;
+}
+
+.svg-panzoom-content svg {
+  max-width: none;
+  height: auto;
+}
+
 @media (max-width: 860px) {
   .workspace {
     grid-template-columns: minmax(0, 1fr);

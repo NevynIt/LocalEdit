@@ -15,6 +15,108 @@
     output.appendChild(pre);
   }
 
+  function createButton(label, title) {
+    var button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    button.title = title || label;
+    return button;
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function displaySvgResult(result) {
+    output.textContent = "";
+
+    var shell = document.createElement("div");
+    shell.className = "svg-panzoom-shell";
+
+    var toolbar = document.createElement("div");
+    toolbar.className = "svg-panzoom-toolbar";
+    var zoomOutButton = createButton("-", "Zoom out");
+    var zoomInButton = createButton("+", "Zoom in");
+    var resetButton = createButton("Reset", "Reset pan and zoom");
+    toolbar.appendChild(zoomOutButton);
+    toolbar.appendChild(zoomInButton);
+    toolbar.appendChild(resetButton);
+
+    var viewport = document.createElement("div");
+    viewport.className = "svg-panzoom-viewport";
+    var content = document.createElement("div");
+    content.className = "svg-panzoom-content";
+    content.innerHTML = typeof result.content === "string" ? result.content : "";
+    viewport.appendChild(content);
+
+    shell.appendChild(toolbar);
+    shell.appendChild(viewport);
+    output.appendChild(shell);
+
+    var state = {
+      scale: 1,
+      x: 0,
+      y: 0,
+      dragging: false,
+      startX: 0,
+      startY: 0,
+      originX: 0,
+      originY: 0
+    };
+
+    function applyTransform() {
+      content.style.transform = "translate(" + state.x + "px, " + state.y + "px) scale(" + state.scale + ")";
+    }
+
+    function zoomBy(multiplier) {
+      state.scale = clamp(state.scale * multiplier, 0.1, 8);
+      applyTransform();
+    }
+
+    zoomOutButton.addEventListener("click", function () {
+      zoomBy(0.8);
+    });
+    zoomInButton.addEventListener("click", function () {
+      zoomBy(1.25);
+    });
+    resetButton.addEventListener("click", function () {
+      state.scale = 1;
+      state.x = 0;
+      state.y = 0;
+      applyTransform();
+    });
+
+    viewport.addEventListener("wheel", function (event) {
+      event.preventDefault();
+      zoomBy(event.deltaY < 0 ? 1.1 : 0.9);
+    }, { passive: false });
+
+    viewport.addEventListener("mousedown", function (event) {
+      state.dragging = true;
+      state.startX = event.clientX;
+      state.startY = event.clientY;
+      state.originX = state.x;
+      state.originY = state.y;
+      viewport.classList.add("is-dragging");
+    });
+
+    global.addEventListener("mousemove", function (event) {
+      if (!state.dragging) {
+        return;
+      }
+      state.x = state.originX + event.clientX - state.startX;
+      state.y = state.originY + event.clientY - state.startY;
+      applyTransform();
+    });
+
+    global.addEventListener("mouseup", function () {
+      state.dragging = false;
+      viewport.classList.remove("is-dragging");
+    });
+
+    applyTransform();
+  }
+
   async function loadPluginPaths(paths) {
     var pluginPaths = Array.isArray(paths) ? paths : [];
     for (var index = 0; index < pluginPaths.length; index += 1) {
@@ -64,7 +166,12 @@
       return;
     }
 
-    if (result.kind === "html" || result.kind === "svg") {
+    if (result.kind === "svg") {
+      displaySvgResult(result);
+      return;
+    }
+
+    if (result.kind === "html") {
       var wrapper = document.createElement("div");
       wrapper.innerHTML = typeof result.content === "string" ? result.content : "";
       output.appendChild(wrapper);
