@@ -6,6 +6,18 @@
     prettier: "plugins/xml/runtime/prettier-xml.bundle.js"
   };
 
+  var TREE_PREVIEW_STYLE = [
+    "<style>",
+    ".tree-preview { display: grid; gap: 4px; font-family: Consolas, \"Courier New\", monospace; font-size: 13px; line-height: 1.45; }",
+    ".tree-node summary { cursor: pointer; user-select: none; }",
+    ".tree-children { margin-left: 18px; border-left: 1px solid var(--border, #cbd3df); padding-left: 10px; }",
+    ".tree-leaf { display: flex; gap: 8px; margin-left: 18px; min-width: 0; }",
+    ".tree-key { color: var(--accent-strong, #0b5f59); font-weight: 700; }",
+    ".tree-meta { color: var(--muted, #5d6b7c); }",
+    ".tree-value { overflow-wrap: anywhere; }",
+    "</style>"
+  ].join("\n");
+
   function requireRuntime(context) {
     if (!context || !context.runtime || typeof context.runtime.ensureScripts !== "function") {
       throw new Error("Plugin runtime loader is not available.");
@@ -113,7 +125,7 @@
 
   function renderXmlTree(documentModel) {
     var parsed = parseXml(documentModel.text || "");
-    return "<div class=\"tree-preview xml-tree\">" + renderNode(parsed) + "</div>";
+    return TREE_PREVIEW_STYLE + "<div class=\"tree-preview xml-tree\">" + renderNode(parsed) + "</div>";
   }
 
   function removeWhitespaceOnlyTextNodes(node) {

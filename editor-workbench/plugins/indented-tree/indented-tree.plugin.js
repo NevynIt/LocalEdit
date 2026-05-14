@@ -77,6 +77,23 @@
     }
   ];
 
+  var OUTLINE_PREVIEW_STYLE = [
+    "<style>",
+    ".tree-node summary { cursor: pointer; user-select: none; }",
+    ".tree-children { margin-left: 18px; border-left: 1px solid var(--border, #cbd3df); padding-left: 10px; }",
+    ".tree-key { color: var(--accent-strong, #0b5f59); font-weight: 700; }",
+    ".tree-meta { color: var(--muted, #5d6b7c); }",
+    ".indented-tree-preview { display: grid; gap: 10px; max-height: calc(100vh - 32px); overflow: auto; }",
+    ".indented-tree-preview-header { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; color: var(--muted, #5d6b7c); }",
+    ".indented-tree-preview-header strong { color: var(--text, #17202c); }",
+    ".indented-tree-metadata { display: grid; gap: 4px; margin: 0; font-family: Consolas, \"Courier New\", monospace; font-size: 12px; }",
+    ".indented-tree-metadata div { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px; }",
+    ".indented-tree-metadata dt { color: var(--muted, #5d6b7c); font-weight: 700; }",
+    ".indented-tree-metadata dd { margin: 0; overflow-wrap: anywhere; }",
+    ".indented-tree-details { margin: 6px 0 6px 18px; border-left: 2px solid var(--border, #cbd3df); padding: 4px 0 4px 10px; color: var(--muted, #5d6b7c); font-family: Consolas, \"Courier New\", monospace; font-size: 12px; white-space: pre-wrap; }",
+    "</style>"
+  ].join("\n");
+
   function requireRuntime(context) {
     if (!context || !context.runtime || typeof context.runtime.ensureScripts !== "function") {
       throw new Error("Plugin runtime loader is not available.");
@@ -1168,6 +1185,7 @@
     }).join("");
     var summary = parsed.nodes.length + " nodes, " + parsed.diagnostics.length + " diagnostics";
     return [
+      OUTLINE_PREVIEW_STYLE,
       "<section class=\"indented-tree-preview\">",
       "<header class=\"indented-tree-preview-header\"><strong>Indented Tree</strong><span>" + escapeHtml(summary) + "</span></header>",
       renderMetadata(parsed),

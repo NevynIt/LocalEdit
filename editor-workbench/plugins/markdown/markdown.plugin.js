@@ -9,6 +9,14 @@
     graphviz: "plugins/graphviz/runtime/graphviz.bundle.js"
   };
 
+  var MARKDOWN_PREVIEW_STYLE = [
+    "<style>",
+    ".diagram { max-width: 100%; overflow: auto; margin: 12px 0; }",
+    ".diagram svg { max-width: 100%; height: auto; }",
+    ".diagram-error { border: 1px solid #f5b5ae; border-radius: 6px; background: #fff5f4; color: #b42318; padding: 10px; }",
+    "</style>"
+  ].join("\n");
+
   function requireRuntime(context) {
     if (!context || !context.runtime || typeof context.runtime.ensureScripts !== "function") {
       throw new Error("Plugin runtime loader is not available.");
@@ -51,7 +59,7 @@
 
   async function renderMarkdownHtml(documentModel, context) {
     await ensureMarkdownRuntime(context, documentModel.text || "");
-    return requireMarkdownTools().renderMarkdown(documentModel.text || "");
+    return MARKDOWN_PREVIEW_STYLE + "\n" + await requireMarkdownTools().renderMarkdown(documentModel.text || "");
   }
 
   function htmlFileName(sourceName) {

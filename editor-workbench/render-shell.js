@@ -8,6 +8,16 @@
   var runtime = new RuntimeLoader(host);
   var loader = new PluginLoader(host, registry);
   var loadedPaths = new Set();
+  var SVG_PANZOOM_STYLE_ID = "editor-workbench-svg-panzoom-style";
+  var SVG_PANZOOM_STYLE = [
+    ".svg-panzoom-shell { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 8px; height: calc(100vh - 32px); min-height: 0; }",
+    ".svg-panzoom-toolbar { display: flex; gap: 6px; align-items: center; }",
+    ".svg-panzoom-zoom { min-width: 54px; color: var(--muted, #5d6b7c); font-size: 12px; font-weight: 700; text-align: right; }",
+    ".svg-panzoom-viewport { position: relative; min-height: 0; overflow: hidden; border: 1px solid var(--border, #cbd3df); border-radius: 6px; background: var(--code-bg, #fbfcfd); cursor: grab; }",
+    ".svg-panzoom-viewport.is-dragging { cursor: grabbing; }",
+    ".svg-panzoom-content { position: absolute; left: 0; top: 0; display: inline-block; transform-origin: 0 0; }",
+    ".svg-panzoom-content svg { max-width: none; height: auto; overflow: visible; }"
+  ].join("\n");
 
   function clearOutput() {
     if (activeRenderCleanup) {
@@ -41,8 +51,19 @@
     return Math.round(scale * 100) + "%";
   }
 
+  function ensureSvgPanzoomStyles() {
+    if (document.getElementById(SVG_PANZOOM_STYLE_ID)) {
+      return;
+    }
+    var style = document.createElement("style");
+    style.id = SVG_PANZOOM_STYLE_ID;
+    style.textContent = SVG_PANZOOM_STYLE;
+    document.head.appendChild(style);
+  }
+
   function displaySvgResult(result) {
     clearOutput();
+    ensureSvgPanzoomStyles();
 
     var shell = document.createElement("div");
     shell.className = "svg-panzoom-shell";

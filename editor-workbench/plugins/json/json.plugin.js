@@ -7,6 +7,18 @@
     viewer: "plugins/shared/cytoscape-viewer/cytoscape-viewer.js"
   };
 
+  var TREE_PREVIEW_STYLE = [
+    "<style>",
+    ".tree-preview { display: grid; gap: 4px; font-family: Consolas, \"Courier New\", monospace; font-size: 13px; line-height: 1.45; }",
+    ".tree-node summary { cursor: pointer; user-select: none; }",
+    ".tree-children { margin-left: 18px; border-left: 1px solid var(--border, #cbd3df); padding-left: 10px; }",
+    ".tree-leaf { display: flex; gap: 8px; margin-left: 18px; min-width: 0; }",
+    ".tree-key { color: var(--accent-strong, #0b5f59); font-weight: 700; }",
+    ".tree-meta { color: var(--muted, #5d6b7c); }",
+    ".tree-value { overflow-wrap: anywhere; }",
+    "</style>"
+  ].join("\n");
+
   var JSON_CYTOSCAPE_STYLE = [
     {
       selector: "node",
@@ -251,7 +263,7 @@
 
   function renderJsonTree(documentModel) {
     var value = parseJson(documentModel.text || "");
-    return "<div class=\"tree-preview json-tree\">" + renderNode("$", value) + "</div>";
+    return TREE_PREVIEW_STYLE + "<div class=\"tree-preview json-tree\">" + renderNode("$", value) + "</div>";
   }
 
   async function renderJsonCytoscapeTree(documentModel, context) {

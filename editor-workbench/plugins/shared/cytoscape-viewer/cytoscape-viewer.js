@@ -72,6 +72,27 @@
     }
   ];
 
+  var VIEWER_STYLE_ID = "editor-workbench-cytoscape-viewer-style";
+  var VIEWER_STYLE = [
+    ".cytoscape-graph-shell { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 8px; height: calc(100vh - 32px); min-height: 0; }",
+    ".cytoscape-graph-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }",
+    ".cytoscape-graph-title-group { display: grid; gap: 2px; }",
+    ".cytoscape-graph-title { font-size: 14px; }",
+    ".cytoscape-graph-summary { color: var(--muted, #5d6b7c); font-size: 12px; }",
+    ".cytoscape-graph-controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; }",
+    ".cytoscape-graph-viewport { min-height: 0; border: 1px solid var(--border, #cbd3df); border-radius: 8px; background: #ffffff; }"
+  ].join("\n");
+
+  function ensureViewerStyles(documentRef) {
+    if (documentRef.getElementById(VIEWER_STYLE_ID)) {
+      return;
+    }
+    var style = documentRef.createElement("style");
+    style.id = VIEWER_STYLE_ID;
+    style.textContent = VIEWER_STYLE;
+    (documentRef.head || documentRef.documentElement).appendChild(style);
+  }
+
   function isPlainObject(value) {
     return Boolean(value && typeof value === "object" && !Array.isArray(value));
   }
@@ -146,6 +167,7 @@
     var elements = getElementList(graph);
     var configuredLayout = viewerOptions.layout || (graph && graph.layout) || DEFAULT_LAYOUT;
     var documentRef = target.ownerDocument;
+    ensureViewerStyles(documentRef);
     var shell = documentRef.createElement("section");
     shell.className = "cytoscape-graph-shell";
 

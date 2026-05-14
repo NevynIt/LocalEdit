@@ -5,6 +5,22 @@
     csv: "plugins/csv/runtime/csv.bundle.js"
   };
 
+  var CSV_VIEWER_STYLE = [
+    "<style>",
+    ".csv-viewer { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px; max-height: calc(100vh - 32px); min-height: 0; }",
+    ".csv-header-checkbox { align-self: center; margin: 0; }",
+    ".csv-viewer-options { align-self: center; color: var(--muted, #5d6b7c); cursor: pointer; font-size: 12px; font-weight: 700; }",
+    ".csv-table-wrap { grid-column: 1 / -1; max-width: 100%; max-height: calc(100vh - 88px); overflow: auto; border: 1px solid var(--border, #cbd3df); border-radius: 6px; background: var(--surface, #ffffff); }",
+    ".csv-header-table { display: none; }",
+    ".csv-header-checkbox:checked ~ .csv-default-table { display: none; }",
+    ".csv-header-checkbox:checked ~ .csv-header-table { display: block; }",
+    ".csv-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 13px; }",
+    ".csv-table th, .csv-table td { max-width: 360px; border: 1px solid var(--border, #cbd3df); padding: 6px 8px; text-align: left; vertical-align: top; white-space: pre-wrap; overflow-wrap: anywhere; }",
+    ".csv-table th { position: sticky; top: 0; z-index: 1; background: var(--surface-strong, #eef1f5); color: var(--muted, #5d6b7c); font-weight: 700; }",
+    ".csv-table tbody th { left: 0; z-index: 2; }",
+    "</style>"
+  ].join("\n");
+
   function requireRuntime(context) {
     if (!context || !context.runtime || typeof context.runtime.ensureScripts !== "function") {
       throw new Error("Plugin runtime loader is not available.");
@@ -140,6 +156,7 @@
 
   function renderViewer(result) {
     return [
+      CSV_VIEWER_STYLE,
       "<section class=\"csv-viewer\">",
       "<input class=\"csv-header-checkbox\" id=\"csv-first-row-header\" type=\"checkbox\">",
       "<label class=\"csv-viewer-options\" for=\"csv-first-row-header\">Interpret first row as titles</label>",
