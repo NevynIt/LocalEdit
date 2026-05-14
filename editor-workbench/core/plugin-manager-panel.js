@@ -1,0 +1,158 @@
+(function (global) {
+  "use strict";
+
+  function el(tagName, className, text) {
+    var node = document.createElement(tagName);
+    if (className) {
+      node.className = className;
+    }
+    if (text !== undefined) {
+      node.textContent = text;
+    }
+    return node;
+  }
+
+  class PluginManagerPanel {
+    constructor(layout, app) {
+      this.layout = layout;
+      this.app = app;
+    }
+
+    render(state) {
+      var root = this.layout.pluginPanel;
+      root.textContent = "";
+
+      var header = el("div", "panel-header");
+      header.appendChild(el("h2", "panel-title", "Plugin Manager"));
+      var closeButton = el("button", "", "Close");
+      closeButton.type = "button";
+      closeButton.addEventListener("click", () => this.app.togglePluginManagerPanel(false));
+      header.appendChild(closeButton);
+      root.appendChild(header);
+
+      var body = el("div", "panel-body");
+      root.appendChild(body);
+
+      if (state.canAddPluginPath) {
+        body.appendChild(this.renderAddPlugin());
+      }
+
+      if (state.items.length === 0) {
+        body.appendChild(el("p", "empty-state", "No known plugins are configured."));
+        return;
+      }
+
+      state.items.forEach((item) => {
+        body.appendChild(this.renderPluginItem(item));
+      });
+    }
+
+    renderAddPlugin() {
+      var wrapper = el("div", "plugin-add");
+      var input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "plugins/example.js";
+      input.setAttribute("aria-label", "Plugin path");
+
+      var button = el("button", "", "Add");
+      button.type = "button";
+      button.addEventListener("click", async () => {
+        await this.app.addKnownPlugin(input.value.trim());
+        input.value = "";
+      });
+
+      wrapper.appendChild(input);
+      wrapper.appendChild(button);
+      return wrapper;
+    }
+
+    renderPluginItem(item) {
+      var config = item.config;
+      var registered = item.registered;
+      var wrapper = el("section", "plugin-item");
+
+      var titleRow = el("div", "plugin-title-row");
+      titleRow.appendChild(el("span", "plugin-name", registered ? registered.name : "Unloaded plugin"));
+      titleRow.appendChild(this.statusChip(config.lastStatus || "unloaded"));
+      wrapper.appendChild(titleRow);
+
+      var grid = el("div", "meta-grid");
+      grid.appendChild(this.metaRow("Path", config.path));
+      grid.appendChild(this.metaRow("ID", registered ? registered.id : config.id || ""));
+      grid.appendChild(this.metaRow("Version", registered ? registered.version : ""));
+      grid.appendChild(this.metaRow("Languages", registered && registered.languages.length ? registered.languages.join(", ") : ""));
+      grid.appendChild(this.metaRow("Engines", registered ? this.engineSummary(registered.plugin) : ""));
+      if (registered && registered.description) {
+        grid.appendChild(this.metaRow("About", registered.description));
+      }
+      wrapper.appendChild(grid);
+
+      var autoLabel = el("label", "");
+      var autoToggle = document.createElement("input");
+      autoToggle.type = "checkbox";
+      autoToggle.checked = config.autoLoad;
+      autoToggle.addEventListener("change", () => {
+        this.app.setPluginAutoLoad(config.id || config.path, autoToggle.checked);
+      });
+      autoLabel.appendChild(autoToggle);
+      autoLabel.appendChild(document.createTextNode(" Auto-load"));
+      wrapper.appendChild(autoLabel);
+
+      if (config.lastError) {
+        wrapper.appendChild(el("div", "error-text", config.lastError));
+      }
+
+      var actions = el("div", "plugin-actions");
+      var loadButton = el("button", "", "Load");
+      loadButton.type = "button";
+      loadButton.addEventListener("click", () => this.app.loadKnownPlugin(config.id || config.path));
+      actions.appendChild(loadButton);
+
+      var disableButton = el("button", "", "Disable");
+      disableButton.type = "button";
+      disableButton.disabled = !registered || !registered.active;
+      disableButton.addEventListener("click", () => this.app.disablePlugin(registered.id));
+      actions.appendChild(disableButton);
+
+      var removeButton = el("button", "", "Remove");
+      removeButton.type = "button";
+      removeButton.addEventListener("click", () => this.app.removeKnownPlugin(config.id || config.path));
+      actions.appendChild(removeButton);
+      wrapper.appendChild(actions);
+
+      return wrapper;
+    }
+
+    statusChip(status) {
+      var chip = el("span", "status-chip " + status, status);
+      return chip;
+    }
+
+    metaRow(key, value) {
+      var row = el("div", "meta-row");
+      row.appendChild(el("span", "meta-key", key));
+      row.appendChild(el("span", "meta-value", value || "-"));
+      return row;
+    }
+
+    engineSummary(plugin) {
+      var parts = [];
+      [
+        ["highlighters", "highlighter"],
+        ["linters", "linter"],
+        ["transformers", "transformer"],
+        ["renderers", "renderer"],
+        ["exporters", "exporter"]
+      ].forEach(function (entry) {
+        var values = Array.isArray(plugin[entry[0]]) ? plugin[entry[0]] : [];
+        if (values.length) {
+          parts.push(values.length + " " + entry[1] + (values.length === 1 ? "" : "s"));
+        }
+      });
+      return parts.join(", ") || "None";
+    }
+  }
+
+  global.PluginManagerPanel = PluginManagerPanel;
+})(window);
+

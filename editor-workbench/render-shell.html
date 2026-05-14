@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: data:; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';">
+    <title>Editor Workbench Render</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="render-shell">
+    <main id="render-output" class="render-output" aria-live="polite"></main>
+    <script src="core/host-adapter.js"></script>
+    <script src="core/document-model.js"></script>
+    <script src="core/plugin-types.js"></script>
+    <script src="core/plugin-registry.js"></script>
+    <script src="core/plugin-loader.js"></script>
+    <script src="render-shell.js"></script>
+  </body>
+</html>
+

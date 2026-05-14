@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: data:; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';">
+    <title>Local Editor Workbench</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <header id="toolbar" class="toolbar" aria-label="Editor toolbar"></header>
+      <main class="workspace">
+        <section id="editor-container" class="editor-region" aria-label="Source editor"></section>
+        <aside id="plugin-manager-panel" class="side-panel is-hidden" aria-label="Plugin manager"></aside>
+        <aside id="diagnostics-panel" class="diagnostics-panel" aria-label="Diagnostics"></aside>
+      </main>
+      <footer id="status-bar" class="status-bar" aria-live="polite"></footer>
+    </div>
+
+    <script src="core/host-adapter.js"></script>
+    <script src="core/document-model.js"></script>
+    <script src="core/language-registry.js"></script>
+    <script src="core/plugin-types.js"></script>
+    <script src="core/plugin-registry.js"></script>
+    <script src="core/plugin-loader.js"></script>
+    <script src="core/plugin-manager.js"></script>
+    <script src="core/storage.js"></script>
+    <script src="core/file-open.js"></script>
+    <script src="core/file-download.js"></script>
+    <script src="core/editor-core.js"></script>
+    <script src="core/diagnostics-manager.js"></script>
+    <script src="core/transform-manager.js"></script>
+    <script src="core/render-session.js"></script>
+    <script src="core/render-manager.js"></script>
+    <script src="core/export-manager.js"></script>
+    <script src="core/toolbar.js"></script>
+    <script src="core/plugin-manager-panel.js"></script>
+    <script src="core/diagnostics-panel.js"></script>
+    <script src="core/editor-layout.js"></script>
+    <script src="core/app.js"></script>
+    <script src="local-bootstrap.js"></script>
+  </body>
+</html>
+
