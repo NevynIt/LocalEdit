@@ -59,6 +59,26 @@ const svgSanitizeOptions = {
   FORBID_ATTR: ["href", "xlink:href", "src", "srcset", "poster", "formaction", "style"]
 };
 
+const allowedAttributeUrls = new Set();
+
+function registerAllowedAttributeUrls(urls) {
+  if (!Array.isArray(urls)) {
+    return;
+  }
+
+  urls.forEach((url) => {
+    if (typeof url === "string" && url) {
+      allowedAttributeUrls.add(url);
+    }
+  });
+}
+
+function isAllowedAttributeUrl(value) {
+  return allowedAttributeUrls.has(value);
+}
+
+registerAllowedAttributeUrls(window.EditorWorkbenchSanitizeAllowedAttributeUrls);
+
 DOMPurify.addHook("afterSanitizeAttributes", (node) => {
   if (!node || !node.attributes) {
     return;
@@ -66,6 +86,10 @@ DOMPurify.addHook("afterSanitizeAttributes", (node) => {
 
   Array.from(node.attributes).forEach((attribute) => {
     const value = attribute.value || "";
+    if (isAllowedAttributeUrl(value)) {
+      return;
+    }
+
     if (/(?:javascript:|vbscript:|data:|file:|https?:)/i.test(value)) {
       node.removeAttribute(attribute.name);
       return;
@@ -134,6 +158,7 @@ function sanitizeSvg(svg) {
 window.EditorWorkbenchSanitize = {
   DOMPurify,
   escapeHtml,
+  registerAllowedAttributeUrls,
   sanitizeHtml,
   sanitizeSvg
 };

@@ -1147,12 +1147,30 @@ var EditorWorkbenchSanitizeBundle = (() => {
     ],
     FORBID_ATTR: ["href", "xlink:href", "src", "srcset", "poster", "formaction", "style"]
   };
+  var allowedAttributeUrls = /* @__PURE__ */ new Set();
+  function registerAllowedAttributeUrls(urls) {
+    if (!Array.isArray(urls)) {
+      return;
+    }
+    urls.forEach((url) => {
+      if (typeof url === "string" && url) {
+        allowedAttributeUrls.add(url);
+      }
+    });
+  }
+  function isAllowedAttributeUrl(value) {
+    return allowedAttributeUrls.has(value);
+  }
+  registerAllowedAttributeUrls(window.EditorWorkbenchSanitizeAllowedAttributeUrls);
   purify.addHook("afterSanitizeAttributes", (node) => {
     if (!node || !node.attributes) {
       return;
     }
     Array.from(node.attributes).forEach((attribute) => {
       const value = attribute.value || "";
+      if (isAllowedAttributeUrl(value)) {
+        return;
+      }
       if (/(?:javascript:|vbscript:|data:|file:|https?:)/i.test(value)) {
         node.removeAttribute(attribute.name);
         return;
@@ -1202,6 +1220,7 @@ var EditorWorkbenchSanitizeBundle = (() => {
   window.EditorWorkbenchSanitize = {
     DOMPurify: purify,
     escapeHtml,
+    registerAllowedAttributeUrls,
     sanitizeHtml,
     sanitizeSvg
   };

@@ -7,6 +7,26 @@
       this.registry = registry;
     }
 
+    registerSanitizerAllowedAttributeUrls(plugin) {
+      if (!plugin || !Array.isArray(plugin.allowedAttributeUrls) || plugin.allowedAttributeUrls.length === 0) {
+        return;
+      }
+
+      var tools = global.EditorWorkbenchSanitize;
+      if (tools && typeof tools.registerAllowedAttributeUrls === "function") {
+        tools.registerAllowedAttributeUrls(plugin.allowedAttributeUrls);
+        return;
+      }
+
+      global.EditorWorkbenchSanitizeAllowedAttributeUrls = global.EditorWorkbenchSanitizeAllowedAttributeUrls || [];
+      for (var index = 0; index < plugin.allowedAttributeUrls.length; index += 1) {
+        var url = plugin.allowedAttributeUrls[index];
+        if (typeof url === "string" && url) {
+          global.EditorWorkbenchSanitizeAllowedAttributeUrls.push(url);
+        }
+      }
+    }
+
     async load(path) {
       if (!this.host.validatePluginPath(path)) {
         return {
@@ -34,6 +54,7 @@
         var firstPluginId;
         for (var index = 0; index < newPlugins.length; index += 1) {
           var plugin = newPlugins[index];
+          this.registerSanitizerAllowedAttributeUrls(plugin);
           this.registry.registerPlugin(plugin, { path: path });
           if (!firstPluginId) {
             firstPluginId = plugin.id;
@@ -83,6 +104,7 @@
         var firstPluginId;
         for (var index = 0; index < newPlugins.length; index += 1) {
           var plugin = newPlugins[index];
+          this.registerSanitizerAllowedAttributeUrls(plugin);
           this.registry.registerPlugin(plugin, {
             path: "uploaded:" + fileName,
             sourceType: "uploaded",

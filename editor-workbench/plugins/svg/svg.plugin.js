@@ -140,6 +140,10 @@
     version: "0.1.0",
     description: "SVG language support with sanitized preview and export.",
     documentationUrl: "https://developer.mozilla.org/docs/Web/SVG",
+    allowedAttributeUrls: [
+      "http://www.w3.org/2000/svg",
+      "http://www.w3.org/1999/xlink"
+    ],
     getExampleDocument: function () {
       return {
         fileName: "example.svg",

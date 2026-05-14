@@ -37,6 +37,10 @@
     version: "0.1.0",
     description: "Mermaid language support with sanitized SVG preview and export.",
     documentationUrl: "https://mermaid.js.org/intro/",
+    allowedAttributeUrls: [
+      "http://www.w3.org/2000/svg",
+      "http://www.w3.org/1999/xlink"
+    ],
     getExampleDocument: function () {
       return {
         fileName: "example.mmd",
