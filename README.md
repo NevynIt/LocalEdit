@@ -64,7 +64,7 @@ The app does not load from npm, a CDN, or a server at runtime.
 | Mermaid | `mermaid` | SVG preview/export |
 | Graphviz | `graphviz` | DOT syntax, local WASM SVG preview/export |
 | SVG | `svg` | SVG syntax, sanitized SVG preview/export, PNG export |
-| JSON | `json` | Syntax, parse linting, tree preview, format, compact |
+| JSON | `json` | Syntax, parse linting, HTML tree preview, Cytoscape tree preview, format, compact |
 | XML | `xml` | Syntax, DOMParser linting, tree preview, Prettier format, compact |
 | JavaScript | `javascript` | Syntax, Prettier format |
 | CSV | `csv` | Row-width linting, scrollable table preview |
@@ -111,7 +111,7 @@ All runtime dependencies are bundled locally. Key dependencies include:
 
 - CodeMirror packages for editor base and language support.
 - Marked and DOMPurify for Markdown and sanitization.
-- Mermaid for diagram rendering.
+- Mermaid and Cytoscape for diagram and tree-graph rendering.
 - `@viz-js/viz` and `@viz-js/lang-dot` for Graphviz/DOT.
 - Prettier and `@prettier/plugin-xml` for JavaScript/XML formatting.
 - PapaParse for CSV parsing.

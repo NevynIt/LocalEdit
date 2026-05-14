@@ -1,4 +1,5 @@
 import mermaid from "mermaid";
+import cytoscape from "cytoscape";
 
 let renderCounter = 0;
 let initialized = false;
@@ -36,7 +37,13 @@ async function renderMermaidSvg(source) {
   return requireSanitizer().sanitizeSvg(result.svg || "");
 }
 
+function getCytoscape() {
+  return cytoscape;
+}
+
 window.EditorWorkbenchMermaid = {
   mermaid,
+  cytoscape: getCytoscape(),
+  getCytoscape,
   renderMermaidSvg
 };

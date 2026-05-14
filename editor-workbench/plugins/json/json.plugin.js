@@ -2,7 +2,8 @@
   "use strict";
 
   var RUNTIME_PATHS = {
-    codeMirror: "plugins/json/runtime/codemirror-json.bundle.js"
+    codeMirror: "plugins/json/runtime/codemirror-json.bundle.js",
+    cytoscape: "plugins/mermaid/runtime/mermaid.bundle.js"
   };
 
   function requireRuntime(context) {
@@ -17,6 +18,24 @@
       throw new Error("CodeMirror JSON runtime bundle is not loaded.");
     }
     return global.EditorWorkbenchCodeMirror;
+  }
+
+  function requireCytoscapeTools() {
+    if (!global.EditorWorkbenchMermaid) {
+      throw new Error("Cytoscape runtime bundle is not loaded.");
+    }
+    return global.EditorWorkbenchMermaid;
+  }
+
+  function resolveCytoscapeFactory() {
+    var tools = requireCytoscapeTools();
+    if (typeof tools.cytoscape === "function") {
+      return tools.cytoscape;
+    }
+    if (typeof tools.getCytoscape === "function") {
+      return tools.getCytoscape();
+    }
+    throw new Error("Cytoscape runtime bundle is not loaded.");
   }
 
   function escapeHtml(value) {
@@ -61,6 +80,217 @@
     return JSON.stringify(value);
   }
 
+  function valueKind(value) {
+    if (Array.isArray(value)) {
+      return "array";
+    }
+    if (value === null) {
+      return "null";
+    }
+    return typeof value;
+  }
+
+  function truncateText(value, maxLength) {
+    var text = String(value == null ? "" : value);
+    if (text.length <= maxLength) {
+      return text;
+    }
+    return text.slice(0, Math.max(0, maxLength - 1)) + "\u2026";
+  }
+
+  function createGraphLabel(label, value) {
+    if (value && typeof value === "object") {
+      return label + "\n" + describeValue(value);
+    }
+    return label + "\n" + truncateText(describeValue(value), 72);
+  }
+
+  function buildCytoscapeGraph(rootValue) {
+    var elements = [];
+    var nextId = 0;
+    var stats = {
+      nodes: 0,
+      edges: 0,
+      depth: 0
+    };
+
+    function visit(label, value, parentId, depth) {
+      var nodeId = "json-node-" + nextId;
+      nextId += 1;
+      stats.nodes += 1;
+      stats.depth = Math.max(stats.depth, depth);
+      elements.push({
+        data: {
+          id: nodeId,
+          label: createGraphLabel(label, value),
+          kind: parentId ? (value && typeof value === "object" ? "branch" : "leaf") : "root",
+          valueKind: valueKind(value)
+        }
+      });
+
+      if (parentId) {
+        stats.edges += 1;
+        elements.push({
+          data: {
+            id: "json-edge-" + parentId + "-" + nodeId,
+            source: parentId,
+            target: nodeId
+          }
+        });
+      }
+
+      if (value && typeof value === "object") {
+        var keys = Array.isArray(value)
+          ? value.map(function (_, index) { return index; })
+          : Object.keys(value);
+        keys.forEach(function (key) {
+          visit(String(key), value[key], nodeId, depth + 1);
+        });
+      }
+
+      return nodeId;
+    }
+
+    return {
+      elements: elements,
+      rootId: visit("$", rootValue, "", 0),
+      stats: stats
+    };
+  }
+
+  function createSummaryText(graph) {
+    return graph.stats.nodes + " nodes \u2022 " + graph.stats.edges + " edges \u2022 depth " + graph.stats.depth;
+  }
+
+  function mountCytoscapeTree(target, cytoscapeFactory, graph) {
+    var documentRef = target.ownerDocument;
+    var shell = documentRef.createElement("section");
+    shell.className = "cytoscape-tree-shell";
+
+    var header = documentRef.createElement("div");
+    header.className = "cytoscape-tree-header";
+
+    var titleGroup = documentRef.createElement("div");
+    titleGroup.className = "cytoscape-tree-title-group";
+
+    var title = documentRef.createElement("strong");
+    title.className = "cytoscape-tree-title";
+    title.textContent = "JSON tree graph";
+
+    var summary = documentRef.createElement("span");
+    summary.className = "cytoscape-tree-summary";
+    summary.textContent = createSummaryText(graph);
+
+    titleGroup.appendChild(title);
+    titleGroup.appendChild(summary);
+
+    var fitButton = documentRef.createElement("button");
+    fitButton.type = "button";
+    fitButton.textContent = "Fit";
+    fitButton.title = "Fit graph to view";
+
+    header.appendChild(titleGroup);
+    header.appendChild(fitButton);
+
+    var hint = documentRef.createElement("p");
+    hint.className = "cytoscape-tree-hint";
+    hint.textContent = "Pan by dragging the canvas and zoom with the mouse wheel.";
+
+    var viewport = documentRef.createElement("div");
+    viewport.className = "cytoscape-tree-viewport";
+
+    shell.appendChild(header);
+    shell.appendChild(hint);
+    shell.appendChild(viewport);
+    target.appendChild(shell);
+
+    var cy = cytoscapeFactory({
+      container: viewport,
+      elements: graph.elements,
+      layout: {
+        name: "breadthfirst",
+        directed: true,
+        animate: false,
+        padding: 32,
+        spacingFactor: 1.1
+      },
+      minZoom: 0.15,
+      maxZoom: 3,
+      wheelSensitivity: 0.15,
+      style: [
+        {
+          selector: "node",
+          style: {
+            "background-color": "#dbeafe",
+            "border-color": "#60a5fa",
+            "border-width": 1,
+            "color": "#0f172a",
+            "font-family": "Consolas, Courier New, monospace",
+            "font-size": 11,
+            "height": "label",
+            "label": "data(label)",
+            "padding": "10px",
+            "shape": "round-rectangle",
+            "text-halign": "center",
+            "text-max-width": 180,
+            "text-valign": "center",
+            "text-wrap": "wrap",
+            "width": "label"
+          }
+        },
+        {
+          selector: "node[kind = 'root']",
+          style: {
+            "background-color": "#c7d2fe",
+            "border-color": "#6366f1",
+            "font-weight": 700
+          }
+        },
+        {
+          selector: "node[kind = 'branch']",
+          style: {
+            "background-color": "#dcfce7",
+            "border-color": "#34d399"
+          }
+        },
+        {
+          selector: "node[kind = 'leaf']",
+          style: {
+            "background-color": "#f8fafc",
+            "border-color": "#cbd5e1"
+          }
+        },
+        {
+          selector: "edge",
+          style: {
+            "curve-style": "bezier",
+            "line-color": "#94a3b8",
+            "opacity": 0.9,
+            "target-arrow-color": "#94a3b8",
+            "target-arrow-shape": "triangle",
+            "width": 1.5
+          }
+        }
+      ]
+    });
+
+    function fitGraph() {
+      cy.fit(cy.elements(), 32);
+    }
+
+    fitButton.addEventListener("click", fitGraph);
+    if (typeof global.requestAnimationFrame === "function") {
+      global.requestAnimationFrame(fitGraph);
+    } else {
+      fitGraph();
+    }
+
+    return function () {
+      fitButton.removeEventListener("click", fitGraph);
+      cy.destroy();
+    };
+  }
+
   function renderNode(label, value) {
     var safeLabel = escapeHtml(label);
     if (value && typeof value === "object") {
@@ -89,6 +319,22 @@
     return "<div class=\"tree-preview json-tree\">" + renderNode("$", value) + "</div>";
   }
 
+  async function renderJsonCytoscapeTree(documentModel, context) {
+    var value = parseJson(documentModel.text || "");
+    var graph = buildCytoscapeGraph(value);
+    await requireRuntime(context).ensureScripts(RUNTIME_PATHS.cytoscape);
+    var cytoscapeFactory = resolveCytoscapeFactory();
+    return {
+      kind: "custom",
+      content: {
+        mount: function (target) {
+          return mountCytoscapeTree(target, cytoscapeFactory, graph);
+        }
+      },
+      mimeType: "application/x.editor-workbench.custom+json-tree"
+    };
+  }
+
   function formatJson(documentModel, compact) {
     var value = parseJson(documentModel.text || "");
     return {
@@ -104,7 +350,7 @@
     id: "json-core",
     name: "JSON",
     version: "0.1.0",
-    description: "JSON syntax, linting, tree preview, and formatting.",
+    description: "JSON syntax, linting, tree previews, and formatting.",
     documentationUrl: "https://www.json.org/json-en.html",
     getExampleDocument: function () {
       return {
@@ -188,6 +434,13 @@
             mimeType: "text/html"
           };
         }
+      },
+      {
+        id: "json-cytoscape-tree-preview",
+        name: "JSON Cytoscape Tree Preview",
+        inputLanguages: ["json"],
+        outputKind: "custom",
+        render: renderJsonCytoscapeTree
       }
     ],
     exporters: []
