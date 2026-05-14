@@ -1,0 +1,22 @@
+{
+  "name": "editor-workbench-local-package",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Development tooling for vendoring local Editor Workbench browser dependencies.",
+  "scripts": {
+    "build:libs": "node scripts/build-libs.js",
+    "verify:syntax": "node scripts/verify-js-syntax.js"
+  },
+  "dependencies": {
+    "@codemirror/lang-markdown": "6.5.0",
+    "@codemirror/state": "6.6.0",
+    "@codemirror/view": "6.42.1",
+    "codemirror": "6.0.2",
+    "dompurify": "3.4.3",
+    "marked": "18.0.3"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.0"
+  }
+}
+

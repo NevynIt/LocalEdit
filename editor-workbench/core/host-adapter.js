@@ -22,7 +22,13 @@
     }
 
     getDefaultKnownPlugins() {
-      return [];
+      return [
+        {
+          path: "plugins/markdown/markdown.plugin.js",
+          known: true,
+          autoLoad: true
+        }
+      ];
     }
 
     canAddPluginPath() {
@@ -48,7 +54,13 @@
     }
 
     getDefaultKnownPlugins() {
-      return [];
+      return [
+        {
+          path: "plugins/markdown/markdown.plugin.js",
+          known: true,
+          autoLoad: true
+        }
+      ];
     }
 
     canAddPluginPath() {
@@ -64,4 +76,3 @@
   global.LocalHostAdapter = LocalHostAdapter;
   global.ExtensionHostAdapter = ExtensionHostAdapter;
 })(window);
-

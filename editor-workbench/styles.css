@@ -134,6 +134,31 @@ input[type="text"] {
   white-space: pre;
 }
 
+.cm-editor {
+  height: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--code-bg);
+  color: var(--text);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 14px;
+  outline: none;
+}
+
+.cm-editor.cm-focused {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.16);
+}
+
+.cm-scroller {
+  font-family: Consolas, "Courier New", monospace;
+  line-height: 1.5;
+}
+
+.cm-content {
+  min-height: 100%;
+}
+
 .editor-textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.16);
@@ -337,4 +362,3 @@ input[type="text"] {
     max-height: 28vh;
   }
 }
-

@@ -59,6 +59,7 @@
         this.diagnosticsPanel = new DiagnosticsPanel(this.layout);
 
         this.pluginManager.onChange(() => {
+          this.registerPluginLanguages();
           this.updateUi();
         });
 
@@ -111,17 +112,17 @@
     setDocument(documentModel) {
       this.document = new DocumentModel(documentModel);
       this.editor.setText(this.document.text);
-      this.editor.setLanguage(this.document.languageId);
+      this.applyEditorLanguage();
       this.updateUi();
       this.scheduleAutosave();
     }
 
     setLanguage(languageId) {
       var language = this.languageRegistry.get(languageId);
-      var nextLanguageId = language ? language.id : "plain-text";
+      var nextLanguageId = language ? language.id : languageId || "plain-text";
       this.document = this.document.cloneWith({ languageId: nextLanguageId });
       if (this.editor) {
-        this.editor.setLanguage(nextLanguageId);
+        this.applyEditorLanguage();
       }
       if (this.storage) {
         this.storage.set("selectedLanguage", nextLanguageId);
@@ -242,6 +243,7 @@
       }
 
       var languageId = this.document.languageId;
+      this.applyEditorLanguage();
       this.toolbar.update({
         languageId: languageId,
         languages: this.languageRegistry.list(),
@@ -254,6 +256,44 @@
         canAddPluginPath: this.host.canAddPluginPath(),
         items: this.pluginManager.getPanelItems()
       });
+    }
+
+    registerPluginLanguages() {
+      if (!this.pluginRegistry || !this.languageRegistry) {
+        return;
+      }
+
+      this.pluginRegistry.getLanguageDefinitions().forEach((definition) => {
+        if (definition && definition.id && !this.languageRegistry.get(definition.id)) {
+          this.languageRegistry.register(definition);
+        }
+      });
+    }
+
+    applyEditorLanguage() {
+      if (!this.editor || !this.pluginRegistry) {
+        return;
+      }
+
+      var languageId = this.document.languageId;
+      var extensions = [];
+      this.pluginRegistry.getHighlighters(languageId).forEach(function (provider) {
+        if (typeof provider.getCodeMirrorExtensions !== "function") {
+          return;
+        }
+
+        try {
+          var result = provider.getCodeMirrorExtensions({
+            languageId: languageId
+          });
+          if (Array.isArray(result)) {
+            extensions = extensions.concat(result);
+          }
+        } catch (error) {
+          return;
+        }
+      });
+      this.editor.setLanguage(languageId, extensions);
     }
 
     scheduleAutosave() {
@@ -285,4 +325,3 @@
 
   global.App = App;
 })(window);
-

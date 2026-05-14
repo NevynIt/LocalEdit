@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: data:; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: data:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';">
     <title>Local Editor Workbench</title>
     <link rel="stylesheet" href="styles.css">
   </head>
@@ -18,6 +18,8 @@
       <footer id="status-bar" class="status-bar" aria-live="polite"></footer>
     </div>
 
+    <script src="libs/codemirror/editor.bundle.js"></script>
+    <script src="libs/markdown/markdown.bundle.js"></script>
     <script src="core/host-adapter.js"></script>
     <script src="core/document-model.js"></script>
     <script src="core/language-registry.js"></script>
@@ -42,4 +44,3 @@
     <script src="local-bootstrap.js"></script>
   </body>
 </html>
-

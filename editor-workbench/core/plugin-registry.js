@@ -33,6 +33,7 @@
         status: active ? "loaded" : "inactive",
         error: "",
         plugin: Object.assign({}, plugin, {
+          languageDefinitions: list(plugin.languageDefinitions),
           highlighters: list(plugin.highlighters),
           linters: list(plugin.linters),
           transformers: list(plugin.transformers),
@@ -110,6 +111,20 @@
         });
     }
 
+    getLanguageDefinitions() {
+      var definitions = [];
+      this.plugins.forEach(function (entry) {
+        if (!entry.active) {
+          return;
+        }
+
+        list(entry.plugin.languageDefinitions).forEach(function (definition) {
+          definitions.push(definition);
+        });
+      });
+      return definitions;
+    }
+
     getProviders(kind, languageId, languageField) {
       var providers = [];
       this.plugins.forEach(function (entry) {
@@ -136,4 +151,3 @@
 
   global.PluginRegistry = PluginRegistry;
 })(window);
-

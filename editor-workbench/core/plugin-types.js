@@ -8,6 +8,7 @@
    * @property {string} version
    * @property {string=} description
    * @property {string[]=} languages
+   * @property {LanguageDefinition[]=} languageDefinitions
    * @property {HighlighterProvider[]=} highlighters
    * @property {LinterProvider[]=} linters
    * @property {TransformerProvider[]=} transformers
@@ -98,6 +99,7 @@
    * @typedef {Object} ExporterProvider
    * @property {string} id
    * @property {string} name
+   * @property {string[]=} languages
    * @property {Array<"source" | "rendered">} inputKinds
    * @property {string} outputFileExtension
    * @property {string} mimeType
@@ -126,4 +128,3 @@
     version: "0.1.0"
   };
 })(window);
-
