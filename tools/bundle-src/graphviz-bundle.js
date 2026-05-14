@@ -3,7 +3,7 @@ import { instance, engines, formats, graphvizVersion } from "@viz-js/viz";
 let vizPromise;
 
 function requireSanitizer() {
-  const tools = window.EditorWorkbenchMarkdown;
+  const tools = window.EditorWorkbenchSanitize;
   if (!tools || typeof tools.sanitizeSvg !== "function") {
     throw new Error("SVG sanitizer is not available.");
   }

@@ -1,6 +1,19 @@
 (function (global) {
   "use strict";
 
+  var RUNTIME_PATHS = {
+    sanitize: "plugins/shared/sanitize/sanitize.bundle.js",
+    graphviz: "plugins/graphviz/runtime/graphviz.bundle.js",
+    codeMirror: "plugins/graphviz/runtime/codemirror-dot.bundle.js"
+  };
+
+  function requireRuntime(context) {
+    if (!context || !context.runtime || typeof context.runtime.ensureScripts !== "function") {
+      throw new Error("Plugin runtime loader is not available.");
+    }
+    return context.runtime;
+  }
+
   function requireGraphvizTools() {
     if (!global.EditorWorkbenchGraphviz || typeof global.EditorWorkbenchGraphviz.renderGraphvizSvg !== "function") {
       throw new Error("Graphviz runtime bundle is not loaded.");
@@ -20,7 +33,8 @@
     return baseName.replace(/\.[^.]+$/, "") + ".svg";
   }
 
-  async function renderGraphviz(documentModel) {
+  async function renderGraphviz(documentModel, context) {
+    await requireRuntime(context).ensureScripts([RUNTIME_PATHS.sanitize, RUNTIME_PATHS.graphviz]);
     return requireGraphvizTools().renderGraphvizSvg(documentModel.text || "");
   }
 
@@ -44,7 +58,8 @@
         id: "graphviz-codemirror",
         name: "DOT syntax",
         languages: ["graphviz"],
-        getCodeMirrorExtensions: function () {
+        getCodeMirrorExtensions: async function (context) {
+          await requireRuntime(context).ensureScripts(RUNTIME_PATHS.codeMirror);
           return [requireCodeMirrorTools().dot()];
         }
       }
@@ -57,10 +72,10 @@
         name: "Graphviz SVG Preview",
         inputLanguages: ["graphviz"],
         outputKind: "svg",
-        render: async function (documentModel) {
+        render: async function (documentModel, context) {
           return {
             kind: "svg",
-            content: await renderGraphviz(documentModel),
+            content: await renderGraphviz(documentModel, context),
             mimeType: "image/svg+xml"
           };
         }
@@ -74,12 +89,12 @@
         inputKinds: ["source"],
         outputFileExtension: "svg",
         mimeType: "image/svg+xml",
-        export: async function (input) {
+        export: async function (input, context) {
           var sourceDocument = input && input.sourceDocument ? input.sourceDocument : { text: "", fileName: "untitled.dot" };
           return {
             fileName: svgFileName(sourceDocument.fileName),
             mimeType: "image/svg+xml",
-            content: await renderGraphviz(sourceDocument)
+            content: await renderGraphviz(sourceDocument, context)
           };
         }
       }

@@ -1,11 +1,23 @@
 (function (global) {
   "use strict";
 
-  function requireMarkdownTools() {
-    if (!global.EditorWorkbenchMarkdown || typeof global.EditorWorkbenchMarkdown.sanitizeSvg !== "function") {
+  var RUNTIME_PATHS = {
+    sanitize: "plugins/shared/sanitize/sanitize.bundle.js",
+    codeMirror: "plugins/svg/runtime/codemirror-html.bundle.js"
+  };
+
+  function requireRuntime(context) {
+    if (!context || !context.runtime || typeof context.runtime.ensureScripts !== "function") {
+      throw new Error("Plugin runtime loader is not available.");
+    }
+    return context.runtime;
+  }
+
+  function requireSanitizerTools() {
+    if (!global.EditorWorkbenchSanitize || typeof global.EditorWorkbenchSanitize.sanitizeSvg !== "function") {
       throw new Error("SVG sanitizer is not loaded.");
     }
-    return global.EditorWorkbenchMarkdown;
+    return global.EditorWorkbenchSanitize;
   }
 
   function requireCodeMirrorTools() {
@@ -20,8 +32,9 @@
     return baseName.replace(/\.[^.]+$/, "") + ".svg";
   }
 
-  function sanitizeSvg(documentModel) {
-    return requireMarkdownTools().sanitizeSvg(documentModel.text || "");
+  async function sanitizeSvg(documentModel, context) {
+    await requireRuntime(context).ensureScripts(RUNTIME_PATHS.sanitize);
+    return requireSanitizerTools().sanitizeSvg(documentModel.text || "");
   }
 
   global.EditorPlugins = global.EditorPlugins || [];
@@ -44,7 +57,8 @@
         id: "svg-codemirror",
         name: "SVG syntax",
         languages: ["svg"],
-        getCodeMirrorExtensions: function () {
+        getCodeMirrorExtensions: async function (context) {
+          await requireRuntime(context).ensureScripts(RUNTIME_PATHS.codeMirror);
           return [requireCodeMirrorTools().html({ selfClosingTags: true })];
         }
       }
@@ -57,10 +71,10 @@
         name: "SVG Preview",
         inputLanguages: ["svg"],
         outputKind: "svg",
-        render: function (documentModel) {
+        render: async function (documentModel, context) {
           return {
             kind: "svg",
-            content: sanitizeSvg(documentModel),
+            content: await sanitizeSvg(documentModel, context),
             mimeType: "image/svg+xml"
           };
         }
@@ -74,12 +88,12 @@
         inputKinds: ["source"],
         outputFileExtension: "svg",
         mimeType: "image/svg+xml",
-        export: function (input) {
+        export: async function (input, context) {
           var sourceDocument = input && input.sourceDocument ? input.sourceDocument : { text: "", fileName: "untitled.svg" };
           return {
             fileName: svgFileName(sourceDocument.fileName),
             mimeType: "image/svg+xml",
-            content: sanitizeSvg(sourceDocument)
+            content: await sanitizeSvg(sourceDocument, context)
           };
         }
       }

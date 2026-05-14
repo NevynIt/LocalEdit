@@ -2,6 +2,11 @@
   "use strict";
 
   /**
+   * @typedef {Object} RuntimeLoader
+   * @property {(paths: string[] | string) => Promise<void>} ensureScripts
+   */
+
+  /**
    * @typedef {Object} EditorPlugin
    * @property {string} id
    * @property {string} name
@@ -29,12 +34,13 @@
    * @property {string} id
    * @property {string} name
    * @property {string[]} languages
-   * @property {(context: HighlighterContext) => unknown[]} getCodeMirrorExtensions
+   * @property {(context: HighlighterContext) => unknown[] | Promise<unknown[]>} getCodeMirrorExtensions
    */
 
   /**
    * @typedef {Object} HighlighterContext
    * @property {string} languageId
+   * @property {RuntimeLoader=} runtime
    */
 
   /**
@@ -48,6 +54,7 @@
   /**
    * @typedef {Object} LinterContext
    * @property {string} languageId
+   * @property {RuntimeLoader=} runtime
    */
 
   /**
@@ -71,6 +78,7 @@
   /**
    * @typedef {Object} TransformerContext
    * @property {string} languageId
+   * @property {RuntimeLoader=} runtime
    */
 
   /**
@@ -94,6 +102,7 @@
    * @typedef {Object} RendererContext
    * @property {string} languageId
    * @property {object=} options
+   * @property {RuntimeLoader=} runtime
    */
 
   /**
@@ -123,6 +132,7 @@
   /**
    * @typedef {Object} ExporterContext
    * @property {string=} suggestedFileName
+   * @property {RuntimeLoader=} runtime
    */
 
   /**

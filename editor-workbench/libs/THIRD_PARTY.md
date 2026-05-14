@@ -1,11 +1,12 @@
 # Third-Party Runtime Libraries
 
-The runtime files under `editor-workbench/libs/` are generated local bundles. They must be packaged with the app and must not be loaded from a CDN at runtime.
+The runtime files under `editor-workbench/libs/` and `editor-workbench/plugins/**/runtime/` are generated local bundles. They must be packaged with the app and must not be loaded from a CDN at runtime.
 
 ## Bundled Dependencies
 
 - CodeMirror packages: MIT license
   - `codemirror`
+  - `@codemirror/language`
   - `@codemirror/state`
   - `@codemirror/view`
   - `@codemirror/lang-markdown`

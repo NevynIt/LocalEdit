@@ -36,19 +36,19 @@ Requires Node.js.
 
 ```bash
 npm install
-npm run build        # bundle all dependencies
-npm run verify       # syntax-check all JS files
+npm run build:libs        # bundle all dependencies
+npm run verify:syntax     # syntax-check all JS files
 ```
 
-Bundled outputs land in `editor-workbench/libs/`.
+The editor core bundle lands in `editor-workbench/libs/`. Plugin-owned runtime bundles land under the relevant `editor-workbench/plugins/**/runtime/` directory and are loaded only when a plugin provider needs them.
 
 ## Project Structure
 
 ```
 editor-workbench/
 ├── core/            # App, editor, plugin registry, storage, UI
-├── plugins/         # Built-in plugins (markdown, mermaid, graphviz, svg)
-├── libs/            # Pre-built dependency bundles (esbuild IIFE)
+├── plugins/         # Built-in plugins and lazy plugin runtime bundles
+├── libs/            # Shared editor-core dependency bundles
 ├── index.html       # Local mode entry
 ├── editor.html      # Extension mode entry
 └── render-shell.html# Isolated preview renderer

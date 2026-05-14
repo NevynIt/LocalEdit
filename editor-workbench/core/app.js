@@ -9,6 +9,7 @@
       this.editor = null;
       this.languageRegistry = null;
       this.pluginRegistry = null;
+      this.runtimeLoader = null;
       this.pluginLoader = null;
       this.pluginManager = null;
       this.diagnosticsManager = null;
@@ -24,6 +25,7 @@
       this.autoRefreshEnabled = false;
       this.renderRefreshDelayMs = 3000;
       this.renderSessions = [];
+      this.editorLanguageRequestId = 0;
     }
 
     async start() {
@@ -43,12 +45,13 @@
         });
 
         this.pluginRegistry = new PluginRegistry();
+        this.runtimeLoader = new RuntimeLoader(this.host);
         this.pluginLoader = new PluginLoader(this.host, this.pluginRegistry);
         this.pluginManager = new PluginManager(this.host, this.storage, this.pluginLoader, this.pluginRegistry);
-        this.diagnosticsManager = new DiagnosticsManager(this.pluginRegistry);
-        this.transformManager = new TransformManager(this.pluginRegistry);
+        this.diagnosticsManager = new DiagnosticsManager(this.pluginRegistry, this.runtimeLoader);
+        this.transformManager = new TransformManager(this.pluginRegistry, this.runtimeLoader);
         this.renderManager = new RenderManager(this.pluginRegistry, this.host);
-        this.exportManager = new ExportManager(this.pluginRegistry);
+        this.exportManager = new ExportManager(this.pluginRegistry, this.runtimeLoader);
 
         this.editor = new EditorCore();
         this.editor.mount(this.layout.editorContainer);
@@ -317,29 +320,43 @@
       });
     }
 
-    applyEditorLanguage() {
+    async applyEditorLanguage() {
       if (!this.editor || !this.pluginRegistry) {
         return;
       }
 
       var languageId = this.document.languageId;
+      var requestId = this.editorLanguageRequestId + 1;
+      this.editorLanguageRequestId = requestId;
       var extensions = [];
-      this.pluginRegistry.getHighlighters(languageId).forEach(function (provider) {
+      var providers = this.pluginRegistry.getHighlighters(languageId);
+      for (var index = 0; index < providers.length; index += 1) {
+        var provider = providers[index];
         if (typeof provider.getCodeMirrorExtensions !== "function") {
-          return;
+          continue;
         }
 
         try {
           var result = provider.getCodeMirrorExtensions({
-            languageId: languageId
+            languageId: languageId,
+            runtime: this.runtimeLoader
           });
+          if (result && typeof result.then === "function") {
+            result = await result;
+          }
+          if (requestId !== this.editorLanguageRequestId || this.document.languageId !== languageId) {
+            return;
+          }
           if (Array.isArray(result)) {
             extensions = extensions.concat(result);
           }
         } catch (error) {
-          return;
+          continue;
         }
-      });
+      }
+      if (requestId !== this.editorLanguageRequestId || this.document.languageId !== languageId) {
+        return;
+      }
       this.editor.setLanguage(languageId, extensions);
     }
 

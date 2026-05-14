@@ -1,7 +1,7 @@
 import { basicSetup } from "codemirror";
-import { html } from "@codemirror/lang-html";
-import { markdown } from "@codemirror/lang-markdown";
-import { dot } from "@viz-js/lang-dot";
+import * as codeMirrorLanguage from "@codemirror/language";
+import * as codeMirrorState from "@codemirror/state";
+import * as codeMirrorView from "@codemirror/view";
 import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 
@@ -10,7 +10,9 @@ window.EditorWorkbenchCodeMirror = {
   Compartment,
   EditorState,
   EditorView,
-  dot,
-  html,
-  markdown
+  modules: {
+    "@codemirror/language": codeMirrorLanguage,
+    "@codemirror/state": codeMirrorState,
+    "@codemirror/view": codeMirrorView
+  }
 };

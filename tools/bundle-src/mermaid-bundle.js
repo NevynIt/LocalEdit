@@ -4,7 +4,7 @@ let renderCounter = 0;
 let initialized = false;
 
 function requireSanitizer() {
-  const tools = window.EditorWorkbenchMarkdown;
+  const tools = window.EditorWorkbenchSanitize;
   if (!tools || typeof tools.sanitizeSvg !== "function") {
     throw new Error("SVG sanitizer is not available.");
   }

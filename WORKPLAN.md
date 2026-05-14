@@ -2,7 +2,7 @@
 
 ## Current Status
 
-Implementation completed for the v1 shell, plugin infrastructure, dependency vendoring workflow, CodeMirror editor integration, Markdown plugin, Mermaid plugin, Graphviz plugin, SVG plugin, and Markdown inline diagram rendering. Static checks and local Edge smoke verification passed on 2026-05-14. Manual unpacked extension testing remains pending.
+Implementation completed for the v1 shell, plugin infrastructure, dependency vendoring workflow, CodeMirror editor integration, Markdown plugin, Mermaid plugin, Graphviz plugin, SVG plugin, Markdown inline diagram rendering, and lazy plugin-owned runtime bundles. Static checks and local Edge smoke verification passed on 2026-05-14. Manual unpacked extension testing remains pending.
 
 ## Phase Checklist
 
@@ -37,7 +37,9 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - [x] npm exact dependency install completed and `package-lock.json` was generated.
 - [x] Local bundles generated:
   - `editor-workbench/libs/codemirror/editor.bundle.js`
-  - `editor-workbench/libs/markdown/markdown.bundle.js`
+  - `editor-workbench/plugins/shared/sanitize/sanitize.bundle.js`
+  - `editor-workbench/plugins/markdown/runtime/markdown.bundle.js`
+  - `editor-workbench/plugins/markdown/runtime/codemirror-markdown.bundle.js`
 - [x] `npm audit --audit-level=moderate` reported 0 vulnerabilities.
 - [x] CodeMirror rendered in Edge headless with no textarea fallback.
 - [x] Markdown language auto-loaded from `plugins/markdown/markdown.plugin.js`.
@@ -52,8 +54,10 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - [x] Example plugin added at `editor-workbench/plugins/example-smoke.plugin.js` for manual path-load or upload testing.
 - [x] Additional exact dependencies installed: `mermaid@11.15.0`, `@viz-js/viz@3.27.0`, `@viz-js/lang-dot@1.0.5`, and `@codemirror/lang-html@6.4.11`.
 - [x] Additional local bundles generated:
-  - `editor-workbench/libs/mermaid/mermaid.bundle.js`
-  - `editor-workbench/libs/graphviz/graphviz.bundle.js`
+  - `editor-workbench/plugins/mermaid/runtime/mermaid.bundle.js`
+  - `editor-workbench/plugins/graphviz/runtime/graphviz.bundle.js`
+  - `editor-workbench/plugins/graphviz/runtime/codemirror-dot.bundle.js`
+  - `editor-workbench/plugins/svg/runtime/codemirror-html.bundle.js`
 - [x] Manifest and local/render-shell CSP allow only local Graphviz WASM support through `'wasm-unsafe-eval'`; `connect-src 'none'` and empty host permissions remain in place.
 - [x] App-code forbidden API scan passed with no `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `sendBeacon`, `eval`, or `new Function` usage outside vendored bundles.
 - [x] Third-party bundle static scan reviewed package-internal network/dynamic-code strings in generated Mermaid/Graphviz/DOMPurify bundles; Edge runtime smoke observed no HTTP(S) requests, page errors, or console errors.
@@ -89,8 +93,8 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - [x] Document bundled dependency attribution in `editor-workbench/libs/THIRD_PARTY.md`.
 - [x] Keep `node_modules/` ignored and out of runtime packaging.
 - [x] Add and pin Mermaid, Viz.js/Graphviz, DOT language, and HTML language dependencies.
-- [x] Build `editor-workbench/libs/mermaid/mermaid.bundle.js`.
-- [x] Build `editor-workbench/libs/graphviz/graphviz.bundle.js`.
+- [x] Build Mermaid and Graphviz runtime bundles under plugin runtime directories.
+- [x] Build plugin-owned CodeMirror language bundles for Markdown, DOT, and SVG/HTML.
 - [x] Keep runtime dependency loading local with no CDN, remote font, remote style, or remote script references.
 
 ## Markdown Plugin Checklist

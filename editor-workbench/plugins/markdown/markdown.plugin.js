@@ -1,8 +1,23 @@
 (function (global) {
   "use strict";
 
+  var RUNTIME_PATHS = {
+    sanitize: "plugins/shared/sanitize/sanitize.bundle.js",
+    markdown: "plugins/markdown/runtime/markdown.bundle.js",
+    codeMirror: "plugins/markdown/runtime/codemirror-markdown.bundle.js",
+    mermaid: "plugins/mermaid/runtime/mermaid.bundle.js",
+    graphviz: "plugins/graphviz/runtime/graphviz.bundle.js"
+  };
+
+  function requireRuntime(context) {
+    if (!context || !context.runtime || typeof context.runtime.ensureScripts !== "function") {
+      throw new Error("Plugin runtime loader is not available.");
+    }
+    return context.runtime;
+  }
+
   function requireMarkdownTools() {
-    if (!global.EditorWorkbenchMarkdown) {
+    if (!global.EditorWorkbenchMarkdown || typeof global.EditorWorkbenchMarkdown.renderMarkdown !== "function") {
       throw new Error("Markdown runtime bundle is not loaded.");
     }
     return global.EditorWorkbenchMarkdown;
@@ -15,7 +30,27 @@
     return global.EditorWorkbenchCodeMirror;
   }
 
-  async function renderMarkdownHtml(documentModel) {
+  function hasMermaidFence(source) {
+    return /(^|\n)```(?:mermaid|mmd)(?:[^\n]*)\n/i.test(source || "");
+  }
+
+  function hasGraphvizFence(source) {
+    return /(^|\n)```(?:dot|gv|graphviz)(?:[^\n]*)\n/i.test(source || "");
+  }
+
+  async function ensureMarkdownRuntime(context, text) {
+    var scripts = [RUNTIME_PATHS.sanitize, RUNTIME_PATHS.markdown];
+    if (hasMermaidFence(text)) {
+      scripts.push(RUNTIME_PATHS.mermaid);
+    }
+    if (hasGraphvizFence(text)) {
+      scripts.push(RUNTIME_PATHS.graphviz);
+    }
+    await requireRuntime(context).ensureScripts(scripts);
+  }
+
+  async function renderMarkdownHtml(documentModel, context) {
+    await ensureMarkdownRuntime(context, documentModel.text || "");
     return requireMarkdownTools().renderMarkdown(documentModel.text || "");
   }
 
@@ -69,7 +104,8 @@
         id: "markdown-codemirror",
         name: "Markdown syntax",
         languages: ["markdown"],
-        getCodeMirrorExtensions: function () {
+        getCodeMirrorExtensions: async function (context) {
+          await requireRuntime(context).ensureScripts(RUNTIME_PATHS.codeMirror);
           return [requireCodeMirrorTools().markdown()];
         }
       }
@@ -82,10 +118,10 @@
         name: "Markdown HTML Preview",
         inputLanguages: ["markdown"],
         outputKind: "html",
-        render: async function (documentModel) {
+        render: async function (documentModel, context) {
           return {
             kind: "html",
-            content: await renderMarkdownHtml(documentModel),
+            content: await renderMarkdownHtml(documentModel, context),
             mimeType: "text/html"
           };
         }
@@ -99,9 +135,9 @@
         inputKinds: ["source"],
         outputFileExtension: "html",
         mimeType: "text/html",
-        export: async function (input) {
+        export: async function (input, context) {
           var sourceDocument = input && input.sourceDocument ? input.sourceDocument : { text: "", fileName: "untitled.md" };
-          var body = await renderMarkdownHtml(sourceDocument);
+          var body = await renderMarkdownHtml(sourceDocument, context);
           return {
             fileName: htmlFileName(sourceDocument.fileName),
             mimeType: "text/html",

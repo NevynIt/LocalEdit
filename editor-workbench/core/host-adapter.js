@@ -1,14 +1,28 @@
 (function (global) {
   "use strict";
 
-  function isAllowedPluginPath(path) {
+  function isSafeLocalScriptPath(path) {
     return (
       typeof path === "string" &&
-      path.startsWith("plugins/") &&
       path.endsWith(".js") &&
       !path.includes("://") &&
       !path.startsWith("//") &&
-      !path.includes("..")
+      !path.includes("..") &&
+      !path.includes("\\")
+    );
+  }
+
+  function isAllowedPluginPath(path) {
+    return (
+      isSafeLocalScriptPath(path) &&
+      path.startsWith("plugins/")
+    );
+  }
+
+  function isAllowedRuntimePath(path) {
+    return (
+      isSafeLocalScriptPath(path) &&
+      (path.startsWith("plugins/") || path === "libs/codemirror/editor.bundle.js")
     );
   }
 
@@ -65,6 +79,10 @@
     validatePluginPath(path) {
       return isAllowedPluginPath(path);
     }
+
+    validateRuntimePath(path) {
+      return isAllowedRuntimePath(path);
+    }
   }
 
   class ExtensionHostAdapter {
@@ -99,9 +117,15 @@
     validatePluginPath(path) {
       return isAllowedPluginPath(path);
     }
+
+    validateRuntimePath(path) {
+      return isAllowedRuntimePath(path);
+    }
   }
 
+  global.isSafeLocalScriptPath = isSafeLocalScriptPath;
   global.isAllowedPluginPath = isAllowedPluginPath;
+  global.isAllowedRuntimePath = isAllowedRuntimePath;
   global.LocalHostAdapter = LocalHostAdapter;
   global.ExtensionHostAdapter = ExtensionHostAdapter;
 })(window);

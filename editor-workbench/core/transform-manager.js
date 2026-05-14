@@ -2,8 +2,9 @@
   "use strict";
 
   class TransformManager {
-    constructor(registry) {
+    constructor(registry, runtime) {
       this.registry = registry;
+      this.runtime = runtime;
     }
 
     list(languageId) {
@@ -17,11 +18,11 @@
       }
 
       return transformer.transform(documentModel, {
-        languageId: documentModel.languageId
+        languageId: documentModel.languageId,
+        runtime: this.runtime
       });
     }
   }
 
   global.TransformManager = TransformManager;
 })(window);
-

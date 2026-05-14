@@ -1,6 +1,18 @@
 (function (global) {
   "use strict";
 
+  var RUNTIME_PATHS = [
+    "plugins/shared/sanitize/sanitize.bundle.js",
+    "plugins/mermaid/runtime/mermaid.bundle.js"
+  ];
+
+  function requireRuntime(context) {
+    if (!context || !context.runtime || typeof context.runtime.ensureScripts !== "function") {
+      throw new Error("Plugin runtime loader is not available.");
+    }
+    return context.runtime;
+  }
+
   function requireMermaidTools() {
     if (!global.EditorWorkbenchMermaid || typeof global.EditorWorkbenchMermaid.renderMermaidSvg !== "function") {
       throw new Error("Mermaid runtime bundle is not loaded.");
@@ -13,7 +25,8 @@
     return baseName.replace(/\.[^.]+$/, "") + ".svg";
   }
 
-  async function renderMermaid(documentModel) {
+  async function renderMermaid(documentModel, context) {
+    await requireRuntime(context).ensureScripts(RUNTIME_PATHS);
     return requireMermaidTools().renderMermaidSvg(documentModel.text || "");
   }
 
@@ -41,10 +54,10 @@
         name: "Mermaid SVG Preview",
         inputLanguages: ["mermaid"],
         outputKind: "svg",
-        render: async function (documentModel) {
+        render: async function (documentModel, context) {
           return {
             kind: "svg",
-            content: await renderMermaid(documentModel),
+            content: await renderMermaid(documentModel, context),
             mimeType: "image/svg+xml"
           };
         }
@@ -58,12 +71,12 @@
         inputKinds: ["source"],
         outputFileExtension: "svg",
         mimeType: "image/svg+xml",
-        export: async function (input) {
+        export: async function (input, context) {
           var sourceDocument = input && input.sourceDocument ? input.sourceDocument : { text: "", fileName: "untitled.mmd" };
           return {
             fileName: svgFileName(sourceDocument.fileName),
             mimeType: "image/svg+xml",
-            content: await renderMermaid(sourceDocument)
+            content: await renderMermaid(sourceDocument, context)
           };
         }
       }

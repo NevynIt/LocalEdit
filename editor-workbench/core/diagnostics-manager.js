@@ -2,8 +2,9 @@
   "use strict";
 
   class DiagnosticsManager {
-    constructor(registry) {
+    constructor(registry, runtime) {
       this.registry = registry;
+      this.runtime = runtime;
       this.diagnostics = [];
     }
 
@@ -15,7 +16,8 @@
         var linter = linters[index];
         try {
           var result = await linter.lint(documentModel, {
-            languageId: documentModel.languageId
+            languageId: documentModel.languageId,
+            runtime: this.runtime
           });
           if (Array.isArray(result)) {
             diagnostics = diagnostics.concat(result);
@@ -42,4 +44,3 @@
 
   global.DiagnosticsManager = DiagnosticsManager;
 })(window);
-

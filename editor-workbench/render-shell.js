@@ -4,6 +4,7 @@
   var output = document.getElementById("render-output");
   var host = global.chrome && global.chrome.runtime ? new ExtensionHostAdapter() : new LocalHostAdapter();
   var registry = new PluginRegistry();
+  var runtime = new RuntimeLoader(host);
   var loader = new PluginLoader(host, registry);
   var loadedPaths = new Set();
 
@@ -104,7 +105,8 @@
 
       var result = await renderer.render(documentModel, {
         languageId: documentModel.languageId,
-        options: message.options || {}
+        options: message.options || {},
+        runtime: runtime
       });
       displayResult(result);
     } catch (error) {
