@@ -446,6 +446,103 @@ input[type="text"] {
   background: #ffffff;
 }
 
+.cytoscape-graph-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  height: calc(100vh - 32px);
+  min-height: 0;
+}
+
+.cytoscape-graph-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cytoscape-graph-title-group {
+  display: grid;
+  gap: 2px;
+}
+
+.cytoscape-graph-title {
+  font-size: 14px;
+}
+
+.cytoscape-graph-summary {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.cytoscape-graph-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.cytoscape-graph-viewport {
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.indented-tree-preview {
+  display: grid;
+  gap: 10px;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+.indented-tree-preview-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  color: var(--muted);
+}
+
+.indented-tree-preview-header strong {
+  color: var(--text);
+}
+
+.indented-tree-metadata {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+}
+
+.indented-tree-metadata div {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 8px;
+}
+
+.indented-tree-metadata dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.indented-tree-metadata dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.indented-tree-details {
+  margin: 6px 0 6px 18px;
+  border-left: 2px solid var(--border);
+  padding: 4px 0 4px 10px;
+  color: var(--muted);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
 .csv-table-wrap {
   max-width: 100%;
   max-height: calc(100vh - 48px);

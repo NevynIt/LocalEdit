@@ -12,6 +12,8 @@ Editor Workbench is a local-first structured text editor that runs from disk or 
 - Mermaid and Graphviz standalone SVG preview/export.
 - SVG preview/export, sanitized SVG-to-PNG export, and pan/zoom for standalone SVG previews.
 - JSON and XML linting, tree previews, prettify, and compact transforms.
+- Indented Tree parsing, linting, outline preview, Cytoscape preview, and JSON/Cytoscape export.
+- Cytoscape JSON linting, graph preview, formatting, and compacting.
 - JavaScript formatting through local Prettier.
 - CSV row-width linting and scrollable table preview.
 - Python formatting through local Ruff WASM.
@@ -65,6 +67,8 @@ The app does not load from npm, a CDN, or a server at runtime.
 | Graphviz | `graphviz` | DOT syntax, local WASM SVG preview/export |
 | SVG | `svg` | SVG syntax, sanitized SVG preview/export, PNG export |
 | JSON | `json` | Syntax, parse linting, HTML tree preview, Cytoscape tree preview, format, compact |
+| Cytoscape JSON | `cytoscape` | JSON syntax, graph-shape linting, Cytoscape preview, format, compact |
+| Indented Tree | `indented-tree` | Syntax, parser linting, outline preview, Cytoscape preview, JSON/Cytoscape export |
 | XML | `xml` | Syntax, DOMParser linting, tree preview, Prettier format, compact |
 | JavaScript | `javascript` | Syntax, Prettier format |
 | CSV | `csv` | Row-width linting, scrollable table preview |

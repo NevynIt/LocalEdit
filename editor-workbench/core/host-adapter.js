@@ -54,6 +54,16 @@
         autoLoad: false
       },
       {
+        path: "plugins/cytoscape/cytoscape.plugin.js",
+        known: true,
+        autoLoad: false
+      },
+      {
+        path: "plugins/indented-tree/indented-tree.plugin.js",
+        known: true,
+        autoLoad: false
+      },
+      {
         path: "plugins/xml/xml.plugin.js",
         known: true,
         autoLoad: false

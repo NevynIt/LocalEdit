@@ -34,12 +34,17 @@
         return undefined;
       }
 
-      var extension = fileName.split(".").pop().toLowerCase();
+      var lowerName = fileName.toLowerCase();
       var found;
+      var foundLength = 0;
       this.languages.forEach(function (language) {
-        if (!found && language.extensions.indexOf(extension) !== -1) {
-          found = language.id;
-        }
+        language.extensions.forEach(function (extension) {
+          var normalized = String(extension || "").toLowerCase();
+          if (normalized && lowerName.endsWith("." + normalized) && normalized.length > foundLength) {
+            found = language.id;
+            foundLength = normalized.length;
+          }
+        });
       });
       return found;
     }
@@ -47,4 +52,3 @@
 
   global.LanguageRegistry = LanguageRegistry;
 })(window);
-
