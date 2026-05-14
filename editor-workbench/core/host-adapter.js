@@ -31,47 +31,47 @@
       {
         path: "plugins/markdown/markdown.plugin.js",
         known: true,
-        autoLoad: true
+        autoLoad: false
       },
       {
         path: "plugins/mermaid/mermaid.plugin.js",
         known: true,
-        autoLoad: true
+        autoLoad: false
       },
       {
         path: "plugins/graphviz/graphviz.plugin.js",
         known: true,
-        autoLoad: true
+        autoLoad: false
       },
       {
         path: "plugins/svg/svg.plugin.js",
         known: true,
-        autoLoad: true
+        autoLoad: false
       },
       {
         path: "plugins/json/json.plugin.js",
         known: true,
-        autoLoad: true
+        autoLoad: false
       },
       {
         path: "plugins/xml/xml.plugin.js",
         known: true,
-        autoLoad: true
+        autoLoad: false
       },
       {
         path: "plugins/javascript/javascript.plugin.js",
         known: true,
-        autoLoad: true
+        autoLoad: false
       },
       {
         path: "plugins/csv/csv.plugin.js",
         known: true,
-        autoLoad: true
+        autoLoad: false
       },
       {
         path: "plugins/python/python.plugin.js",
         known: true,
-        autoLoad: true
+        autoLoad: false
       }
     ];
   }

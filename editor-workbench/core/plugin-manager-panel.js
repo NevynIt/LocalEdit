@@ -95,11 +95,12 @@
     renderPluginItem(item) {
       var config = item.config;
       var registered = item.registered;
+      var isLoaded = Boolean(registered && registered.active);
       var wrapper = el("section", "plugin-item");
 
       var titleRow = el("div", "plugin-title-row");
-      titleRow.appendChild(el("span", "plugin-name", registered ? registered.name : "Unloaded plugin"));
-      titleRow.appendChild(this.statusChip(config.lastStatus || "unloaded"));
+      titleRow.appendChild(el("span", "plugin-name", isLoaded ? registered.name : this.unloadedPluginName(config, registered)));
+      titleRow.appendChild(this.statusChip(isLoaded ? "loaded" : config.lastStatus === "failed" ? "failed" : "unloaded"));
       wrapper.appendChild(titleRow);
 
       var grid = el("div", "meta-grid");
@@ -147,6 +148,25 @@
       wrapper.appendChild(actions);
 
       return wrapper;
+    }
+
+    unloadedPluginName(config, registered) {
+      var pluginId = registered && registered.id ? registered.id : config.id;
+      if (pluginId) {
+        return pluginId.replace(/-core$/, "");
+      }
+
+      var sourceName = config.sourceType === "uploaded" ? config.fileName : config.path;
+      if (!sourceName) {
+        return "Unloaded plugin";
+      }
+
+      return sourceName
+        .split("/")
+        .pop()
+        .replace(/\.plugin\.js$/, "")
+        .replace(/\.js$/, "")
+        .replace(/-core$/, "");
     }
 
     statusChip(status) {
