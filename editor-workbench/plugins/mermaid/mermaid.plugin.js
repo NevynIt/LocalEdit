@@ -36,6 +36,20 @@
     name: "Mermaid",
     version: "0.1.0",
     description: "Mermaid language support with sanitized SVG preview and export.",
+    documentationUrl: "https://mermaid.js.org/intro/",
+    getExampleDocument: function () {
+      return {
+        fileName: "example.mmd",
+        languageId: "mermaid",
+        mimeType: "text/x-mermaid",
+        text: [
+          "flowchart TD",
+          "  A[Start] --> B{Validate}",
+          "  B -->|Yes| C[Render Preview]",
+          "  B -->|No| D[Show Error]"
+        ].join("\n")
+      };
+    },
     languages: ["mermaid"],
     languageDefinitions: [
       {

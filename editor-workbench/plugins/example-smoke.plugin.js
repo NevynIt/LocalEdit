@@ -7,6 +7,14 @@
     name: "Example Smoke Plugin",
     version: "0.1.0",
     description: "A tiny example plugin for testing plugin loading, rendering, and exporting.",
+    getExampleDocument: function () {
+      return {
+        fileName: "example.txt",
+        languageId: "plain-text",
+        mimeType: "text/plain",
+        text: "Example smoke plugin text.\n"
+      };
+    },
     languages: [],
     highlighters: [],
     linters: [],

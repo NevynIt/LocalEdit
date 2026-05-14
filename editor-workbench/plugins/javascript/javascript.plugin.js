@@ -43,6 +43,23 @@
     name: "JavaScript",
     version: "0.1.0",
     description: "JavaScript syntax highlighting and formatting.",
+    documentationUrl: "https://developer.mozilla.org/docs/Web/JavaScript/Guide",
+    getExampleDocument: function () {
+      return {
+        fileName: "example.js",
+        languageId: "javascript",
+        mimeType: "text/javascript",
+        text: [
+          "const plugins = [\"markdown\", \"json\", \"xml\"];",
+          "",
+          "function describePlugins(values) {",
+          "  return values.map((value) => value.toUpperCase()).join(\", \");",
+          "}",
+          "",
+          "console.log(describePlugins(plugins));"
+        ].join("\n")
+      };
+    },
     languages: ["javascript"],
     languageDefinitions: [
       {

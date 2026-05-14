@@ -139,6 +139,22 @@
     name: "SVG",
     version: "0.1.0",
     description: "SVG language support with sanitized preview and export.",
+    documentationUrl: "https://developer.mozilla.org/docs/Web/SVG",
+    getExampleDocument: function () {
+      return {
+        fileName: "example.svg",
+        languageId: "svg",
+        mimeType: "image/svg+xml",
+        text: [
+          "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 240 120\">",
+          "  <rect x=\"10\" y=\"10\" width=\"220\" height=\"100\" rx=\"12\" fill=\"#0b5fff\" />",
+          "  <text x=\"120\" y=\"68\" text-anchor=\"middle\" font-size=\"20\" fill=\"#ffffff\">",
+          "    Example SVG",
+          "  </text>",
+          "</svg>"
+        ].join("\n")
+      };
+    },
     languages: ["svg"],
     languageDefinitions: [
       {

@@ -43,6 +43,21 @@
     name: "Python",
     version: "0.1.0",
     description: "Python syntax highlighting and Ruff formatting.",
+    documentationUrl: "https://docs.python.org/3/tutorial/",
+    getExampleDocument: function () {
+      return {
+        fileName: "example.py",
+        languageId: "python",
+        mimeType: "text/x-python",
+        text: [
+          "def summarize_plugins(names):",
+          "    return \", \".join(name.title() for name in names)",
+          "",
+          "if __name__ == \"__main__\":",
+          "    print(summarize_plugins([\"markdown\", \"json\", \"xml\"]))"
+        ].join("\n")
+      };
+    },
     languages: ["python"],
     languageDefinitions: [
       {

@@ -44,6 +44,20 @@
     name: "Graphviz",
     version: "0.1.0",
     description: "Graphviz DOT language support with sanitized SVG preview and export.",
+    documentationUrl: "https://graphviz.org/documentation/",
+    getExampleDocument: function () {
+      return {
+        fileName: "example.dot",
+        languageId: "graphviz",
+        mimeType: "text/vnd.graphviz",
+        text: [
+          "digraph Example {",
+          "  rankdir=LR;",
+          "  Start -> Review -> Done;",
+          "}"
+        ].join("\n")
+      };
+    },
     languages: ["graphviz"],
     languageDefinitions: [
       {

@@ -134,6 +134,20 @@
     name: "CSV",
     version: "0.1.0",
     description: "CSV and TSV linting with table preview.",
+    documentationUrl: "https://datatracker.ietf.org/doc/html/rfc4180",
+    getExampleDocument: function () {
+      return {
+        fileName: "example.csv",
+        languageId: "csv",
+        mimeType: "text/csv",
+        text: [
+          "name,language,status",
+          "Markdown,markdown,loaded",
+          "JSON,json,available",
+          "XML,xml,available"
+        ].join("\n")
+      };
+    },
     languages: ["csv"],
     languageDefinitions: [
       {

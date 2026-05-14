@@ -46,7 +46,7 @@
         return;
       }
 
-      state.items.forEach((item) => {
+      this.sortedItems(state.items).forEach((item) => {
         body.appendChild(this.renderPluginItem(item));
       });
     }
@@ -112,6 +112,9 @@
       if (registered && registered.description) {
         grid.appendChild(this.metaRow("About", registered.description));
       }
+      if (registered && registered.plugin && registered.plugin.documentationUrl) {
+        grid.appendChild(this.linkMetaRow("Documentation", registered.plugin.documentationUrl, "Open documentation"));
+      }
       wrapper.appendChild(grid);
 
       var autoLabel = el("label", "");
@@ -130,16 +133,19 @@
       }
 
       var actions = el("div", "plugin-actions");
-      var loadButton = el("button", "", "Load");
-      loadButton.type = "button";
-      loadButton.addEventListener("click", () => this.app.loadKnownPlugin(config.id || config.path || config.uploadId));
-      actions.appendChild(loadButton);
+      if (!isLoaded) {
+        var loadButton = el("button", "", "Load");
+        loadButton.type = "button";
+        loadButton.addEventListener("click", () => this.app.loadKnownPlugin(config.id || config.path || config.uploadId));
+        actions.appendChild(loadButton);
+      }
 
-      var disableButton = el("button", "", "Disable");
-      disableButton.type = "button";
-      disableButton.disabled = !registered || !registered.active;
-      disableButton.addEventListener("click", () => this.app.disablePlugin(registered.id));
-      actions.appendChild(disableButton);
+      if (isLoaded && registered && registered.plugin && typeof registered.plugin.getExampleDocument === "function") {
+        var exampleButton = el("button", "", "Load example file");
+        exampleButton.type = "button";
+        exampleButton.addEventListener("click", () => this.app.loadPluginExample(registered.id));
+        actions.appendChild(exampleButton);
+      }
 
       var removeButton = el("button", "", "Remove");
       removeButton.type = "button";
@@ -169,15 +175,55 @@
         .replace(/-core$/, "");
     }
 
+    sortedItems(items) {
+      return (Array.isArray(items) ? items.slice() : []).sort((left, right) => {
+        var leftLoaded = left && left.registered && left.registered.active ? 1 : 0;
+        var rightLoaded = right && right.registered && right.registered.active ? 1 : 0;
+        if (leftLoaded !== rightLoaded) {
+          return rightLoaded - leftLoaded;
+        }
+
+        return this.pluginSortName(left).localeCompare(this.pluginSortName(right), undefined, { sensitivity: "base" });
+      });
+    }
+
+    pluginSortName(item) {
+      if (!item) {
+        return "";
+      }
+
+      var registered = item.registered;
+      if (registered && registered.active && registered.name) {
+        return registered.name;
+      }
+
+      return this.unloadedPluginName(item.config || {}, registered);
+    }
+
     statusChip(status) {
       var chip = el("span", "status-chip " + status, status);
       return chip;
     }
 
+    linkMetaRow(key, href, label) {
+      var link = document.createElement("a");
+      link.href = href;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = label || href;
+      return this.metaRow(key, link);
+    }
+
     metaRow(key, value) {
       var row = el("div", "meta-row");
       row.appendChild(el("span", "meta-key", key));
-      row.appendChild(el("span", "meta-value", value || "-"));
+      var valueNode = el("span", "meta-value");
+      if (value instanceof Node) {
+        valueNode.appendChild(value);
+      } else {
+        valueNode.textContent = value || "-";
+      }
+      row.appendChild(valueNode);
       return row;
     }
 

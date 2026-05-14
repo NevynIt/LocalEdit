@@ -154,6 +154,23 @@
     name: "XML",
     version: "0.1.0",
     description: "XML syntax, linting, tree preview, and formatting.",
+    documentationUrl: "https://developer.mozilla.org/docs/Web/XML",
+    getExampleDocument: function () {
+      return {
+        fileName: "example.xml",
+        languageId: "xml",
+        mimeType: "application/xml",
+        text: [
+          "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+          "<catalog>",
+          "  <book id=\"bk101\">",
+          "    <title>XML Developer Guide</title>",
+          "    <author>LocalEdit</author>",
+          "  </book>",
+          "</catalog>"
+        ].join("\n")
+      };
+    },
     languages: ["xml"],
     languageDefinitions: [
       {

@@ -90,6 +90,28 @@
     name: "Markdown",
     version: "0.1.0",
     description: "Markdown language support, sanitized HTML preview, and HTML export.",
+    documentationUrl: "https://www.markdownguide.org/basic-syntax/",
+    getExampleDocument: function () {
+      return {
+        fileName: "example.md",
+        languageId: "markdown",
+        mimeType: "text/markdown",
+        text: [
+          "# Example Markdown",
+          "",
+          "This is **Markdown** with a short checklist and a Mermaid diagram.",
+          "",
+          "- Review the plugin manager",
+          "- Load an example file",
+          "",
+          "```mermaid",
+          "flowchart TD",
+          "  Start --> Review",
+          "  Review --> Done",
+          "```"
+        ].join("\n")
+      };
+    },
     languages: ["markdown"],
     languageDefinitions: [
       {

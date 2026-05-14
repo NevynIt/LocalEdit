@@ -12,6 +12,7 @@
    * @property {string} name
    * @property {string} version
    * @property {string=} description
+   * @property {string=} documentationUrl
    * @property {string[]=} languages
    * @property {LanguageDefinition[]=} languageDefinitions
    * @property {HighlighterProvider[]=} highlighters
@@ -19,6 +20,15 @@
    * @property {TransformerProvider[]=} transformers
    * @property {RendererProvider[]=} renderers
    * @property {ExporterProvider[]=} exporters
+   * @property {() => ExampleDocument=} getExampleDocument
+   */
+
+  /**
+   * @typedef {Object} ExampleDocument
+   * @property {string} text
+   * @property {string} fileName
+   * @property {string=} languageId
+   * @property {string=} mimeType
    */
 
   /**

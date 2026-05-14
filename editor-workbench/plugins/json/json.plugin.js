@@ -105,6 +105,23 @@
     name: "JSON",
     version: "0.1.0",
     description: "JSON syntax, linting, tree preview, and formatting.",
+    documentationUrl: "https://www.json.org/json-en.html",
+    getExampleDocument: function () {
+      return {
+        fileName: "example.json",
+        languageId: "json",
+        mimeType: "application/json",
+        text: JSON.stringify({
+          name: "LocalEdit",
+          enabled: true,
+          plugins: ["markdown", "json", "xml"],
+          limits: {
+            autoLoad: false,
+            previewRows: 50
+          }
+        }, null, 2)
+      };
+    },
     languages: ["json"],
     languageDefinitions: [
       {

@@ -265,6 +265,31 @@
       }
     }
 
+    async loadPluginExample(pluginId) {
+      try {
+        var plugin = this.pluginRegistry.getPlugin(pluginId);
+        if (!plugin || !plugin.plugin || typeof plugin.plugin.getExampleDocument !== "function") {
+          throw new Error("Example file is not available for this plugin.");
+        }
+
+        var example = plugin.plugin.getExampleDocument();
+        if (!example || typeof example.text !== "string") {
+          throw new Error("Plugin example file is invalid.");
+        }
+
+        this.setDocument(new DocumentModel({
+          text: example.text,
+          languageId: example.languageId || plugin.languages[0] || "plain-text",
+          fileName: example.fileName || "example.txt",
+          mimeType: example.mimeType || "text/plain"
+        }));
+        await this.persistDocument();
+        this.updateStatus("Example file loaded.");
+      } catch (error) {
+        this.updateStatus(error && error.message ? error.message : String(error));
+      }
+    }
+
     disablePlugin(pluginId) {
       this.pluginManager.disablePlugin(pluginId);
       this.updateStatus("Plugin disabled.");
