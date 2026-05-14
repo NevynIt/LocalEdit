@@ -22,6 +22,14 @@
       return !this.pluginPanel.classList.contains("is-hidden");
     }
 
+    setDiagnosticsPanelOpen(open) {
+      this.diagnosticsPanel.classList.toggle("is-hidden", !open);
+    }
+
+    isDiagnosticsPanelOpen() {
+      return !this.diagnosticsPanel.classList.contains("is-hidden");
+    }
+
     setStatus(message) {
       this.statusBar.textContent = message;
     }
@@ -29,4 +37,3 @@
 
   global.EditorLayout = EditorLayout;
 })(window);
-

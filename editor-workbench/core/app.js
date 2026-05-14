@@ -64,7 +64,14 @@
 
         this.toolbar = new Toolbar(this.layout, this);
         this.pluginPanel = new PluginManagerPanel(this.layout, this);
-        this.diagnosticsPanel = new DiagnosticsPanel(this.layout);
+        this.diagnosticsPanel = new DiagnosticsPanel(this.layout, {
+          onClose: () => {
+            this.closeDiagnosticsPanel();
+          },
+          onSelectDiagnostic: (diagnostic) => {
+            this.goToDiagnostic(diagnostic);
+          }
+        });
 
         this.pluginManager.onChange(() => {
           this.registerPluginLanguages();
@@ -141,8 +148,28 @@
     async runLinters() {
       var diagnostics = await this.diagnosticsManager.run(this.document);
       this.editor.setDiagnostics(diagnostics);
-      this.diagnosticsPanel.render(diagnostics);
+      this.diagnosticsPanel.render(diagnostics, this.document);
+      this.layout.setDiagnosticsPanelOpen(true);
       this.updateStatus("Diagnostics complete: " + diagnostics.length + " result" + (diagnostics.length === 1 ? "." : "s."));
+    }
+
+    closeDiagnosticsPanel() {
+      this.layout.setDiagnosticsPanelOpen(false);
+    }
+
+    goToDiagnostic(diagnostic) {
+      if (!diagnostic) {
+        return;
+      }
+      var from = Number(diagnostic.from);
+      var to = Number(diagnostic.to);
+      if (!Number.isFinite(from)) {
+        from = 0;
+      }
+      if (!Number.isFinite(to) || to < from) {
+        to = from;
+      }
+      this.editor.selectRange(from, to);
     }
 
     async runTransformer(transformerId) {

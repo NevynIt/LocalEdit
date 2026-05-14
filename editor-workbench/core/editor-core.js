@@ -141,6 +141,41 @@
       this.emitChange();
     }
 
+    selectRange(from, to) {
+      var start = Number.isFinite(from) ? from : 0;
+      var end = Number.isFinite(to) ? to : start;
+
+      if (this.view) {
+        var docLength = this.view.state.doc.length;
+        start = Math.max(0, Math.min(start, docLength));
+        end = Math.max(start, Math.min(end, docLength));
+        this.view.dispatch({
+          selection: { anchor: start, head: end },
+          scrollIntoView: true
+        });
+        this.view.focus();
+        return;
+      }
+
+      if (!this.textarea) {
+        return;
+      }
+
+      var value = this.textarea.value || "";
+      start = Math.max(0, Math.min(start, value.length));
+      end = Math.max(start, Math.min(end, value.length));
+      this.textarea.focus();
+      this.textarea.setSelectionRange(start, end);
+
+      var line = value.slice(0, start).split("\n").length - 1;
+      var style = global.getComputedStyle ? global.getComputedStyle(this.textarea) : null;
+      var lineHeight = style ? Number.parseFloat(style.lineHeight) : 0;
+      if (!Number.isFinite(lineHeight) || lineHeight <= 0) {
+        lineHeight = 21;
+      }
+      this.textarea.scrollTop = Math.max(0, line * lineHeight - this.textarea.clientHeight / 2);
+    }
+
     setLanguage(languageId, extensions) {
       this.languageId = languageId || "plain-text";
       if (this.view && this.languageCompartment) {

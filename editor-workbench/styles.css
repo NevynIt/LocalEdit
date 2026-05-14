@@ -201,6 +201,20 @@ input[type="text"] {
   grid-template-columns: minmax(0, 1fr) 340px;
 }
 
+.workspace:has(.side-panel.is-hidden):has(.diagnostics-panel.is-hidden) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.workspace:has(.side-panel.is-hidden):has(.diagnostics-panel.is-hidden) .editor-region {
+  grid-column: 1 / -1;
+}
+
+.workspace:has(.side-panel.is-hidden) .diagnostics-panel:not(.is-hidden),
+.workspace:has(.diagnostics-panel.is-hidden) .side-panel:not(.is-hidden) {
+  grid-row: 1 / span 2;
+  border-top: 0;
+}
+
 .panel-header {
   display: flex;
   justify-content: space-between;
@@ -213,6 +227,14 @@ input[type="text"] {
 .panel-title {
   margin: 0;
   font-size: 14px;
+}
+
+.panel-close-button {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .panel-body {
@@ -235,6 +257,22 @@ input[type="text"] {
   border-radius: 6px;
   padding: 10px;
   background: #fbfcfd;
+}
+
+.diagnostic-item {
+  cursor: pointer;
+}
+
+.diagnostic-item:hover,
+.diagnostic-item:focus {
+  border-color: var(--border-strong);
+  outline: none;
+}
+
+.diagnostic-location {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .plugin-title-row,
