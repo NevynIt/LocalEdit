@@ -101,6 +101,15 @@ input[type="text"] {
   text-transform: uppercase;
 }
 
+.toolbar-check {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  min-height: 32px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;

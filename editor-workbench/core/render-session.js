@@ -2,10 +2,11 @@
   "use strict";
 
   class RenderSession {
-    constructor(windowRef, rendererId, pluginPaths) {
+    constructor(windowRef, rendererId, pluginPaths, pluginLoadSpecs) {
       this.windowRef = windowRef;
       this.rendererId = rendererId;
       this.pluginPaths = Array.isArray(pluginPaths) ? pluginPaths.slice() : [];
+      this.pluginLoadSpecs = Array.isArray(pluginLoadSpecs) ? pluginLoadSpecs.slice() : [];
     }
 
     send(documentModel) {
@@ -13,7 +14,8 @@
         type: "render",
         rendererId: this.rendererId,
         document: documentModel,
-        pluginPaths: this.pluginPaths
+        pluginPaths: this.pluginPaths,
+        pluginLoadSpecs: this.pluginLoadSpecs
       };
 
       global.setTimeout(() => {
@@ -32,8 +34,11 @@
         this.windowRef.close();
       }
     }
+
+    isOpen() {
+      return Boolean(this.windowRef && !this.windowRef.closed);
+    }
   }
 
   global.RenderSession = RenderSession;
 })(window);
-

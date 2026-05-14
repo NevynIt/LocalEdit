@@ -20,6 +20,10 @@
       this.diagnosticsPanel = null;
       this.document = new DocumentModel({ text: "", languageId: "plain-text" });
       this.autosaveTimer = 0;
+      this.autoRefreshTimer = 0;
+      this.autoRefreshEnabled = false;
+      this.renderRefreshDelayMs = 3000;
+      this.renderSessions = [];
     }
 
     async start() {
@@ -51,6 +55,7 @@
         this.editor.onDidChange((text) => {
           this.document = this.document.cloneWith({ text: text });
           this.scheduleAutosave();
+          this.scheduleAutoRefresh();
           this.updateStatus("Editing " + this.displayFileName() + ".");
         });
 
@@ -169,11 +174,41 @@
       }
 
       try {
-        this.renderManager.open(rendererId, this.document);
+        var session = this.renderManager.open(rendererId, this.document);
+        this.renderSessions.push(session);
+        this.pruneRenderSessions();
+        this.updateUi();
         this.updateStatus("Render window opened.");
       } catch (error) {
         this.updateStatus(error && error.message ? error.message : String(error));
       }
+    }
+
+    refreshRenderers() {
+      this.pruneRenderSessions();
+      if (this.renderSessions.length === 0) {
+        this.updateStatus("No open render windows to refresh.");
+        this.updateUi();
+        return;
+      }
+
+      this.renderSessions.forEach((session) => {
+        session.refresh(this.document);
+      });
+      this.updateStatus("Refreshed " + this.renderSessions.length + " render window" + (this.renderSessions.length === 1 ? "." : "s."));
+      this.updateUi();
+    }
+
+    setAutoRefresh(enabled) {
+      this.autoRefreshEnabled = Boolean(enabled);
+      if (this.autoRefreshEnabled) {
+        this.scheduleAutoRefresh();
+        this.updateStatus("Auto-refresh enabled after " + this.renderRefreshDelayMs / 1000 + "s of stable source.");
+      } else {
+        global.clearTimeout(this.autoRefreshTimer);
+        this.updateStatus("Auto-refresh disabled.");
+      }
+      this.updateUi();
     }
 
     async runExporter(exporterId) {
@@ -204,6 +239,15 @@
       try {
         await this.pluginManager.addKnownPlugin(path);
         this.updateStatus("Added " + path + ".");
+      } catch (error) {
+        this.updateStatus(error && error.message ? error.message : String(error));
+      }
+    }
+
+    async uploadPluginFile(file) {
+      try {
+        var result = await this.pluginManager.loadUploadedPluginFile(file);
+        this.updateStatus(result.status === "loaded" ? "Uploaded plugin loaded." : result.error);
       } catch (error) {
         this.updateStatus(error && error.message ? error.message : String(error));
       }
@@ -249,11 +293,14 @@
         languages: this.languageRegistry.list(),
         transformers: this.transformManager.list(languageId),
         renderers: this.renderManager.list(languageId),
-        exporters: this.exportManager.list(languageId)
+        exporters: this.exportManager.list(languageId),
+        autoRefreshEnabled: this.autoRefreshEnabled,
+        hasRenderSessions: this.hasOpenRenderSessions()
       });
 
       this.pluginPanel.render({
         canAddPluginPath: this.host.canAddPluginPath(),
+        canUploadPluginFile: this.host.canUploadPluginFile(),
         items: this.pluginManager.getPanelItems()
       });
     }
@@ -301,6 +348,28 @@
       this.autosaveTimer = global.setTimeout(() => {
         this.persistDocument();
       }, 300);
+    }
+
+    scheduleAutoRefresh() {
+      global.clearTimeout(this.autoRefreshTimer);
+      if (!this.autoRefreshEnabled) {
+        return;
+      }
+
+      this.autoRefreshTimer = global.setTimeout(() => {
+        this.refreshRenderers();
+      }, this.renderRefreshDelayMs);
+    }
+
+    pruneRenderSessions() {
+      this.renderSessions = this.renderSessions.filter(function (session) {
+        return session.isOpen();
+      });
+    }
+
+    hasOpenRenderSessions() {
+      this.pruneRenderSessions();
+      return this.renderSessions.length > 0;
     }
 
     async persistDocument() {

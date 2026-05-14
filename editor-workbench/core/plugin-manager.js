@@ -2,9 +2,14 @@
   "use strict";
 
   function normalizeKnownPlugin(config) {
+    var sourceType = config.sourceType || (config.sourceText ? "uploaded" : "path");
     return {
       id: config.id || undefined,
-      path: config.path,
+      path: config.path || "",
+      sourceType: sourceType,
+      fileName: config.fileName || "",
+      sourceText: config.sourceText || "",
+      uploadId: config.uploadId || (sourceType === "uploaded" ? "uploaded-" + Date.now() + "-" + Math.random().toString(36).slice(2) : ""),
       known: true,
       autoLoad: Boolean(config.autoLoad),
       lastStatus: config.lastStatus || "unloaded",
@@ -45,8 +50,8 @@
 
       if (Array.isArray(stored)) {
         stored.forEach(function (config) {
-          if (config && config.path) {
-            byPath.set(config.path, normalizeKnownPlugin(config));
+          if (config && (config.path || config.sourceText)) {
+            byPath.set(config.path || config.uploadId || config.fileName, normalizeKnownPlugin(config));
           }
         });
       }
@@ -69,7 +74,7 @@
       });
 
       for (var index = 0; index < configs.length; index += 1) {
-        await this.loadPlugin(configs[index].id || configs[index].path);
+        await this.loadPlugin(configs[index].id || configs[index].path || configs[index].uploadId);
       }
     }
 
@@ -79,7 +84,12 @@
         throw new Error("Known plugin was not found.");
       }
 
-      var result = await this.loader.load(config.path);
+      var result;
+      if (config.sourceType === "uploaded") {
+        result = await this.loader.loadSource(config.fileName, config.sourceText);
+      } else {
+        result = await this.loader.load(config.path);
+      }
       if (result.status === "loaded") {
         config.id = result.pluginId || config.id;
         config.lastStatus = "loaded";
@@ -91,6 +101,29 @@
 
       await this.saveKnownPlugins(this.knownPlugins);
       return result;
+    }
+
+    async loadUploadedPluginFile(file) {
+      if (!this.host.canUploadPluginFile()) {
+        throw new Error("Uploading plugin files is disabled for this host.");
+      }
+
+      if (!this.host.validatePluginFile(file)) {
+        throw new Error("Uploaded plugin must be a .js file.");
+      }
+
+      var sourceText = await readPluginFile(file);
+      var config = normalizeKnownPlugin({
+        sourceType: "uploaded",
+        fileName: file.name,
+        sourceText: sourceText,
+        autoLoad: false,
+        lastStatus: "unloaded"
+      });
+
+      this.knownPlugins.push(config);
+      await this.saveKnownPlugins(this.knownPlugins);
+      return this.loadPlugin(config.uploadId);
     }
 
     disablePlugin(pluginId) {
@@ -171,11 +204,23 @@
 
     findKnownPlugin(pluginId) {
       return this.knownPlugins.find(function (config) {
-        return config.id === pluginId || config.path === pluginId;
+        return config.id === pluginId || config.path === pluginId || config.uploadId === pluginId;
       });
     }
   }
 
+  function readPluginFile(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        resolve(reader.result || "");
+      };
+      reader.onerror = function () {
+        reject(reader.error || new Error("Unable to read plugin file."));
+      };
+      reader.readAsText(file);
+    });
+  }
+
   global.PluginManager = PluginManager;
 })(window);
-

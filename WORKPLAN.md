@@ -16,6 +16,8 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - [x] Phase 8: Add npm-based development workflow for identifying and vendoring local runtime dependencies.
 - [x] Phase 9: Replace textarea-primary editor with CodeMirror, retaining textarea fallback.
 - [x] Phase 10: Implement first Markdown plugin with syntax support, sanitized HTML preview, and HTML export.
+- [x] Phase 11: Add render manual refresh and 3-second stable-source auto-refresh controls.
+- [x] Phase 12: Add local-mode uploaded plugin loading through the plugin manager file picker.
 
 ## Verification Log
 
@@ -38,6 +40,11 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - [x] Markdown sanitizer removed `<script>` and remote image content in preview/export smoke tests.
 - [x] Generic render shell loaded the Markdown plugin and rendered sanitized preview output.
 - [x] `editor.html` extension entry loaded directly in Edge headless, started in extension mode, and rendered CodeMirror with Markdown registered.
+- [x] `editor.html` direct smoke confirmed arbitrary uploaded plugin control is hidden in extension mode.
+- [x] Render refresh smoke test passed: manual refresh updated an open Markdown preview.
+- [x] Auto-refresh smoke test passed: preview updated after the 3-second stable-source delay.
+- [x] Uploaded local plugin smoke test passed: plugin manager loaded an in-memory `.js` file and exposed its renderer.
+- [x] Example plugin added at `editor-workbench/plugins/example-smoke.plugin.js` for manual path-load or upload testing.
 - [ ] Manual extension test pending: load `editor-workbench/` as an unpacked Edge/Chrome extension.
 
 ## Implementation Notes
@@ -49,6 +56,8 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - Editor v2: CodeMirror wrapped by `EditorCore`, with textarea fallback if the local CodeMirror bundle is unavailable.
 - Dependency workflow: npm is used only for development/build-time vendoring; runtime dependencies are local files under `editor-workbench/libs/`.
 - First plugin: Markdown support is implemented in `plugins/markdown/markdown.plugin.js`.
+- Render refresh: the main toolbar includes a manual refresh button and an auto-refresh toggle that refreshes open render windows only after 3 seconds of stable source.
+- Uploaded plugins: local-file mode can load `.js` plugin files from the plugin manager via a file picker; extension mode keeps arbitrary uploaded plugin files disabled.
 - Plugin scope still excludes Mermaid, JSON/YAML-specific tooling, PDF, PNG, cloud, collaboration, and remote plugin marketplace features.
 
 ## Dependency Vendoring Checklist
@@ -82,6 +91,9 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - [x] Plugin manager opens and shows known plugin configuration, even if empty.
 - [x] CodeMirror editor loads from local bundled files.
 - [x] Markdown plugin auto-loads and contributes language, preview, and export actions.
+- [x] Manual render refresh updates open render windows.
+- [x] Auto-refresh updates open render windows after 3 seconds of stable source.
+- [x] Plugin manager can upload and load a local `.js` plugin file in local-file mode.
 - [x] No external network requests are made by app code.
 
 ### Extension Mode
@@ -103,3 +115,4 @@ Implementation completed for the v1 shell, plugin infrastructure, dependency ven
 - [x] Loaded plugins are registered from `window.EditorPlugins`.
 - [x] Loaded plugins can be deactivated at registry level.
 - [x] Highlighter, linter, transformer, renderer, and exporter contracts are documented and represented in code.
+- [x] Uploaded plugin files are loaded via classic script injection from a local Blob URL, not by `eval`, `new Function`, or dynamic import.

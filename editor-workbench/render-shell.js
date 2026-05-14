@@ -28,6 +28,33 @@
     }
   }
 
+  async function loadPluginSpecs(specs, fallbackPaths) {
+    if (!Array.isArray(specs)) {
+      await loadPluginPaths(fallbackPaths);
+      return;
+    }
+
+    for (var index = 0; index < specs.length; index += 1) {
+      var spec = specs[index];
+      if (spec.sourceType === "uploaded") {
+        var sourceKey = "uploaded:" + spec.fileName + ":" + spec.sourceText.length;
+        if (!loadedPaths.has(sourceKey)) {
+          var sourceResult = await loader.loadSource(spec.fileName, spec.sourceText);
+          loadedPaths.add(sourceKey);
+          if (sourceResult.status !== "loaded") {
+            throw new Error(sourceResult.error || "Uploaded plugin load failed.");
+          }
+        }
+      } else if (spec.path && !loadedPaths.has(spec.path)) {
+        var result = await loader.load(spec.path);
+        loadedPaths.add(spec.path);
+        if (result.status !== "loaded") {
+          throw new Error(result.error || "Plugin load failed.");
+        }
+      }
+    }
+  }
+
   function displayResult(result) {
     output.textContent = "";
 
@@ -68,7 +95,7 @@
 
     try {
       setText("Rendering...");
-      await loadPluginPaths(message.pluginPaths);
+      await loadPluginSpecs(message.pluginLoadSpecs, message.pluginPaths);
       var documentModel = new DocumentModel(message.document);
       var renderer = registry.getRenderer(message.rendererId, documentModel.languageId);
       if (!renderer) {
@@ -87,4 +114,3 @@
 
   setText("Waiting for render input.");
 })(window);
-

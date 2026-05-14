@@ -43,7 +43,17 @@
       this.elements.rendererButton = this.createButton("Open", () => {
         this.app.openRenderer(this.elements.rendererSelect.value);
       });
-      root.appendChild(this.group([this.label("Render"), this.elements.rendererSelect, this.elements.rendererButton]));
+      this.elements.refreshButton = this.createButton("Refresh", () => this.app.refreshRenderers());
+      this.elements.autoRefreshToggle = document.createElement("input");
+      this.elements.autoRefreshToggle.type = "checkbox";
+      this.elements.autoRefreshToggle.addEventListener("change", () => {
+        this.app.setAutoRefresh(this.elements.autoRefreshToggle.checked);
+      });
+      var autoRefreshLabel = document.createElement("label");
+      autoRefreshLabel.className = "toolbar-check";
+      autoRefreshLabel.appendChild(this.elements.autoRefreshToggle);
+      autoRefreshLabel.appendChild(document.createTextNode(" Auto 3s"));
+      root.appendChild(this.group([this.label("Render"), this.elements.rendererSelect, this.elements.rendererButton, this.elements.refreshButton, autoRefreshLabel]));
 
       this.elements.exporterSelect = document.createElement("select");
       this.elements.exporterButton = this.createButton("Export", () => {
@@ -63,6 +73,8 @@
 
       this.elements.transformButton.disabled = state.transformers.length === 0;
       this.elements.rendererButton.disabled = state.renderers.length === 0;
+      this.elements.refreshButton.disabled = !state.hasRenderSessions;
+      this.elements.autoRefreshToggle.checked = Boolean(state.autoRefreshEnabled);
       this.elements.exporterButton.disabled = state.exporters.length === 0;
     }
 
@@ -115,4 +127,3 @@
 
   global.Toolbar = Toolbar;
 })(window);
-

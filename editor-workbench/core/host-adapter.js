@@ -35,6 +35,14 @@
       return true;
     }
 
+    canUploadPluginFile() {
+      return true;
+    }
+
+    validatePluginFile(file) {
+      return Boolean(file && file.name && file.name.endsWith(".js"));
+    }
+
     validatePluginPath(path) {
       return isAllowedPluginPath(path);
     }
@@ -65,6 +73,14 @@
 
     canAddPluginPath() {
       return false;
+    }
+
+    canUploadPluginFile() {
+      return false;
+    }
+
+    validatePluginFile(file) {
+      return Boolean(file && file.name && file.name.endsWith(".js"));
     }
 
     validatePluginPath(path) {

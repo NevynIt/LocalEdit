@@ -22,7 +22,12 @@
         throw new Error("Render window could not be opened.");
       }
 
-      var session = new RenderSession(windowRef, rendererId, this.registry.getActivePluginPaths());
+      var session = new RenderSession(
+        windowRef,
+        rendererId,
+        this.registry.getActivePluginPaths(),
+        this.registry.getActivePluginLoadSpecs()
+      );
       session.send(documentModel);
       return session;
     }
@@ -30,4 +35,3 @@
 
   global.RenderManager = RenderManager;
 })(window);
-

@@ -344,7 +344,9 @@ interface HostAdapter {
   getDefaultKnownPlugins(): KnownPluginConfig[]
 
   canAddPluginPath(): boolean
+  canUploadPluginFile(): boolean
   validatePluginPath(path: string): boolean
+  validatePluginFile(file: File): boolean
 }
 ```
 
@@ -362,6 +364,7 @@ LocalHostAdapter:
 - mode = "local"
 - resolve URLs as relative paths
 - may allow user-added local plugin paths, subject to validation
+- may allow uploaded local `.js` plugin files through a file picker
 - no network paths
 
 ExtensionHostAdapter:
@@ -369,6 +372,7 @@ ExtensionHostAdapter:
 - resolve URLs with chrome.runtime.getURL(path)
 - normally allow packaged plugin paths only
 - no arbitrary external plugin paths
+- normally disable uploaded local plugin files
 ```
 
 Path validation rule:
@@ -688,6 +692,7 @@ class PluginManager {
   async setAutoLoad(pluginId: string, autoLoad: boolean): Promise<void>
 
   async addKnownPlugin(path: string): Promise<void>
+  async loadUploadedPluginFile(file: File): Promise<void>
   async removeKnownPlugin(pluginId: string): Promise<void>
 }
 ```
@@ -697,7 +702,11 @@ Known plugin config:
 ```ts
 interface KnownPluginConfig {
   id?: string
-  path: string
+  path?: string
+  sourceType: "path" | "uploaded"
+  fileName?: string
+  sourceText?: string
+  uploadId?: string
   known: true
   autoLoad: boolean
   lastStatus?: "loaded" | "unloaded" | "failed"
@@ -720,6 +729,7 @@ The plugin manager panel should show, for each known plugin:
 - plugin name, once known;
 - plugin ID, once known;
 - plugin file path;
+- uploaded plugin filename, when the plugin was loaded from a local file picker;
 - version, once known;
 - description, once known;
 - supported languages, once known;
@@ -730,10 +740,20 @@ The plugin manager panel should show, for each known plugin:
 Actions:
 
 - load known plugin;
+- upload and load a local `.js` plugin file in local-file mode, using the browser file picker;
 - disable loaded plugin;
 - toggle auto-load;
 - view load error;
 - remove known plugin, where host permits.
+
+Uploaded local plugin behavior:
+
+- the upload control should use `<input type="file">`, matching normal document open behavior;
+- uploaded plugin files must be `.js`;
+- uploaded plugin source may be stored in IndexedDB as a known plugin config so it can be reloaded if the user enables auto-load;
+- uploaded plugin source must be executed through classic script injection from a locally created Blob URL, not through `eval`, `new Function`, or dynamic `import()`;
+- local mode may allow uploaded plugin files with `script-src 'self' blob:` and `connect-src 'none'`;
+- extension mode should keep arbitrary uploaded plugin files disabled unless a later extension-specific design explicitly permits them.
 
 In extension mode, adding arbitrary plugin paths should normally be disabled.
 
@@ -1016,7 +1036,9 @@ Behavior:
 - open `render-shell.html`;
 - create a `RenderSession`;
 - send document and renderer ID to the render window with `postMessage`;
-- support refresh.
+- track open render sessions;
+- support manual refresh of open render sessions from the main editor UI;
+- support optional auto-refresh after the source has been stable for at least 3 seconds.
 
 ### 8.4 `RenderSession`
 
@@ -1039,6 +1061,7 @@ class RenderSession {
   send(document: DocumentModel): void
   refresh(document: DocumentModel): void
   close(): void
+  isOpen(): boolean
 }
 ```
 
@@ -1174,6 +1197,8 @@ Minimum controls:
 - run linters;
 - transformers dropdown;
 - renderers dropdown;
+- manual render refresh control;
+- auto-refresh toggle that refreshes open render windows only after the source has been stable for at least 3 seconds;
 - exporters dropdown;
 - open plugin manager.
 

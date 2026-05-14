@@ -28,6 +28,9 @@
         version: plugin.version,
         description: plugin.description || "",
         path: metadata && metadata.path ? metadata.path : existing && existing.path,
+        sourceType: metadata && metadata.sourceType ? metadata.sourceType : existing && existing.sourceType || "path",
+        fileName: metadata && metadata.fileName ? metadata.fileName : existing && existing.fileName,
+        sourceText: metadata && metadata.sourceText ? metadata.sourceText : existing && existing.sourceText,
         languages: list(plugin.languages),
         active: active,
         status: active ? "loaded" : "inactive",
@@ -108,6 +111,27 @@
         })
         .map(function (entry) {
           return entry.path;
+        });
+    }
+
+    getActivePluginLoadSpecs() {
+      return this.listPlugins()
+        .filter(function (entry) {
+          return entry.active && (entry.path || entry.sourceText);
+        })
+        .map(function (entry) {
+          if (entry.sourceType === "uploaded") {
+            return {
+              sourceType: "uploaded",
+              fileName: entry.fileName || entry.id + ".js",
+              sourceText: entry.sourceText || ""
+            };
+          }
+
+          return {
+            sourceType: "path",
+            path: entry.path
+          };
         });
     }
 

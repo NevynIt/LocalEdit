@@ -37,6 +37,10 @@
         body.appendChild(this.renderAddPlugin());
       }
 
+      if (state.canUploadPluginFile) {
+        body.appendChild(this.renderUploadPlugin());
+      }
+
       if (state.items.length === 0) {
         body.appendChild(el("p", "empty-state", "No known plugins are configured."));
         return;
@@ -66,6 +70,28 @@
       return wrapper;
     }
 
+    renderUploadPlugin() {
+      var wrapper = el("div", "plugin-add");
+      var input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".js,text/javascript,application/javascript";
+      input.setAttribute("aria-label", "Upload plugin file");
+
+      var button = el("button", "", "Upload");
+      button.type = "button";
+      button.addEventListener("click", async () => {
+        var file = input.files && input.files[0];
+        if (file) {
+          await this.app.uploadPluginFile(file);
+          input.value = "";
+        }
+      });
+
+      wrapper.appendChild(input);
+      wrapper.appendChild(button);
+      return wrapper;
+    }
+
     renderPluginItem(item) {
       var config = item.config;
       var registered = item.registered;
@@ -77,7 +103,7 @@
       wrapper.appendChild(titleRow);
 
       var grid = el("div", "meta-grid");
-      grid.appendChild(this.metaRow("Path", config.path));
+      grid.appendChild(this.metaRow(config.sourceType === "uploaded" ? "File" : "Path", config.sourceType === "uploaded" ? config.fileName : config.path));
       grid.appendChild(this.metaRow("ID", registered ? registered.id : config.id || ""));
       grid.appendChild(this.metaRow("Version", registered ? registered.version : ""));
       grid.appendChild(this.metaRow("Languages", registered && registered.languages.length ? registered.languages.join(", ") : ""));
@@ -92,7 +118,7 @@
       autoToggle.type = "checkbox";
       autoToggle.checked = config.autoLoad;
       autoToggle.addEventListener("change", () => {
-        this.app.setPluginAutoLoad(config.id || config.path, autoToggle.checked);
+        this.app.setPluginAutoLoad(config.id || config.path || config.uploadId, autoToggle.checked);
       });
       autoLabel.appendChild(autoToggle);
       autoLabel.appendChild(document.createTextNode(" Auto-load"));
@@ -105,7 +131,7 @@
       var actions = el("div", "plugin-actions");
       var loadButton = el("button", "", "Load");
       loadButton.type = "button";
-      loadButton.addEventListener("click", () => this.app.loadKnownPlugin(config.id || config.path));
+      loadButton.addEventListener("click", () => this.app.loadKnownPlugin(config.id || config.path || config.uploadId));
       actions.appendChild(loadButton);
 
       var disableButton = el("button", "", "Disable");
@@ -116,7 +142,7 @@
 
       var removeButton = el("button", "", "Remove");
       removeButton.type = "button";
-      removeButton.addEventListener("click", () => this.app.removeKnownPlugin(config.id || config.path));
+      removeButton.addEventListener("click", () => this.app.removeKnownPlugin(config.id || config.path || config.uploadId));
       actions.appendChild(removeButton);
       wrapper.appendChild(actions);
 
@@ -155,4 +181,3 @@
 
   global.PluginManagerPanel = PluginManagerPanel;
 })(window);
-
