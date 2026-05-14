@@ -341,6 +341,26 @@ input[type="text"] {
   word-break: break-word;
 }
 
+.diagram {
+  max-width: 100%;
+  overflow: auto;
+  margin: 12px 0;
+}
+
+.diagram svg,
+.render-output svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.diagram-error {
+  border: 1px solid #f5b5ae;
+  border-radius: 6px;
+  background: #fff5f4;
+  color: var(--danger);
+  padding: 10px;
+}
+
 @media (max-width: 860px) {
   .workspace {
     grid-template-columns: minmax(0, 1fr);

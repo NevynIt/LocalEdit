@@ -12,6 +12,31 @@
     );
   }
 
+  function getPackagedPlugins() {
+    return [
+      {
+        path: "plugins/markdown/markdown.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
+        path: "plugins/mermaid/mermaid.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
+        path: "plugins/graphviz/graphviz.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
+        path: "plugins/svg/svg.plugin.js",
+        known: true,
+        autoLoad: true
+      }
+    ];
+  }
+
   class LocalHostAdapter {
     constructor() {
       this.mode = "local";
@@ -22,13 +47,7 @@
     }
 
     getDefaultKnownPlugins() {
-      return [
-        {
-          path: "plugins/markdown/markdown.plugin.js",
-          known: true,
-          autoLoad: true
-        }
-      ];
+      return getPackagedPlugins();
     }
 
     canAddPluginPath() {
@@ -62,13 +81,7 @@
     }
 
     getDefaultKnownPlugins() {
-      return [
-        {
-          path: "plugins/markdown/markdown.plugin.js",
-          known: true,
-          autoLoad: true
-        }
-      ];
+      return getPackagedPlugins();
     }
 
     canAddPluginPath() {

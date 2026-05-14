@@ -17,6 +17,14 @@
    */
 
   /**
+   * @typedef {Object} LanguageDefinition
+   * @property {string} id
+   * @property {string} label
+   * @property {string[]=} extensions
+   * @property {string[]=} mimeTypes
+   */
+
+  /**
    * @typedef {Object} HighlighterProvider
    * @property {string} id
    * @property {string} name

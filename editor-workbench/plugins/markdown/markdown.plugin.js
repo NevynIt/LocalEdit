@@ -15,7 +15,7 @@
     return global.EditorWorkbenchCodeMirror;
   }
 
-  function renderMarkdownHtml(documentModel) {
+  async function renderMarkdownHtml(documentModel) {
     return requireMarkdownTools().renderMarkdown(documentModel.text || "");
   }
 
@@ -82,10 +82,10 @@
         name: "Markdown HTML Preview",
         inputLanguages: ["markdown"],
         outputKind: "html",
-        render: function (documentModel) {
+        render: async function (documentModel) {
           return {
             kind: "html",
-            content: renderMarkdownHtml(documentModel),
+            content: await renderMarkdownHtml(documentModel),
             mimeType: "text/html"
           };
         }
@@ -99,9 +99,9 @@
         inputKinds: ["source"],
         outputFileExtension: "html",
         mimeType: "text/html",
-        export: function (input) {
+        export: async function (input) {
           var sourceDocument = input && input.sourceDocument ? input.sourceDocument : { text: "", fileName: "untitled.md" };
-          var body = renderMarkdownHtml(sourceDocument);
+          var body = await renderMarkdownHtml(sourceDocument);
           return {
             fileName: htmlFileName(sourceDocument.fileName),
             mimeType: "text/html",

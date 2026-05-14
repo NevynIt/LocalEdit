@@ -15,9 +15,9 @@ The workbench must have:
 - IndexedDB autosave and settings persistence;
 - a plugin manager;
 - plugin contracts for highlighters, linters, transformers, renderers, and exporters;
-- no actual plugins implemented yet.
+- packaged local plugins for Markdown, Mermaid, Graphviz, and SVG.
 
-The first implementation should focus on the application shell and the plugin architecture, not on Markdown, Mermaid, JSON, YAML, or any other concrete language support.
+The implementation started with the application shell and plugin architecture. The current scope also includes first packaged plugins for Markdown, Mermaid, Graphviz, and SVG, all running from local bundled dependencies with no runtime network access.
 
 ---
 
@@ -42,7 +42,7 @@ The root folder must contain the main local and extension entry files so that th
 Do not add:
 
 - a server;
-- a build server dependency;
+- a runtime build server dependency;
 - cloud callbacks;
 - remote APIs;
 - analytics;
@@ -51,15 +51,16 @@ Do not add:
 
 Everything needed at runtime must be local to the folder/package.
 
-### 2.3 No plugins yet
+### 2.3 Packaged plugin scope
 
-Do not implement concrete plugins yet. Only implement:
+The architecture remains plugin-driven. The current packaged plugins are:
 
-- the plugin registry;
-- plugin loading infrastructure;
-- plugin manager UI;
-- plugin type interfaces/contracts;
-- empty `plugins/` folder.
+- Markdown: CodeMirror highlighting, sanitized HTML preview, sanitized HTML export, and inline Mermaid/Graphviz fenced diagram rendering.
+- Mermaid: language registration, SVG preview, and SVG export.
+- Graphviz: language registration, DOT highlighting, local WASM SVG preview, and SVG export.
+- SVG: language registration, HTML/XML-style highlighting, sanitized SVG preview, and sanitized SVG export.
+
+Do not add unrelated concrete plugins unless a later requirement explicitly expands scope.
 
 ### 2.4 Security posture
 
@@ -86,6 +87,8 @@ Implementation must avoid:
 - extension host permissions;
 - broad extension permissions;
 - `eval` and `new Function`.
+
+Graphviz rendering may require browser WASM compilation support. The only allowed dynamic-code CSP exception is `'wasm-unsafe-eval'` for local packaged Graphviz WASM. Do not add `'unsafe-eval'`, remote origins, or network permissions.
 
 ---
 
@@ -134,9 +137,15 @@ editor-workbench/
 
   libs/
     codemirror/
-    other-local-libs/
+    markdown/
+    mermaid/
+    graphviz/
 
   plugins/
+    markdown/
+    mermaid/
+    graphviz/
+    svg/
     .gitkeep
 ```
 
@@ -225,7 +234,7 @@ Minimal expected posture:
   "permissions": [],
   "host_permissions": [],
   "content_security_policy": {
-    "extension_pages": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self'; connect-src 'none'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none';"
+    "extension_pages": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' blob: data:; font-src 'self'; connect-src 'none'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none';"
   }
 }
 ```
@@ -356,6 +365,17 @@ Implementations:
 class LocalHostAdapter implements HostAdapter {}
 class ExtensionHostAdapter implements HostAdapter {}
 ```
+
+Default known packaged plugins:
+
+```text
+plugins/markdown/markdown.plugin.js
+plugins/mermaid/mermaid.plugin.js
+plugins/graphviz/graphviz.plugin.js
+plugins/svg/svg.plugin.js
+```
+
+These defaults should use `autoLoad: true`.
 
 Expected behavior:
 
@@ -492,13 +512,13 @@ interface LanguageDefinition {
 }
 ```
 
-Initial built-in languages may be only generic placeholders, for example:
+Initial built-in languages may include generic placeholders, for example:
 
 ```text
 plain-text
 ```
 
-Do not implement language-specific behavior yet.
+Packaged plugins register language-specific behavior for Markdown, Mermaid, Graphviz, and SVG.
 
 ---
 
@@ -533,7 +553,7 @@ Plugin files should use this pattern:
 })();
 ```
 
-No plugin files should be implemented yet except `.gitkeep` in `plugins/`.
+Packaged plugins should use the same registration model. The current packaged plugin files are `plugins/markdown/markdown.plugin.js`, `plugins/mermaid/mermaid.plugin.js`, `plugins/graphviz/graphviz.plugin.js`, and `plugins/svg/svg.plugin.js`.
 
 ### 6.2 `plugin-types.js`
 
@@ -557,6 +577,7 @@ interface EditorPlugin {
   description?: string
 
   languages?: string[]
+  languageDefinitions?: LanguageDefinition[]
 
   highlighters?: HighlighterProvider[]
   linters?: LinterProvider[]
@@ -1287,7 +1308,7 @@ The render shell should be generic. Do not hard-code Markdown, Mermaid, SVG, or 
 Suggested starting point:
 
 ```html
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: data:; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; font-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' blob: data:; script-src 'self' blob: 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';">
 ```
 
 Avoid inline scripts even in local mode.
@@ -1297,6 +1318,7 @@ Avoid inline scripts even in local mode.
 Use the manifest CSP. Keep it strict:
 
 ```text
+script-src 'self' 'wasm-unsafe-eval'
 connect-src 'none'
 ```
 
@@ -1341,7 +1363,7 @@ Implement in this order:
 21. verify extension mode by loading the same folder as an unpacked extension;
 22. verify no network requests are made.
 
-Do not add concrete plugins during this work.
+After the shell and plugin infrastructure are in place, add only the current packaged plugin scope: Markdown, Mermaid, Graphviz, and SVG.
 
 ---
 
@@ -1357,6 +1379,10 @@ The work is complete when all of the following are true:
 - the user can download/save the current source text;
 - autosave restores the last edited text;
 - plugin manager opens and shows known plugin configuration, even if empty;
+- packaged Markdown, Mermaid, Graphviz, and SVG plugins auto-load;
+- Mermaid and Graphviz standalone previews/exports produce sanitized SVG;
+- SVG preview/export strips scripts, event handlers, remote references, and unsafe links;
+- Markdown preview/export renders Mermaid and Graphviz fenced code blocks inline;
 - no external network requests are made.
 
 ### Extension mode
@@ -1366,7 +1392,8 @@ The work is complete when all of the following are true:
 - the editor works in the extension page;
 - no host permissions are requested;
 - no network permissions are requested;
-- CSP does not require inline scripts, remote scripts, or eval;
+- CSP does not require inline scripts, remote scripts, or `unsafe-eval`;
+- CSP permits local Graphviz WASM through `'wasm-unsafe-eval'`;
 - no external network requests are made.
 
 ### Plugin infrastructure
@@ -1377,7 +1404,7 @@ The work is complete when all of the following are true:
 - plugin scripts are loaded only through classic script injection;
 - loaded plugins are registered from `window.EditorPlugins`;
 - loaded plugins can be deactivated at registry level;
-- highlighter, linter, transformer, renderer, and exporter interfaces are documented and represented in code.
+- language definition, highlighter, linter, transformer, renderer, and exporter interfaces are documented and represented in code.
 
 ---
 
@@ -1385,11 +1412,11 @@ The work is complete when all of the following are true:
 
 Do not build:
 
-- Markdown plugin;
-- Mermaid plugin;
 - JSON/YAML plugin;
-- SVG renderer;
-- Graphviz/DOT renderer;
+- Markdown linting or formatting;
+- Mermaid transforms or non-SVG exports;
+- Graphviz transforms or non-SVG exports;
+- SVG rasterization or conversion;
 - PDF exporter;
 - PNG exporter;
 - server-side conversion;
@@ -1402,7 +1429,43 @@ Do not build:
 
 ---
 
-## 16. Final architectural summary
+## 16. Diagram plugin requirements
+
+### 16.1 Mermaid plugin
+
+- Register language ID `mermaid`.
+- Infer Mermaid from `.mmd` and `.mermaid`.
+- Render with the local Mermaid bundle only.
+- Initialize Mermaid with `startOnLoad: false` and `securityLevel: "strict"`.
+- Provide `Mermaid SVG Preview` and `Mermaid SVG` exporter.
+- Sanitize SVG before display or export.
+
+### 16.2 Graphviz plugin
+
+- Register language ID `graphviz`.
+- Infer Graphviz from `.dot` and `.gv`.
+- Use local `@viz-js/viz` WASM only.
+- Provide DOT highlighting through the local `@viz-js/lang-dot` CodeMirror support.
+- Provide `Graphviz SVG Preview` and `Graphviz SVG` exporter.
+- Sanitize SVG before display or export.
+
+### 16.3 SVG plugin
+
+- Register language ID `svg`.
+- Infer SVG from `.svg`.
+- Use local CodeMirror HTML/XML-style highlighting.
+- Provide `SVG Preview` and `Sanitized SVG` exporter.
+- Strip scripts, event handlers, remote image references, unsafe links, and other scriptable or external-reference surfaces.
+
+### 16.4 Markdown diagram integration
+
+- Markdown preview/export must render fenced `mermaid`, `mmd`, `dot`, `gv`, and `graphviz` blocks inline.
+- Failed diagram blocks must render as escaped visible error placeholders and must not fail the whole Markdown document.
+- Markdown HTML export must embed sanitized SVG inline without adding scripts, remote assets, or runtime dependencies.
+
+---
+
+## 17. Final architectural summary
 
 Build a minimal local-first editor workbench as:
 
@@ -1419,7 +1482,7 @@ root package
   + plugin manager
   + plugin type contracts
   + generic render shell
-  + no concrete plugins yet
+  + packaged Markdown, Mermaid, Graphviz, and SVG plugins
   + no network dependency
 ```
 

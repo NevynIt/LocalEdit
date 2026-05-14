@@ -1,0 +1,72 @@
+(function (global) {
+  "use strict";
+
+  function requireMermaidTools() {
+    if (!global.EditorWorkbenchMermaid || typeof global.EditorWorkbenchMermaid.renderMermaidSvg !== "function") {
+      throw new Error("Mermaid runtime bundle is not loaded.");
+    }
+    return global.EditorWorkbenchMermaid;
+  }
+
+  function svgFileName(sourceName) {
+    var baseName = sourceName || "untitled.mmd";
+    return baseName.replace(/\.[^.]+$/, "") + ".svg";
+  }
+
+  async function renderMermaid(documentModel) {
+    return requireMermaidTools().renderMermaidSvg(documentModel.text || "");
+  }
+
+  global.EditorPlugins = global.EditorPlugins || [];
+  global.EditorPlugins.push({
+    id: "mermaid-core",
+    name: "Mermaid",
+    version: "0.1.0",
+    description: "Mermaid language support with sanitized SVG preview and export.",
+    languages: ["mermaid"],
+    languageDefinitions: [
+      {
+        id: "mermaid",
+        label: "Mermaid",
+        extensions: ["mmd", "mermaid"],
+        mimeTypes: ["text/x-mermaid"]
+      }
+    ],
+    highlighters: [],
+    linters: [],
+    transformers: [],
+    renderers: [
+      {
+        id: "mermaid-svg-preview",
+        name: "Mermaid SVG Preview",
+        inputLanguages: ["mermaid"],
+        outputKind: "svg",
+        render: async function (documentModel) {
+          return {
+            kind: "svg",
+            content: await renderMermaid(documentModel),
+            mimeType: "image/svg+xml"
+          };
+        }
+      }
+    ],
+    exporters: [
+      {
+        id: "mermaid-svg-export",
+        name: "Mermaid SVG",
+        languages: ["mermaid"],
+        inputKinds: ["source"],
+        outputFileExtension: "svg",
+        mimeType: "image/svg+xml",
+        export: async function (input) {
+          var sourceDocument = input && input.sourceDocument ? input.sourceDocument : { text: "", fileName: "untitled.mmd" };
+          return {
+            fileName: svgFileName(sourceDocument.fileName),
+            mimeType: "image/svg+xml",
+            content: await renderMermaid(sourceDocument)
+          };
+        }
+      }
+    ]
+  });
+})(window);

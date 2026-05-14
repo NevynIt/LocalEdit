@@ -35,10 +35,21 @@ async function main() {
     path.join(root, "editor-workbench", "libs", "markdown", "markdown.bundle.js"),
     "EditorWorkbenchMarkdownBundle"
   );
+
+  await buildBundle(
+    path.join(root, "tools", "bundle-src", "mermaid-bundle.js"),
+    path.join(root, "editor-workbench", "libs", "mermaid", "mermaid.bundle.js"),
+    "EditorWorkbenchMermaidBundle"
+  );
+
+  await buildBundle(
+    path.join(root, "tools", "bundle-src", "graphviz-bundle.js"),
+    path.join(root, "editor-workbench", "libs", "graphviz", "graphviz.bundle.js"),
+    "EditorWorkbenchGraphvizBundle"
+  );
 }
 
 main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
-
