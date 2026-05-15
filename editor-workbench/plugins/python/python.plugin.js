@@ -31,7 +31,7 @@
     await requireRuntime(context).ensureScripts(RUNTIME_PATHS.ruff);
     return {
       text: await requireRuffTools().formatPython(documentModel.text || ""),
-      languageId: "python",
+      languageId: "text.python",
       fileName: documentModel.fileName,
       mode: "replace-current"
     };
@@ -47,7 +47,7 @@
     getExampleDocument: function () {
       return {
         fileName: "example.py",
-        languageId: "python",
+        languageId: "text.python",
         mimeType: "text/x-python",
         text: [
           "def summarize_plugins(names):",
@@ -58,11 +58,12 @@
         ].join("\n")
       };
     },
-    languages: ["python"],
+    languages: ["text.python"],
     languageDefinitions: [
       {
-        id: "python",
+        id: "text.python",
         label: "Python",
+        aliases: ["python"],
         extensions: ["py", "pyw"],
         mimeTypes: ["text/x-python"]
       }
@@ -71,7 +72,7 @@
       {
         id: "python-codemirror",
         name: "Python syntax",
-        languages: ["python"],
+        languages: ["text.python"],
         getCodeMirrorExtensions: async function (context) {
           await requireRuntime(context).ensureScripts(RUNTIME_PATHS.codeMirror);
           return [requireCodeMirrorTools().python()];
@@ -83,8 +84,8 @@
       {
         id: "python-format",
         name: "Format Python",
-        inputLanguages: ["python"],
-        outputLanguage: "python",
+        inputLanguages: ["text.python"],
+        outputLanguage: "text.python",
         transform: formatPython
       }
     ],

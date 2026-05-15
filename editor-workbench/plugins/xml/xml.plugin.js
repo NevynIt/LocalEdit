@@ -144,7 +144,7 @@
     removeWhitespaceOnlyTextNodes(parsed);
     return {
       text: new XMLSerializer().serializeToString(parsed),
-      languageId: "xml",
+      languageId: documentModel.languageId || "text.xml",
       fileName: documentModel.fileName,
       mode: "replace-current"
     };
@@ -154,7 +154,7 @@
     await requireRuntime(context).ensureScripts(RUNTIME_PATHS.prettier);
     return {
       text: await requirePrettierTools().formatXml(documentModel.text || ""),
-      languageId: "xml",
+      languageId: documentModel.languageId || "text.xml",
       fileName: documentModel.fileName,
       mode: "replace-current"
     };
@@ -170,7 +170,7 @@
     getExampleDocument: function () {
       return {
         fileName: "example.xml",
-        languageId: "xml",
+        languageId: "text.xml",
         mimeType: "application/xml",
         text: [
           "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
@@ -183,11 +183,12 @@
         ].join("\n")
       };
     },
-    languages: ["xml"],
+    languages: ["text.xml"],
     languageDefinitions: [
       {
-        id: "xml",
+        id: "text.xml",
         label: "XML",
+        aliases: ["xml"],
         extensions: ["xml", "xsd", "xsl", "rss", "atom"],
         mimeTypes: ["application/xml", "text/xml"]
       }
@@ -196,7 +197,7 @@
       {
         id: "xml-codemirror",
         name: "XML syntax",
-        languages: ["xml"],
+        languages: ["text.xml"],
         getCodeMirrorExtensions: async function (context) {
           await requireRuntime(context).ensureScripts(RUNTIME_PATHS.codeMirror);
           return [requireCodeMirrorTools().xml()];
@@ -207,7 +208,7 @@
       {
         id: "xml-parser-linter",
         name: "XML parser",
-        languages: ["xml"],
+        languages: ["text.xml"],
         lint: lintXml
       }
     ],
@@ -215,33 +216,19 @@
       {
         id: "xml-format",
         name: "Format XML",
-        inputLanguages: ["xml"],
-        outputLanguage: "xml",
+        inputLanguages: ["text.xml"],
+        outputLanguage: "text.xml",
         transform: formatXml
       },
       {
         id: "xml-compact",
         name: "Compact XML",
-        inputLanguages: ["xml"],
-        outputLanguage: "xml",
+        inputLanguages: ["text.xml"],
+        outputLanguage: "text.xml",
         transform: compactXml
       }
     ],
-    renderers: [
-      {
-        id: "xml-tree-preview",
-        name: "XML Tree Preview",
-        inputLanguages: ["xml"],
-        outputKind: "html",
-        render: function (documentModel) {
-          return {
-            kind: "html",
-            content: renderXmlTree(documentModel),
-            mimeType: "text/html"
-          };
-        }
-      }
-    ],
+    renderers: [],
     exporters: []
   }));
 })(window);

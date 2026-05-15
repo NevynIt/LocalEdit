@@ -8,7 +8,8 @@ Editor Workbench is a local-first structured text editor that runs from disk or 
 - Multi-document workspace with tabbed document instances, duplicate-name disambiguation, active-document switching, close fallback behavior, session-only reopen for hidden closed tabs, tab-driven rename, and an intentionally empty startup workspace until a document is opened or created.
 - Workspace-scoped IndexedDB persistence for open documents, active tab, selected languages, file open, and source download.
 - Plugin manager with packaged plugins and local `.js` plugin upload in local mode.
-- Canonical language hierarchy with inherited tool matching, alias compatibility, and hierarchical language labels.
+- Canonical `text`-rooted language hierarchy with inherited tool matching, alias compatibility, and hierarchical language labels.
+- Shared foundation dialects for `json.tree`, `json.table`, `json.indented-tree`, and `json.model-graph`.
 - Diagnostics panel, a single pipeline menu, preview/render windows with document-aware titles and metadata, manual refresh, and 3-second stable-source auto-refresh.
 - Document-scoped diagnostics and document-bound preview windows with source metadata chrome.
 - Pipeline-backed transform, render, export, and editor actions, with automatic single-step pipeline entries for registered transformers, renderers, and exporters.
@@ -16,14 +17,15 @@ Editor Workbench is a local-first structured text editor that runs from disk or 
 - Text-producing pipeline results always open as new documents, and pipeline runs can optionally open intermediate transformer steps as additional documents.
 - Pipeline JSON documents for defining and running custom data-only pipelines.
 - Markdown preview/export with sanitized HTML and inline Mermaid/Graphviz fenced diagrams.
-- Mermaid and Graphviz standalone SVG preview/export.
+- Mermaid and Graphviz SVG preview/export through `xml.svg` pipelines.
 - SVG preview/export, sanitized SVG-to-PNG export, and pan/zoom for standalone SVG previews.
-- JSON and XML linting, tree previews, prettify, and compact transforms.
-- Indented Tree parsing, linting, outline preview, Cytoscape preview, and JSON/Cytoscape export.
+- JSON and XML linting, shared tree-preview pipelines, prettify, and compact transforms.
+- YAML linting, syntax highlighting, JSON conversion, OpenAPI YAML normalization, and shared tree-preview pipelines.
+- Indented Tree parsing, linting, shared tree/graph pipelines, and JSON/Cytoscape export pipelines.
 - Read-only jsMind rendering from Indented Tree through a local pinned jsMind bundle.
 - Cytoscape JSON linting, graph preview, formatting, and compacting.
 - JavaScript formatting through local Prettier.
-- CSV row-width linting and scrollable table preview.
+- CSV row-width linting and shared table-preview pipeline.
 - Python formatting through local Ruff WASM.
 
 ## Modes
@@ -79,12 +81,25 @@ Extension mode:
 
 Languages are inheritance-aware. LocalEdit treats plain text as `text.plain`, which inherits from the root `text` language. Parent contributions automatically apply to descendant languages, so generic tools for `json`, `xml`, or `text` remain available to specialized dialects.
 
-Current packaged canonical ids that changed during this rollout include:
+Current packaged canonical ids include:
 
 - `text.plain` with alias compatibility for `plain-text`
-- `graphviz.dot` with alias compatibility for `graphviz`
+- `text.markdown` with alias compatibility for `markdown`
+- `text.mermaid` with alias compatibility for `mermaid`
+- `text.graphviz-dot` with alias compatibility for `graphviz.dot` and `graphviz`
+- `text.indented-tree` with alias compatibility for `indented-tree`
+- `text.csv` with alias compatibility for `csv`
+- `text.json` with alias compatibility for `json`
+- `text.xml` with alias compatibility for `xml`
+- `text.yaml` with alias compatibility for `yaml`
+- `text.javascript` with alias compatibility for `javascript`
+- `text.python` with alias compatibility for `python`
 - `xml.svg` with alias compatibility for `svg`
 - `json.cytoscape` with alias compatibility for `cytoscape`
+- `json.jsmind` with alias compatibility for `jsmind-json`
+- `localedit.pipeline-json` with alias compatibility for `localedit-pipeline-json`
+
+Reusable intermediate dialects include `json.tree`, `json.table`, `json.indented-tree`, `json.model-graph`, and `json.openapi`. YAML profile dialects include `yaml.openapi`, `yaml.frontmatter`, and `yaml.config`.
 
 ## Build And Verification
 
@@ -101,6 +116,7 @@ npm run verify:contracts
 
 - `editor-workbench/libs/codemirror/editor.bundle.js` for the shared editor runtime.
 - `editor-workbench/plugins/shared/sanitize/sanitize.bundle.js` for shared sanitization.
+- `editor-workbench/plugins/yaml/runtime/yaml.bundle.js` and `editor-workbench/plugins/yaml/runtime/codemirror-yaml.bundle.js` for YAML support.
 - Plugin-owned runtime bundles under `editor-workbench/plugins/**/runtime/`.
 
 The app does not load from npm, a CDN, or a server at runtime.
@@ -111,19 +127,21 @@ The app does not load from npm, a CDN, or a server at runtime.
 
 | Plugin | Language IDs | Main capabilities |
 | --- | --- | --- |
-| Markdown | `markdown` | Syntax, sanitized HTML preview/export, Mermaid/Graphviz fenced diagrams |
-| Mermaid | `mermaid` | SVG preview/export |
-| Graphviz | `graphviz.dot` | DOT syntax, local WASM SVG preview/export |
+| Foundation Dialects | `json.tree`, `json.table`, `json.indented-tree`, `json.model-graph`, `json.openapi` | Shared tree/table renderers, model graph transforms, JSON/CSV export, replacement pipelines |
+| Markdown | `text.markdown` | Syntax, sanitized HTML preview/export, Mermaid/Graphviz fenced diagrams |
+| Mermaid | `text.mermaid` | Mermaid-to-`xml.svg` transform and SVG/PNG pipelines |
+| Graphviz | `text.graphviz-dot` | DOT syntax, local WASM Graphviz-to-`xml.svg` transform and SVG/PNG pipelines |
 | SVG | `xml.svg` | SVG syntax, sanitized SVG preview/export, PNG export |
-| JSON | `json` | Syntax, parse linting, HTML tree preview, Cytoscape tree preview, format, compact |
+| JSON | `text.json` | Syntax, parse linting, shared tree/graph pipelines, format, compact |
 | Cytoscape JSON | `json.cytoscape` | JSON syntax, graph-shape linting, Cytoscape preview, format, compact |
-| Indented Tree | `indented-tree` | Syntax, parser linting, outline preview, Cytoscape preview, JSON/Cytoscape export |
-| XML | `xml` | Syntax, DOMParser linting, tree preview, Prettier format, compact |
-| JavaScript | `javascript` | Syntax, Prettier format |
-| CSV | `csv` | Row-width linting, scrollable table preview |
-| Python | `python` | Syntax, Ruff WASM format |
-| Pipeline JSON | `localedit-pipeline-json` | Pipeline document linting and flow preview |
-| jsMind | `jsmind-json` | Indented Tree to jsMind JSON transform and read-only mind-map preview |
+| Indented Tree | `text.indented-tree` | Syntax, parser linting, shared tree/graph pipelines, JSON/Cytoscape export pipelines |
+| XML | `text.xml` | Syntax, DOMParser linting, shared tree pipeline, Prettier format, compact |
+| YAML | `text.yaml`, `yaml.openapi`, `yaml.frontmatter`, `yaml.config` | Syntax, parse linting, JSON conversion, OpenAPI YAML normalization, shared tree pipeline |
+| JavaScript | `text.javascript` | Syntax, Prettier format |
+| CSV | `text.csv` | Row-width linting and shared table pipeline |
+| Python | `text.python` | Syntax, Ruff WASM format |
+| Pipeline JSON | `localedit.pipeline-json` | Pipeline document linting and flow preview |
+| jsMind | `json.jsmind` | Indented Tree to jsMind JSON transform and read-only mind-map preview |
 
 ## Plugin Runtime Model
 
@@ -179,6 +197,7 @@ All runtime dependencies are bundled locally. Key dependencies include:
 - `@viz-js/viz` and `@viz-js/lang-dot` for Graphviz/DOT.
 - Prettier and `@prettier/plugin-xml` for JavaScript/XML formatting.
 - PapaParse for CSV parsing.
+- `yaml` and `@codemirror/lang-yaml` for YAML parsing/stringifying and syntax highlighting.
 - Ruff WASM for Python formatting.
 - jsMind for read-only mind-map rendering.
 

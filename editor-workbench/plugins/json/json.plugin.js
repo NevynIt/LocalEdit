@@ -300,7 +300,7 @@
     var value = parseJson(documentModel.text || "");
     return {
       text: compact ? JSON.stringify(value) : JSON.stringify(value, null, 2),
-      languageId: "json",
+      languageId: documentModel.languageId || "text.json",
       fileName: documentModel.fileName,
       mode: "replace-current"
     };
@@ -316,7 +316,7 @@
     getExampleDocument: function () {
       return {
         fileName: "example.json",
-        languageId: "json",
+      languageId: "text.json",
         mimeType: "application/json",
         text: JSON.stringify({
           name: "LocalEdit",
@@ -329,11 +329,12 @@
         }, null, 2)
       };
     },
-    languages: ["json"],
+    languages: ["text.json"],
     languageDefinitions: [
       {
-        id: "json",
+        id: "text.json",
         label: "JSON",
+        aliases: ["json"],
         extensions: ["json"],
         mimeTypes: ["application/json"]
       }
@@ -342,7 +343,7 @@
       {
         id: "json-codemirror",
         name: "JSON syntax",
-        languages: ["json"],
+        languages: ["text.json"],
         getCodeMirrorExtensions: async function (context) {
           await requireRuntime(context).ensureScripts(RUNTIME_PATHS.codeMirror);
           return [requireCodeMirrorTools().json()];
@@ -353,7 +354,7 @@
       {
         id: "json-parse-linter",
         name: "JSON parser",
-        languages: ["json"],
+        languages: ["text.json"],
         lint: function (documentModel) {
           try {
             parseJson(documentModel.text || "");
@@ -368,8 +369,8 @@
       {
         id: "json-format",
         name: "Format JSON",
-        inputLanguages: ["json"],
-        outputLanguage: "json",
+        inputLanguages: ["text.json"],
+        outputLanguage: "text.json",
         transform: function (documentModel) {
           return formatJson(documentModel, false);
         }
@@ -377,35 +378,14 @@
       {
         id: "json-compact",
         name: "Compact JSON",
-        inputLanguages: ["json"],
-        outputLanguage: "json",
+        inputLanguages: ["text.json"],
+        outputLanguage: "text.json",
         transform: function (documentModel) {
           return formatJson(documentModel, true);
         }
       }
     ],
-    renderers: [
-      {
-        id: "json-tree-preview",
-        name: "JSON Tree Preview",
-        inputLanguages: ["json"],
-        outputKind: "html",
-        render: function (documentModel) {
-          return {
-            kind: "html",
-            content: renderJsonTree(documentModel),
-            mimeType: "text/html"
-          };
-        }
-      },
-      {
-        id: "json-cytoscape-tree-preview",
-        name: "JSON Cytoscape Tree Preview",
-        inputLanguages: ["json"],
-        outputKind: "custom",
-        render: renderJsonCytoscapeTree
-      }
-    ],
+    renderers: [],
     exporters: []
   }));
 })(window);

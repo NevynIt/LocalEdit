@@ -220,7 +220,7 @@
         format: "node_tree",
         data: data
       }, null, 2),
-      languageId: "jsmind-json",
+      languageId: "json.jsmind",
       diagnostics: parsed.diagnostics || []
     };
   }
@@ -1066,8 +1066,10 @@
     contributes: {
       languages: [
         {
-          id: "jsmind-json",
+          id: "json.jsmind",
           name: "jsMind JSON",
+          parentLanguageId: "text.json",
+          aliases: ["jsmind-json"],
           fileExtensions: [".jm.json", ".jsmind.json"],
           mediaType: "application/vnd.jsmind+json",
           description: "jsMind node_tree JSON documents."
@@ -1079,7 +1081,7 @@
           id: "jsmind-json-codemirror",
           name: "jsMind JSON syntax",
           editor: "codemirror",
-          languages: ["jsmind-json"],
+          languages: ["json.jsmind"],
           createExtension: async function (context) {
             await requireRuntime(context).ensureScripts("plugins/json/runtime/codemirror-json.bundle.js");
             return [global.EditorWorkbenchCodeMirror.json()];
@@ -1090,8 +1092,8 @@
         {
           id: "indented-tree-to-jsmind-json",
           name: "Indented Tree to jsMind JSON",
-          inputLanguage: "indented-tree",
-          outputLanguage: "jsmind-json",
+          inputLanguage: "text.indented-tree",
+          outputLanguage: "json.jsmind",
           parameters: {},
           transform: indentedTreeToJsMind
         }
@@ -1100,7 +1102,7 @@
         {
           id: "jsmind-renderer",
           name: "jsMind Mind Map",
-          accepts: ["jsmind-json"],
+          accepts: ["json.jsmind"],
           outputKind: "custom",
           parameters: {
             theme: { type: "string", default: "localedit" },
@@ -1117,7 +1119,7 @@
         {
           id: "jsmind-json-linter",
           name: "jsMind JSON parser",
-          accepts: ["jsmind-json"],
+          accepts: ["json.jsmind"],
           lint: function (input) {
             try {
               var value = JSON.parse(input.text || "");
@@ -1145,7 +1147,7 @@
         {
           id: "view-indented-tree-as-mindmap",
           name: "View as Mind Map",
-          inputLanguage: "indented-tree",
+          inputLanguage: "text.indented-tree",
           steps: [
             { use: "indented-tree-to-jsmind-json", params: {} },
             { use: "jsmind-renderer", params: {} }

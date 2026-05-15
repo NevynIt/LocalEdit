@@ -84,12 +84,12 @@
     getExampleDocument: function () {
       return {
         fileName: "view-indented-tree-as-mindmap.pipeline.json",
-        languageId: "localedit-pipeline-json",
+        languageId: "localedit.pipeline-json",
         mimeType: "application/vnd.localedit.pipeline+json",
         text: JSON.stringify({
           id: "view-indented-tree-as-mindmap-copy",
           name: "View as Mind Map",
-          inputLanguage: "indented-tree",
+          inputLanguage: "text.indented-tree",
           steps: [
             { use: "indented-tree-to-jsmind-json", params: {} },
             { use: "jsmind-renderer", params: {} }
@@ -100,8 +100,10 @@
     contributes: {
       languages: [
         {
-          id: "localedit-pipeline-json",
+          id: "localedit.pipeline-json",
           name: "LocalEdit Pipeline JSON",
+          parentLanguageId: "text.json",
+          aliases: ["localedit-pipeline-json"],
           fileExtensions: [".pipeline.json"],
           mediaType: "application/vnd.localedit.pipeline+json",
           description: "Data-only LocalEdit pipeline definitions."
@@ -113,7 +115,7 @@
           id: "pipeline-json-codemirror",
           name: "Pipeline JSON syntax",
           editor: "codemirror",
-          languages: ["localedit-pipeline-json"],
+          languages: ["localedit.pipeline-json"],
           createExtension: async function (context) {
             if (!context || !context.runtime) {
               throw new Error("Runtime loader is not available.");
@@ -128,7 +130,7 @@
         {
           id: "pipeline-flow-renderer",
           name: "Pipeline Flow",
-          accepts: ["localedit-pipeline-json"],
+          accepts: ["localedit.pipeline-json"],
           outputKind: "html",
           parameters: {},
           render: renderPipeline
@@ -139,7 +141,7 @@
         {
           id: "pipeline-json-linter",
           name: "Pipeline JSON validator",
-          accepts: ["localedit-pipeline-json"],
+          accepts: ["localedit.pipeline-json"],
           lint: lintPipeline
         }
       ],

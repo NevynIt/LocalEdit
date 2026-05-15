@@ -102,7 +102,7 @@
     getExampleDocument: function () {
       return {
         fileName: "example.md",
-        languageId: "markdown",
+        languageId: "text.markdown",
         mimeType: "text/markdown",
         text: [
           "# Example Markdown",
@@ -120,11 +120,12 @@
         ].join("\n")
       };
     },
-    languages: ["markdown"],
+    languages: ["text.markdown"],
     languageDefinitions: [
       {
-        id: "markdown",
+        id: "text.markdown",
         label: "Markdown",
+        aliases: ["markdown"],
         extensions: ["md", "markdown", "mdown", "mkd"],
         mimeTypes: ["text/markdown"]
       }
@@ -133,7 +134,7 @@
       {
         id: "markdown-codemirror",
         name: "Markdown syntax",
-        languages: ["markdown"],
+        languages: ["text.markdown"],
         getCodeMirrorExtensions: async function (context) {
           await requireRuntime(context).ensureScripts(RUNTIME_PATHS.codeMirror);
           return [requireCodeMirrorTools().markdown()];
@@ -146,7 +147,7 @@
       {
         id: "markdown-html-preview",
         name: "Markdown HTML Preview",
-        inputLanguages: ["markdown"],
+        inputLanguages: ["text.markdown"],
         outputKind: "html",
         render: async function (documentModel, context) {
           return {
@@ -161,7 +162,7 @@
       {
         id: "markdown-html-export",
         name: "Markdown HTML",
-        languages: ["markdown"],
+        languages: ["text.markdown"],
         inputKinds: ["source"],
         outputFileExtension: "html",
         mimeType: "text/html",

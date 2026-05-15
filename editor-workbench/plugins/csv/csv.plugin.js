@@ -176,7 +176,7 @@
     getExampleDocument: function () {
       return {
         fileName: "example.csv",
-        languageId: "csv",
+        languageId: "text.csv",
         mimeType: "text/csv",
         text: [
           "name,language,status",
@@ -186,11 +186,12 @@
         ].join("\n")
       };
     },
-    languages: ["csv"],
+    languages: ["text.csv"],
     languageDefinitions: [
       {
-        id: "csv",
+        id: "text.csv",
         label: "CSV/TSV",
+        aliases: ["csv"],
         extensions: ["csv", "tsv"],
         mimeTypes: ["text/csv", "text/tab-separated-values"]
       }
@@ -200,27 +201,12 @@
       {
         id: "csv-width-linter",
         name: "CSV row width",
-        languages: ["csv"],
+        languages: ["text.csv"],
         lint: lintCsv
       }
     ],
     transformers: [],
-    renderers: [
-      {
-        id: "csv-table-preview",
-        name: "CSV Table Preview",
-        inputLanguages: ["csv"],
-        outputKind: "html",
-        render: async function (documentModel, context) {
-          var result = await parseCsv(documentModel, context);
-          return {
-            kind: "html",
-            content: renderViewer(result),
-            mimeType: "text/html"
-          };
-        }
-      }
-    ],
+    renderers: [],
     exporters: []
   }));
 })(window);

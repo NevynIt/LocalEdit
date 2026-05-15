@@ -1346,7 +1346,7 @@
     getExampleDocument: function () {
       return {
         fileName: "example.itt",
-        languageId: "indented-tree",
+        languageId: "text.indented-tree",
         mimeType: "text/x-indented-tree",
         text: [
           "---",
@@ -1367,11 +1367,12 @@
         ].join("\n")
       };
     },
-    languages: ["indented-tree"],
+    languages: ["text.indented-tree"],
     languageDefinitions: [
       {
-        id: "indented-tree",
+        id: "text.indented-tree",
         label: "Indented Tree",
+        aliases: ["indented-tree"],
         extensions: ["itt", "itree"],
         mimeTypes: ["text/x-indented-tree"]
       }
@@ -1380,7 +1381,7 @@
       {
         id: "indented-tree-codemirror",
         name: "Indented Tree syntax",
-        languages: ["indented-tree"],
+        languages: ["text.indented-tree"],
         getCodeMirrorExtensions: function () {
           return createCodeMirrorExtensions();
         }
@@ -1390,7 +1391,7 @@
       {
         id: "indented-tree-linter",
         name: "Indented Tree parser",
-        languages: ["indented-tree"],
+        languages: ["text.indented-tree"],
         lint: function (documentModel) {
           return parseIndentedTree(documentModel.text || "").diagnostics.map(function (diagnostic) {
             return {
@@ -1405,53 +1406,7 @@
       }
     ],
     transformers: [],
-    renderers: [
-      {
-        id: "indented-tree-outline-preview",
-        name: "Indented Tree Outline Preview",
-        inputLanguages: ["indented-tree"],
-        outputKind: "html",
-        render: function (documentModel) {
-          return {
-            kind: "html",
-            content: renderOutline(documentModel),
-            mimeType: "text/html"
-          };
-        }
-      },
-      {
-        id: "indented-tree-cytoscape-preview",
-        name: "Indented Tree Cytoscape Preview",
-        inputLanguages: ["indented-tree"],
-        outputKind: "custom",
-        render: renderCytoscapePreview
-      }
-    ],
-    exporters: [
-      {
-        id: "indented-tree-json-export",
-        name: "Indented Tree JSON",
-        languages: ["indented-tree"],
-        inputKinds: ["source"],
-        outputFileExtension: "json",
-        mimeType: "application/json",
-        export: function (input) {
-          var sourceDocument = input && input.sourceDocument ? input.sourceDocument : { text: "", fileName: "untitled.itt" };
-          return createFullJsonExport(sourceDocument);
-        }
-      },
-      {
-        id: "indented-tree-cytoscape-export",
-        name: "Cytoscape JSON",
-        languages: ["indented-tree"],
-        inputKinds: ["source"],
-        outputFileExtension: "cy.json",
-        mimeType: "application/vnd.cytoscape+json",
-        export: function (input) {
-          var sourceDocument = input && input.sourceDocument ? input.sourceDocument : { text: "", fileName: "untitled.itt" };
-          return createCytoscapeExport(sourceDocument);
-        }
-      }
-    ]
+    renderers: [],
+    exporters: []
   }));
 })(window);

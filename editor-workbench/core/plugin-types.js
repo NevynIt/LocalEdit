@@ -83,6 +83,8 @@
    * @property {string} name
    * @property {string} inputLanguage
    * @property {string} outputLanguage
+   * @property {"default" | "advanced" | "internal"=} visibility
+   * @property {boolean=} lossy
    * @property {object=} parameters
    * @property {(input: object) => TransformResult | Promise<TransformResult>} transform
    */
@@ -93,6 +95,7 @@
    * @property {string} name
    * @property {string[]} accepts
    * @property {"html" | "svg" | "text" | "image" | "custom"} outputKind
+   * @property {"default" | "advanced" | "internal"=} visibility
    * @property {object=} parameters
    * @property {(input: object) => RenderResult | Promise<RenderResult>} render
    */
@@ -111,6 +114,7 @@
    * @property {string[]} accepts
    * @property {string} outputFileExtension
    * @property {string} mimeType
+   * @property {"default" | "advanced" | "internal"=} visibility
    * @property {object=} parameters
    * @property {(input: object) => ExportResult | Promise<ExportResult>} export
    */
@@ -128,6 +132,7 @@
    * @property {string} id
    * @property {string} name
    * @property {string} inputLanguage
+   * @property {"default" | "advanced" | "internal"=} visibility
    * @property {{use: string, params?: object}[]} steps
    */
 

@@ -15,6 +15,7 @@ The runtime files under `editor-workbench/libs/` and `editor-workbench/plugins/*
 - CodeMirror structured language packages: MIT license
   - `@codemirror/lang-json`
   - `@codemirror/lang-xml`
+  - `@codemirror/lang-yaml`
   - `@codemirror/lang-javascript`
   - `@codemirror/lang-python`
 - Marked: MIT license
@@ -26,6 +27,7 @@ The runtime files under `editor-workbench/libs/` and `editor-workbench/plugins/*
 - Prettier: MIT license
 - Prettier XML plugin: MIT license
 - PapaParse: MIT license
+- YAML parser/stringifier package `yaml`: ISC license
 - Ruff WASM web bindings: MIT license
 
 Generated bundles may include additional package notices in adjacent `.LEGAL.txt` files. Keep those files with the matching bundles when packaging the app.

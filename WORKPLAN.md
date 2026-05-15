@@ -4,6 +4,28 @@
 
 Implementation completed for the v1 shell, plugin infrastructure, dependency vendoring workflow, CodeMirror editor integration, Markdown plugin, Mermaid plugin, Graphviz plugin, SVG plugin, Markdown inline diagram rendering, lazy plugin-owned runtime bundles, JSON/XML/JavaScript/CSV/Python plugins, SVG PNG export, and standalone SVG pan/zoom. The Big Refactor implementation has migrated packaged plugins to contribution records, added editor contributions, pipelines, pipeline documents, canonical diagnostics, and read-only jsMind rendering. Static and contract verification passed on 2026-05-15; browser smoke was attempted but blocked by the available browser tool/client policy, and manual unpacked extension testing remains pending.
 
+## Plugin Streamlining Foundation And YAML Tracker
+
+This tracker covers the current implementation pass from `localedit_plugin_streamlining_foundation_whitepaper.md` and `localedit_languages_plugins_prioritization_expanded_streamlining_v2.md`.
+
+### Streamlining Scope
+
+- [x] Record the selected implementation scope before changing implementation files.
+- [x] Foundation slice: introduce shared tree/table/model-graph dialects, shared renderers, internal transformers, and replacement pipelines.
+- [x] Remove replaced direct source-specific renderers/exporters instead of keeping deprecated compatibility entries.
+- [x] Keep Cytoscape physically bundled with Mermaid in this pass, while exposing a neutral Cytoscape runtime facade for graph plugins.
+- [x] YAML slice: add YAML syntax, linting, transforms, runtime bundles, and pipeline actions.
+- [x] Update `README.md` and this workplan after the foundation slice and after the YAML slice.
+
+### Streamlining Verification
+
+- [x] Baseline checks passed on 2026-05-15 with `.tools\node\node-v24.15.0-win-x64\npm.cmd run verify:syntax` and `.tools\node\node-v24.15.0-win-x64\npm.cmd run verify:contracts`.
+- [x] Exact dependency versions confirmed from npm on 2026-05-15: `yaml@2.9.0` and `@codemirror/lang-yaml@6.1.3`.
+- [x] Foundation build and verification passed on 2026-05-15 with `npm run build:libs`, `npm run verify:syntax`, and `npm run verify:contracts` through the bundled npm toolchain.
+- [x] YAML dependency install, bundle build, syntax check, and contract verification passed on 2026-05-15.
+- [x] Contract tests assert replacement pipelines exist and removed direct source-specific contribution ids are absent.
+- [ ] Browser smoke for the streamlining/YAML pass is still pending; the in-app Browser plugin blocked direct `file:///C:/Stuff/LocalEdit/editor-workbench/index.html` access by URL policy on 2026-05-15.
+
 ## Multi-Document Workspace And Language Hierarchy Tracker
 
 This tracker covers the next breaking workstream: inheritance-aware language definitions plus a multi-document workspace model with document-scoped tabs, diagnostics, autosave, render bindings, and preview metadata. The separate language-plugin prioritization proposal is intentionally out of scope for this tracker.

@@ -29,6 +29,11 @@
   function getPackagedPlugins() {
     return [
       {
+        path: "plugins/foundation/foundation.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
         path: "plugins/markdown/markdown.plugin.js",
         known: true,
         autoLoad: true
@@ -75,6 +80,11 @@
       },
       {
         path: "plugins/xml/xml.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
+        path: "plugins/yaml/yaml.plugin.js",
         known: true,
         autoLoad: true
       },

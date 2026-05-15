@@ -52,7 +52,7 @@
     getExampleDocument: function () {
       return {
         fileName: "example.dot",
-        languageId: "graphviz.dot",
+        languageId: "text.graphviz-dot",
         mimeType: "text/vnd.graphviz",
         text: [
           "digraph Example {",
@@ -62,13 +62,44 @@
         ].join("\n")
       };
     },
-    languages: ["graphviz.dot"],
+    languages: ["text.graphviz-dot"],
+    contributes: {
+      pipelines: [
+        {
+          id: "view-graphviz-as-svg",
+          name: "View as SVG",
+          inputLanguage: "text.graphviz-dot",
+          steps: [
+            { use: "graphviz-to-svg", params: {} },
+            { use: "svg-preview", params: {} }
+          ]
+        },
+        {
+          id: "export-graphviz-as-svg",
+          name: "Export as SVG",
+          inputLanguage: "text.graphviz-dot",
+          steps: [
+            { use: "graphviz-to-svg", params: {} },
+            { use: "svg-sanitized-export", params: {} }
+          ]
+        },
+        {
+          id: "export-graphviz-as-png",
+          name: "Export as PNG",
+          inputLanguage: "text.graphviz-dot",
+          steps: [
+            { use: "graphviz-to-svg", params: {} },
+            { use: "svg-png-export", params: {} }
+          ]
+        }
+      ]
+    },
     languageDefinitions: [
       {
-        id: "graphviz.dot",
+        id: "text.graphviz-dot",
         label: "Graphviz DOT",
         parent: "text",
-        aliases: ["graphviz"],
+        aliases: ["graphviz.dot", "graphviz"],
         extensions: ["dot", "gv"],
         mimeTypes: ["text/vnd.graphviz"]
       }
@@ -77,7 +108,7 @@
       {
         id: "graphviz-codemirror",
         name: "DOT syntax",
-        languages: ["graphviz.dot"],
+        languages: ["text.graphviz-dot"],
         getCodeMirrorExtensions: async function (context) {
           await requireRuntime(context).ensureScripts(RUNTIME_PATHS.codeMirror);
           return [requireCodeMirrorTools().dot()];
@@ -85,39 +116,23 @@
       }
     ],
     linters: [],
-    transformers: [],
-    renderers: [
+    transformers: [
       {
-        id: "graphviz-svg-preview",
-        name: "Graphviz SVG Preview",
-        inputLanguages: ["graphviz.dot"],
-        outputKind: "svg",
-        render: async function (documentModel, context) {
+        id: "graphviz-to-svg",
+        name: "Graphviz to SVG",
+        inputLanguages: ["text.graphviz-dot"],
+        outputLanguage: "xml.svg",
+        visibility: "internal",
+        transform: async function (documentModel, context) {
           return {
-            kind: "svg",
-            content: await renderGraphviz(documentModel, context),
-            mimeType: "image/svg+xml"
+            text: await renderGraphviz(documentModel, context),
+            languageId: "xml.svg",
+            fileName: svgFileName(documentModel.fileName)
           };
         }
       }
     ],
-    exporters: [
-      {
-        id: "graphviz-svg-export",
-        name: "Graphviz SVG",
-        languages: ["graphviz.dot"],
-        inputKinds: ["source"],
-        outputFileExtension: "svg",
-        mimeType: "image/svg+xml",
-        export: async function (input, context) {
-          var sourceDocument = input && input.sourceDocument ? input.sourceDocument : { text: "", fileName: "untitled.dot" };
-          return {
-            fileName: svgFileName(sourceDocument.fileName),
-            mimeType: "image/svg+xml",
-            content: await renderGraphviz(sourceDocument, context)
-          };
-        }
-      }
-    ]
+    renderers: [],
+    exporters: []
   }));
 })(window);

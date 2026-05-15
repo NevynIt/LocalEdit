@@ -59,8 +59,91 @@ for (const pluginFile of walkPluginFiles("editor-workbench/plugins")) {
     packagedRegistry.registerPlugin(plugin, { path: pluginFile.replace(/\\/g, "/").replace("editor-workbench/", "") });
   }
 }
-assert.ok(packagedRegistry.getLanguages().some((language) => language.id === "localedit-pipeline-json"));
-assert.ok(packagedRegistry.getLanguages().some((language) => language.id === "jsmind-json"));
+[
+  "text.json",
+  "json.tree",
+  "json.table",
+  "json.indented-tree",
+  "json.model-graph",
+  "json.cytoscape",
+  "json.jsmind",
+  "localedit.pipeline-json",
+  "text.indented-tree",
+  "text.csv",
+  "text.xml",
+  "text.yaml",
+  "yaml.openapi",
+  "yaml.frontmatter",
+  "yaml.config",
+  "text.mermaid",
+  "text.graphviz-dot"
+].forEach((languageId) => {
+  assert.ok(packagedRegistry.getLanguages().some((language) => language.id === languageId), `${languageId} language is registered`);
+});
+
+[
+  "json-tree-preview",
+  "json-cytoscape-tree-preview",
+  "xml-tree-preview",
+  "csv-table-preview",
+  "indented-tree-outline-preview",
+  "indented-tree-cytoscape-preview",
+  "indented-tree-json-export",
+  "indented-tree-cytoscape-export",
+  "mermaid-svg-preview",
+  "mermaid-svg-export",
+  "graphviz-svg-preview",
+  "graphviz-svg-export"
+].forEach((contributionId) => {
+  assert.equal(packagedRegistry.findContribution(contributionId), undefined, `${contributionId} should be replaced by pipelines`);
+});
+
+const replacementPipelineIds = [
+  "view-json-as-tree",
+  "view-json-as-graph",
+  "view-xml-as-tree",
+  "view-csv-as-table",
+  "view-indented-tree-as-tree",
+  "view-indented-tree-as-graph",
+  "export-indented-tree-json",
+  "export-indented-tree-cytoscape-json",
+  "view-mermaid-as-svg",
+  "export-mermaid-as-svg",
+  "view-graphviz-as-svg",
+  "export-graphviz-as-svg",
+  "view-yaml-as-tree",
+  "convert-yaml-to-json",
+  "convert-json-to-yaml",
+  "normalize-openapi-yaml-to-json"
+];
+replacementPipelineIds.forEach((pipelineId) => {
+  assert.ok(packagedRegistry.getContribution("pipeline", pipelineId), `${pipelineId} pipeline is registered`);
+});
+assert.equal(packagedRegistry.getContribution("transformer", "json-to-tree").visibility, "internal");
+assert.equal(packagedRegistry.getContribution("transformer", "yaml-to-tree").visibility, "internal");
+
+const packagedLanguageRegistry = new context.LanguageRegistry();
+packagedLanguageRegistry.register({
+  id: "text",
+  name: "Text",
+  parentLanguageId: null,
+  mediaType: "text/plain"
+});
+packagedLanguageRegistry.register({
+  id: "text.plain",
+  name: "Plain Text",
+  parentLanguageId: "text",
+  aliases: ["plain-text"],
+  fileExtensions: ["txt"],
+  mediaType: "text/plain"
+});
+packagedRegistry.getLanguages().forEach((language) => {
+  packagedLanguageRegistry.register(language);
+});
+const packagedPipelineRegistry = new context.PipelineRegistry(packagedRegistry, packagedLanguageRegistry);
+replacementPipelineIds.forEach((pipelineId) => {
+  assert.equal(packagedPipelineRegistry.validate(packagedPipelineRegistry.get(pipelineId)), true, `${pipelineId} pipeline validates`);
+});
 
 const languageRegistry = new context.LanguageRegistry();
 languageRegistry.register({
@@ -262,6 +345,7 @@ registry.registerPlugin({
           return {
             text: input.text + input.params.suffix,
             languageId: "beta",
+            fileName: "converted.beta",
             diagnostics: [
               { source: "alpha-to-beta", severity: "information", message: "converted", languageId: "beta" }
             ]
@@ -436,6 +520,7 @@ diagnostics.runLinters(documentModel, "doc-1").then(async (items) => {
   assert.equal(result.action, "open-new-document");
   assert.equal(result.document.text, "abc?");
   assert.equal(result.document.languageId, "beta");
+  assert.equal(result.document.fileName, "converted.beta");
   assert.equal(result.diagnostics.length, 1);
   assert.equal(result.intermediateResults.length, 1);
 
@@ -451,6 +536,7 @@ diagnostics.runLinters(documentModel, "doc-1").then(async (items) => {
   assert.equal(preparedRenderInput.contribution.id, "beta-renderer");
   assert.equal(preparedRenderInput.input.text, "abc#");
   assert.equal(preparedRenderInput.input.languageId, "beta");
+  assert.equal(preparedRenderInput.input.fileName, "converted.beta");
 
   const childDocumentModel = new context.DocumentModel({ text: "xyz", languageId: "alpha.child" });
   const childResult = await executor.execute("alpha-child-preview", childDocumentModel);

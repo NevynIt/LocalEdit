@@ -41,6 +41,11 @@ function getCytoscape() {
   return cytoscape;
 }
 
+window.EditorWorkbenchCytoscapeRuntime = {
+  cytoscape: getCytoscape(),
+  getCytoscape
+};
+
 window.EditorWorkbenchMermaid = {
   mermaid,
   cytoscape: getCytoscape(),

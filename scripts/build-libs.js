@@ -136,6 +136,18 @@ async function main() {
     "EditorWorkbenchCodeMirrorXmlBundle"
   );
 
+  await buildBundle(
+    path.join(root, "tools", "bundle-src", "yaml-bundle.js"),
+    path.join(root, "editor-workbench", "plugins", "yaml", "runtime", "yaml.bundle.js"),
+    "EditorWorkbenchYamlBundle"
+  );
+
+  await buildCodeMirrorLanguageBundle(
+    path.join(root, "tools", "bundle-src", "codemirror-yaml-bundle.js"),
+    path.join(root, "editor-workbench", "plugins", "yaml", "runtime", "codemirror-yaml.bundle.js"),
+    "EditorWorkbenchCodeMirrorYamlBundle"
+  );
+
   await buildCodeMirrorLanguageBundle(
     path.join(root, "tools", "bundle-src", "codemirror-javascript-bundle.js"),
     path.join(root, "editor-workbench", "plugins", "javascript", "runtime", "codemirror-javascript.bundle.js"),

@@ -91,6 +91,9 @@
   }
 
   function requireCytoscapeTools() {
+    if (global.EditorWorkbenchCytoscapeRuntime && typeof global.EditorWorkbenchCytoscapeRuntime.getCytoscape === "function") {
+      return global.EditorWorkbenchCytoscapeRuntime.getCytoscape();
+    }
     if (!global.EditorWorkbenchMermaid) {
       throw new Error("Cytoscape runtime bundle is not loaded.");
     }
@@ -394,7 +397,7 @@
       {
         id: "json.cytoscape",
         label: "Cytoscape JSON",
-        parent: "json",
+        parent: "text.json",
         aliases: ["cytoscape"],
         extensions: ["cy.json", "cytoscape.json", "cyjs"],
         mimeTypes: ["application/vnd.cytoscape+json"]

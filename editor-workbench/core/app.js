@@ -794,7 +794,7 @@
     openContributionCatalogDocument() {
       var record = this.openDocument(new DocumentModel({
         text: this.buildContributionCatalogDocument(),
-        languageId: "indented-tree",
+        languageId: "text.indented-tree",
         fileName: "contribution-catalog.itt",
         mimeType: "text/x-indented-tree"
       }), {
@@ -810,12 +810,19 @@
       var actions = [];
       this.pipelineActionsById = new Map();
 
+      function isPrimaryAction(contribution) {
+        return !contribution || !contribution.visibility || contribution.visibility === "default";
+      }
+
       function pushAction(action) {
         self.pipelineActionsById.set(action.id, action);
         actions.push(action);
       }
 
       this.transformManager.list(languageId).forEach(function (transformer) {
+        if (!isPrimaryAction(transformer)) {
+          return;
+        }
         pushAction({
           id: "synthetic:transformer:" + transformer.id,
           name: "Transform: " + (transformer.name || transformer.id),
@@ -831,6 +838,9 @@
       });
 
       this.renderManager.list(languageId).forEach(function (renderer) {
+        if (!isPrimaryAction(renderer)) {
+          return;
+        }
         pushAction({
           id: "synthetic:renderer:" + renderer.id,
           name: "Preview: " + (renderer.name || renderer.id),
@@ -846,6 +856,9 @@
       });
 
       this.exportManager.list(languageId).forEach(function (exporter) {
+        if (!isPrimaryAction(exporter)) {
+          return;
+        }
         pushAction({
           id: "synthetic:exporter:" + exporter.id,
           name: "Export: " + (exporter.name || exporter.id),
@@ -861,6 +874,9 @@
       });
 
       this.pipelineRegistry.list(languageId).forEach(function (pipeline) {
+        if (!isPrimaryAction(pipeline)) {
+          return;
+        }
         pushAction({
           id: pipeline.id,
           name: pipeline.name || pipeline.id,

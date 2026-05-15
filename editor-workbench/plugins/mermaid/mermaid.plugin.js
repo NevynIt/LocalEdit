@@ -44,7 +44,7 @@
     getExampleDocument: function () {
       return {
         fileName: "example.mmd",
-        languageId: "mermaid",
+        languageId: "text.mermaid",
         mimeType: "text/x-mermaid",
         text: [
           "flowchart TD",
@@ -54,50 +54,66 @@
         ].join("\n")
       };
     },
-    languages: ["mermaid"],
+    languages: ["text.mermaid"],
+    contributes: {
+      pipelines: [
+        {
+          id: "view-mermaid-as-svg",
+          name: "View as SVG",
+          inputLanguage: "text.mermaid",
+          steps: [
+            { use: "mermaid-to-svg", params: {} },
+            { use: "svg-preview", params: {} }
+          ]
+        },
+        {
+          id: "export-mermaid-as-svg",
+          name: "Export as SVG",
+          inputLanguage: "text.mermaid",
+          steps: [
+            { use: "mermaid-to-svg", params: {} },
+            { use: "svg-sanitized-export", params: {} }
+          ]
+        },
+        {
+          id: "export-mermaid-as-png",
+          name: "Export as PNG",
+          inputLanguage: "text.mermaid",
+          steps: [
+            { use: "mermaid-to-svg", params: {} },
+            { use: "svg-png-export", params: {} }
+          ]
+        }
+      ]
+    },
     languageDefinitions: [
       {
-        id: "mermaid",
+        id: "text.mermaid",
         label: "Mermaid",
+        aliases: ["mermaid"],
         extensions: ["mmd", "mermaid"],
         mimeTypes: ["text/x-mermaid"]
       }
     ],
     highlighters: [],
     linters: [],
-    transformers: [],
-    renderers: [
+    transformers: [
       {
-        id: "mermaid-svg-preview",
-        name: "Mermaid SVG Preview",
-        inputLanguages: ["mermaid"],
-        outputKind: "svg",
-        render: async function (documentModel, context) {
+        id: "mermaid-to-svg",
+        name: "Mermaid to SVG",
+        inputLanguages: ["text.mermaid"],
+        outputLanguage: "xml.svg",
+        visibility: "internal",
+        transform: async function (documentModel, context) {
           return {
-            kind: "svg",
-            content: await renderMermaid(documentModel, context),
-            mimeType: "image/svg+xml"
+            text: await renderMermaid(documentModel, context),
+            languageId: "xml.svg",
+            fileName: svgFileName(documentModel.fileName)
           };
         }
       }
     ],
-    exporters: [
-      {
-        id: "mermaid-svg-export",
-        name: "Mermaid SVG",
-        languages: ["mermaid"],
-        inputKinds: ["source"],
-        outputFileExtension: "svg",
-        mimeType: "image/svg+xml",
-        export: async function (input, context) {
-          var sourceDocument = input && input.sourceDocument ? input.sourceDocument : { text: "", fileName: "untitled.mmd" };
-          return {
-            fileName: svgFileName(sourceDocument.fileName),
-            mimeType: "image/svg+xml",
-            content: await renderMermaid(sourceDocument, context)
-          };
-        }
-      }
-    ]
+    renderers: [],
+    exporters: []
   }));
 })(window);

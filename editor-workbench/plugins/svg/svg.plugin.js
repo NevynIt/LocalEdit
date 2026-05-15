@@ -164,7 +164,7 @@
       {
         id: "xml.svg",
         label: "SVG",
-        parent: "xml",
+        parent: "text.xml",
         aliases: ["svg"],
         extensions: ["svg"],
         mimeTypes: ["image/svg+xml"]

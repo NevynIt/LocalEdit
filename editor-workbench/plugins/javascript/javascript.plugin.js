@@ -31,7 +31,7 @@
     await requireRuntime(context).ensureScripts(RUNTIME_PATHS.prettier);
     return {
       text: await requirePrettierTools().formatJavaScript(documentModel.text || ""),
-      languageId: "javascript",
+      languageId: "text.javascript",
       fileName: documentModel.fileName,
       mode: "replace-current"
     };
@@ -47,7 +47,7 @@
     getExampleDocument: function () {
       return {
         fileName: "example.js",
-        languageId: "javascript",
+        languageId: "text.javascript",
         mimeType: "text/javascript",
         text: [
           "const plugins = [\"markdown\", \"json\", \"xml\"];",
@@ -60,11 +60,12 @@
         ].join("\n")
       };
     },
-    languages: ["javascript"],
+    languages: ["text.javascript"],
     languageDefinitions: [
       {
-        id: "javascript",
+        id: "text.javascript",
         label: "JavaScript",
+        aliases: ["javascript"],
         extensions: ["js", "mjs", "cjs"],
         mimeTypes: ["text/javascript", "application/javascript"]
       }
@@ -73,7 +74,7 @@
       {
         id: "javascript-codemirror",
         name: "JavaScript syntax",
-        languages: ["javascript"],
+        languages: ["text.javascript"],
         getCodeMirrorExtensions: async function (context) {
           await requireRuntime(context).ensureScripts(RUNTIME_PATHS.codeMirror);
           return [requireCodeMirrorTools().javascript()];
@@ -85,8 +86,8 @@
       {
         id: "javascript-format",
         name: "Format JavaScript",
-        inputLanguages: ["javascript"],
-        outputLanguage: "javascript",
+        inputLanguages: ["text.javascript"],
+        outputLanguage: "text.javascript",
         transform: formatJavaScript
       }
     ],

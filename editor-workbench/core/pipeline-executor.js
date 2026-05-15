@@ -133,7 +133,11 @@
     }
 
     async executeTerminal(contribution, input) {
-      var documentModel = makeDocument(input.text, input.languageId, input.sourceDocument);
+      var terminalSource = Object.assign({}, input.sourceDocument || {}, {
+        fileName: input.fileName || input.sourceDocument && input.sourceDocument.fileName,
+        mimeType: input.mimeType || input.sourceDocument && input.sourceDocument.mimeType
+      });
+      var documentModel = makeDocument(input.text, input.languageId, terminalSource);
       if (contribution.kind === "renderer") {
         var session = this.services.renderManager.openContribution(contribution, documentModel, input.params, {
           pipelineId: input.pipeline.id,
