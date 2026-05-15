@@ -89,6 +89,31 @@
         autoLoad: true
       },
       {
+        path: "plugins/structured-docs/structured-docs.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
+        path: "plugins/data-profile/data-profile.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
+        path: "plugins/process-model/process-model.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
+        path: "plugins/architecture-model/architecture-model.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
+        path: "plugins/code-analysis/code-analysis.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
         path: "plugins/javascript/javascript.plugin.js",
         known: true,
         autoLoad: true

@@ -1,11 +1,214 @@
 (function (global) {
   "use strict";
 
-  function addOption(select, value, label) {
-    var option = document.createElement("option");
-    option.value = value;
-    option.textContent = label;
-    select.appendChild(option);
+  function list(value) {
+    return Array.isArray(value) ? value : [];
+  }
+
+  function normalizePath(value, fallback) {
+    if (Array.isArray(value)) {
+      return value.map(function (part) { return String(part || "").trim(); }).filter(Boolean);
+    }
+    if (typeof value === "string") {
+      return value.split(/[\/>]/).map(function (part) { return part.trim(); }).filter(Boolean);
+    }
+    return list(fallback).map(function (part) { return String(part || "").trim(); }).filter(Boolean);
+  }
+
+  function addPath(root, path, item) {
+    var current = root;
+    path.forEach(function (part) {
+      if (!current.childrenByLabel) {
+        current.childrenByLabel = new Map();
+      }
+      if (!current.childrenByLabel.has(part)) {
+        var next = {
+          type: "group",
+          label: part,
+          children: [],
+          childrenByLabel: new Map()
+        };
+        current.childrenByLabel.set(part, next);
+        current.children.push(next);
+      }
+      current = current.childrenByLabel.get(part);
+    });
+    current.children.push(item);
+  }
+
+  function sortMenuNodes(nodes) {
+    nodes.sort(function (a, b) {
+      if (a.type !== b.type) {
+        return a.type === "group" ? -1 : 1;
+      }
+      return String(a.label || "").localeCompare(String(b.label || ""));
+    });
+    nodes.forEach(function (node) {
+      if (node.type === "group") {
+        sortMenuNodes(node.children);
+      }
+    });
+    return nodes;
+  }
+
+  class MenuButton {
+    constructor(label, onSelect) {
+      this.label = label;
+      this.onSelect = onSelect;
+      this.selectedValue = "";
+      this.selectedLabel = "";
+      this.items = [];
+      this.root = document.createElement("div");
+      this.root.className = "toolbar-menu";
+      this.button = document.createElement("button");
+      this.button.type = "button";
+      this.button.className = "toolbar-menu-button";
+      this.button.setAttribute("aria-haspopup", "menu");
+      this.button.setAttribute("aria-expanded", "false");
+      this.panel = document.createElement("div");
+      this.panel.className = "toolbar-menu-panel";
+      this.panel.setAttribute("role", "menu");
+      this.root.appendChild(this.button);
+      this.root.appendChild(this.panel);
+
+      this.button.addEventListener("click", () => {
+        this.toggle();
+      });
+      this.button.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowDown" || event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          this.open();
+          this.focusFirstItem();
+        }
+      });
+      this.root.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          this.close();
+          this.button.focus();
+        }
+      });
+      document.addEventListener("click", (event) => {
+        if (!this.root.contains(event.target)) {
+          this.close();
+        }
+      });
+      this.updateButton();
+    }
+
+    setDisabled(disabled) {
+      this.button.disabled = Boolean(disabled);
+      if (disabled) {
+        this.close();
+      }
+    }
+
+    update(items, selectedValue, emptyLabel) {
+      this.items = list(items);
+      this.selectedValue = selectedValue || "";
+      var selected = this.items.find((item) => item.id === this.selectedValue || item.value === this.selectedValue);
+      this.selectedLabel = selected ? selected.label || selected.name || selected.id : "";
+      this.panel.textContent = "";
+      if (!this.items.length) {
+        var empty = document.createElement("div");
+        empty.className = "toolbar-menu-empty";
+        empty.textContent = emptyLabel || "No items";
+        this.panel.appendChild(empty);
+      } else {
+        this.panel.appendChild(this.renderNodes(sortMenuNodes(this.buildTree(this.items))));
+      }
+      this.updateButton();
+    }
+
+    buildTree(items) {
+      var root = {
+        children: [],
+        childrenByLabel: new Map()
+      };
+      items.forEach(function (item) {
+        var menuPath = normalizePath(item.menuPath, item.category ? [item.category] : []);
+        var leaf = {
+          type: "item",
+          id: item.id,
+          value: item.value || item.id,
+          label: item.label || item.name || item.id,
+          description: item.description || "",
+          selected: item.id === this.selectedValue || item.value === this.selectedValue
+        };
+        addPath(root, menuPath, leaf);
+      }, this);
+      return root.children;
+    }
+
+    renderNodes(nodes) {
+      var listNode = document.createElement("div");
+      listNode.className = "toolbar-menu-list";
+      nodes.forEach((node) => {
+        if (node.type === "group") {
+          var wrapper = document.createElement("div");
+          wrapper.className = "toolbar-menu-group";
+          var groupButton = document.createElement("button");
+          groupButton.type = "button";
+          groupButton.className = "toolbar-menu-group-button";
+          groupButton.textContent = node.label;
+          groupButton.setAttribute("aria-haspopup", "menu");
+          wrapper.appendChild(groupButton);
+          var submenu = document.createElement("div");
+          submenu.className = "toolbar-submenu";
+          submenu.appendChild(this.renderNodes(node.children));
+          wrapper.appendChild(submenu);
+          listNode.appendChild(wrapper);
+          return;
+        }
+
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "toolbar-menu-item" + (node.selected ? " is-selected" : "");
+        button.setAttribute("role", "menuitem");
+        button.dataset.value = node.value;
+        button.textContent = node.label;
+        button.title = node.description || node.label;
+        button.addEventListener("click", () => {
+          this.close();
+          this.onSelect(node.value);
+        });
+        listNode.appendChild(button);
+      });
+      return listNode;
+    }
+
+    updateButton() {
+      var suffix = this.selectedLabel ? ": " + this.selectedLabel : "";
+      this.button.textContent = this.label + suffix;
+    }
+
+    focusFirstItem() {
+      var first = this.panel.querySelector(".toolbar-menu-item, .toolbar-menu-group-button");
+      if (first) {
+        first.focus();
+      }
+    }
+
+    open() {
+      if (this.button.disabled) {
+        return;
+      }
+      this.root.classList.add("is-open");
+      this.button.setAttribute("aria-expanded", "true");
+    }
+
+    close() {
+      this.root.classList.remove("is-open");
+      this.button.setAttribute("aria-expanded", "false");
+    }
+
+    toggle() {
+      if (this.root.classList.contains("is-open")) {
+        this.close();
+      } else {
+        this.open();
+      }
+    }
   }
 
   class Toolbar {
@@ -27,27 +230,30 @@
       this.elements.saveButton = this.createButton("Save", () => this.app.saveSourceAsDownload());
       root.appendChild(this.group([this.elements.newButton, this.elements.openButton, this.elements.saveButton]));
 
-      this.elements.languageSelect = document.createElement("select");
-      this.elements.languageSelect.addEventListener("change", () => {
-        this.app.setLanguage(this.elements.languageSelect.value);
+      this.elements.languageMenu = new MenuButton("Language", (languageId) => {
+        this.app.setLanguage(languageId);
       });
-      root.appendChild(this.group([this.label("Language"), this.elements.languageSelect]));
+      root.appendChild(this.group([this.elements.languageMenu.root]));
 
-      this.elements.editorSelect = document.createElement("select");
-      this.elements.editorSelect.addEventListener("change", () => {
-        this.app.switchEditor(this.elements.editorSelect.value);
+      this.elements.editorMenu = new MenuButton("Editor", (editorId) => {
+        this.app.switchEditor(editorId);
       });
-      root.appendChild(this.group([this.label("Editor"), this.elements.editorSelect]));
+      root.appendChild(this.group([this.elements.editorMenu.root]));
 
-      this.elements.reopenSelect = document.createElement("select");
-      this.elements.reopenButton = this.createButton("Reopen", () => {
-        this.app.reopenClosedDocument(this.elements.reopenSelect.value);
+      this.elements.reopenMenu = new MenuButton("Reopen", (documentId) => {
+        this.app.reopenClosedDocument(documentId);
       });
-      root.appendChild(this.group([this.label("Closed"), this.elements.reopenSelect, this.elements.reopenButton]));
+      root.appendChild(this.group([this.elements.reopenMenu.root]));
 
       this.elements.lintButton = this.createButton("Lint", () => this.app.runLinters());
       root.appendChild(this.group([this.elements.lintButton]));
 
+      this.elements.actionsMenu = new MenuButton("Actions", (actionId) => {
+        this.app.runPipelineAction(actionId);
+      });
+      this.elements.discoverPipelinesButton = this.createButton("Discover", () => {
+        this.app.openContributionCatalogDocument();
+      });
       this.elements.refreshButton = this.createButton("Refresh", () => this.app.refreshRenderers());
       this.elements.autoRefreshToggle = document.createElement("input");
       this.elements.autoRefreshToggle.type = "checkbox";
@@ -67,60 +273,86 @@
       intermediateLabel.className = "toolbar-check";
       intermediateLabel.appendChild(this.elements.intermediateToggle);
       intermediateLabel.appendChild(document.createTextNode(" Steps"));
-
-      this.elements.pipelineSelect = document.createElement("select");
-      this.elements.pipelineButton = this.createButton("Run", () => {
-        this.app.runPipelineAction(this.elements.pipelineSelect.value);
-      });
-      this.elements.discoverPipelinesButton = this.createButton("Discover", () => {
-        this.app.openContributionCatalogDocument();
-      });
-      root.appendChild(this.group([this.label("Pipeline"), this.elements.pipelineSelect, this.elements.pipelineButton, this.elements.discoverPipelinesButton, this.elements.refreshButton, autoRefreshLabel, intermediateLabel]));
+      root.appendChild(this.group([this.elements.actionsMenu.root, this.elements.discoverPipelinesButton, this.elements.refreshButton, autoRefreshLabel, intermediateLabel]));
 
       this.elements.pluginsButton = this.createButton("Plugins", () => this.app.togglePluginManagerPanel());
       root.appendChild(this.group([this.elements.pluginsButton]));
     }
 
     update(state) {
-      this.populateSelect(this.elements.languageSelect, state.languages, state.languageId, "id", "displayName");
-      this.populateProviderSelect(this.elements.editorSelect, state.editors, "No editors");
-      this.populateProviderSelect(this.elements.reopenSelect, state.closedDocuments, "No closed tabs");
-      this.populateProviderSelect(this.elements.pipelineSelect, state.pipelineActions, "No pipelines");
-      this.elements.editorSelect.value = state.editorId || "";
+      this.elements.languageMenu.update(this.buildLanguageItems(state.languages), state.languageId, "No languages");
+      this.elements.editorMenu.update(this.buildProviderItems(state.editors, "Editors"), state.editorId || "", "No editors");
+      this.elements.reopenMenu.update(this.buildProviderItems(state.closedDocuments, "Recently closed"), "", "No closed tabs");
+      this.elements.actionsMenu.update(this.buildActionItems(state.pipelineActions), "", "No actions");
 
       this.elements.saveButton.disabled = !state.hasDocument;
-      this.elements.languageSelect.disabled = !state.hasDocument;
-      this.elements.editorSelect.disabled = state.editors.length === 0;
-      this.elements.reopenButton.disabled = state.closedDocuments.length === 0;
+      this.elements.languageMenu.setDisabled(!state.hasDocument);
+      this.elements.editorMenu.setDisabled(state.editors.length === 0);
+      this.elements.reopenMenu.setDisabled(state.closedDocuments.length === 0);
       this.elements.lintButton.disabled = !state.hasDocument;
       this.elements.refreshButton.disabled = !state.hasRenderSessions;
       this.elements.autoRefreshToggle.disabled = !state.hasDocument;
       this.elements.autoRefreshToggle.checked = Boolean(state.autoRefreshEnabled);
       this.elements.intermediateToggle.disabled = !state.hasDocument;
       this.elements.intermediateToggle.checked = Boolean(state.openIntermediateDocuments);
-      this.elements.pipelineButton.disabled = state.pipelineActions.length === 0;
+      this.elements.actionsMenu.setDisabled(state.pipelineActions.length === 0);
       this.elements.discoverPipelinesButton.disabled = !state.canDiscoverPipelines;
     }
 
-    populateSelect(select, items, selectedValue, valueKey, labelKey) {
-      select.textContent = "";
-      items.forEach(function (item) {
-        addOption(select, item[valueKey], item[labelKey]);
+    buildLanguageItems(languages) {
+      var byId = new Map();
+      list(languages).forEach(function (language) {
+        byId.set(language.id, language);
       });
-      select.value = selectedValue;
+      function languagePath(language) {
+        var explicit = normalizePath(language.menuPath, []);
+        if (explicit.length) {
+          return explicit;
+        }
+        var path = [];
+        var current = language;
+        var guard = 0;
+        while (current && current.parentLanguageId && byId.has(current.parentLanguageId) && guard < 12) {
+          current = byId.get(current.parentLanguageId);
+          if (current.id !== "text") {
+            path.unshift(current.name || current.id);
+          }
+          guard += 1;
+        }
+        if (!path.length && language.category) {
+          path.push(language.category);
+        }
+        return path;
+      }
+      return list(languages).map(function (language) {
+        return {
+          id: language.id,
+          label: language.name || language.id,
+          description: language.description || language.id,
+          menuPath: languagePath(language)
+        };
+      });
     }
 
-    populateProviderSelect(select, items, emptyLabel) {
-      select.textContent = "";
-      if (items.length === 0) {
-        addOption(select, "", emptyLabel);
-        select.disabled = true;
-        return;
-      }
+    buildProviderItems(items, groupLabel) {
+      return list(items).map(function (item) {
+        return {
+          id: item.id,
+          label: item.name || item.displayName || item.id,
+          description: item.description || "",
+          menuPath: normalizePath(item.menuPath, [item.category || groupLabel])
+        };
+      });
+    }
 
-      select.disabled = false;
-      items.forEach(function (provider) {
-        addOption(select, provider.id, provider.name || provider.id);
+    buildActionItems(items) {
+      return list(items).map(function (item) {
+        return {
+          id: item.id,
+          label: item.name || item.id,
+          description: item.description || "",
+          menuPath: normalizePath(item.menuPath, [item.category || "Actions"])
+        };
       });
     }
 
@@ -165,13 +397,6 @@
       });
     }
 
-    label(text) {
-      var span = document.createElement("span");
-      span.className = "toolbar-label";
-      span.textContent = text;
-      return span;
-    }
-
     group(children) {
       var group = document.createElement("div");
       group.className = "toolbar-group";
@@ -183,4 +408,5 @@
   }
 
   global.Toolbar = Toolbar;
+  global.ToolbarMenuButton = MenuButton;
 })(window);

@@ -39,6 +39,8 @@
    * @property {string=} mediaType
     * @property {string[]=} mediaTypes
    * @property {string=} description
+   * @property {string=} category
+   * @property {string[] | string=} menuPath
    */
 
   /**
@@ -84,6 +86,8 @@
    * @property {string} inputLanguage
    * @property {string} outputLanguage
    * @property {"default" | "advanced" | "internal"=} visibility
+   * @property {string=} category
+   * @property {string[] | string=} menuPath
    * @property {boolean=} lossy
    * @property {object=} parameters
    * @property {(input: object) => TransformResult | Promise<TransformResult>} transform
@@ -96,6 +100,8 @@
    * @property {string[]} accepts
    * @property {"html" | "svg" | "text" | "image" | "custom"} outputKind
    * @property {"default" | "advanced" | "internal"=} visibility
+   * @property {string=} category
+   * @property {string[] | string=} menuPath
    * @property {object=} parameters
    * @property {(input: object) => RenderResult | Promise<RenderResult>} render
    */
@@ -115,6 +121,8 @@
    * @property {string} outputFileExtension
    * @property {string} mimeType
    * @property {"default" | "advanced" | "internal"=} visibility
+   * @property {string=} category
+   * @property {string[] | string=} menuPath
    * @property {object=} parameters
    * @property {(input: object) => ExportResult | Promise<ExportResult>} export
    */
@@ -133,6 +141,8 @@
    * @property {string} name
    * @property {string} inputLanguage
    * @property {"default" | "advanced" | "internal"=} visibility
+   * @property {string=} category
+   * @property {string[] | string=} menuPath
    * @property {{use: string, params?: object}[]} steps
    */
 
@@ -160,7 +170,9 @@
       }),
       mediaType: definition.mediaType || definition.mediaTypes && definition.mediaTypes[0] || list(definition.mimeTypes)[0] || "",
       mediaTypes: list(definition.mediaTypes || definition.mimeTypes),
-      description: definition.description || ""
+      description: definition.description || "",
+      category: definition.category || "",
+      menuPath: definition.menuPath || undefined
     };
   }
 

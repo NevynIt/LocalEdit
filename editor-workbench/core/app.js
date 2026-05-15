@@ -819,6 +819,51 @@
         actions.push(action);
       }
 
+      function splitMenuPath(value) {
+        if (Array.isArray(value)) {
+          return value.map(function (part) { return String(part || "").trim(); }).filter(Boolean);
+        }
+        if (typeof value === "string") {
+          return value.split(/[\/>]/).map(function (part) { return part.trim(); }).filter(Boolean);
+        }
+        return [];
+      }
+
+      function inferPipelineCategory(name, fallback) {
+        var text = String(name || "").toLowerCase();
+        if (/\b(export|download|png|svg|csv)\b/.test(text)) {
+          return "Export";
+        }
+        if (/\b(report|markdown)\b/.test(text)) {
+          return "Reports";
+        }
+        if (/\b(graph|cytoscape|mind|map|dependency|traceability)\b/.test(text)) {
+          return "Graphs";
+        }
+        if (/\b(table|endpoint|risk|action|role)\b/.test(text)) {
+          return "Tables";
+        }
+        if (/\b(profile|analy|lint|schema|outline)\b/.test(text)) {
+          return "Analyze";
+        }
+        if (/\b(convert|normalize|format|compact|openapi|json|yaml)\b/.test(text)) {
+          return "Convert";
+        }
+        if (/\b(view|preview|render)\b/.test(text)) {
+          return "Preview";
+        }
+        return fallback || "Actions";
+      }
+
+      function actionMenuPath(contribution, prefix, fallbackCategory) {
+        var path = splitMenuPath(contribution && contribution.menuPath);
+        if (path.length) {
+          return path;
+        }
+        var category = contribution && contribution.category || fallbackCategory || inferPipelineCategory(contribution && contribution.name, prefix);
+        return [category, contribution && (contribution.name || contribution.id) || prefix];
+      }
+
       this.transformManager.list(languageId).forEach(function (transformer) {
         if (!isPrimaryAction(transformer)) {
           return;
@@ -826,6 +871,8 @@
         pushAction({
           id: "synthetic:transformer:" + transformer.id,
           name: "Transform: " + (transformer.name || transformer.id),
+          category: transformer.category || "Convert",
+          menuPath: actionMenuPath(transformer, "Transform", "Convert"),
           pipeline: {
             id: "direct-transform-" + transformer.id,
             name: "Run " + transformer.id,
@@ -844,6 +891,8 @@
         pushAction({
           id: "synthetic:renderer:" + renderer.id,
           name: "Preview: " + (renderer.name || renderer.id),
+          category: renderer.category || "Preview",
+          menuPath: actionMenuPath(renderer, "Preview", "Preview"),
           pipeline: {
             id: "direct-render-" + renderer.id,
             name: "Render " + renderer.id,
@@ -862,6 +911,8 @@
         pushAction({
           id: "synthetic:exporter:" + exporter.id,
           name: "Export: " + (exporter.name || exporter.id),
+          category: exporter.category || "Export",
+          menuPath: actionMenuPath(exporter, "Export", "Export"),
           pipeline: {
             id: "direct-export-" + exporter.id,
             name: "Export " + exporter.id,
@@ -880,6 +931,10 @@
         pushAction({
           id: pipeline.id,
           name: pipeline.name || pipeline.id,
+          category: pipeline.category || inferPipelineCategory(pipeline.name || pipeline.id, "Pipelines"),
+          menuPath: splitMenuPath(pipeline.menuPath).length
+            ? splitMenuPath(pipeline.menuPath)
+            : [pipeline.category || inferPipelineCategory(pipeline.name || pipeline.id, "Pipelines"), pipeline.name || pipeline.id],
           pipelineId: pipeline.id
         });
       });

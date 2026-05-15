@@ -82,6 +82,25 @@ for (const pluginFile of walkPluginFiles("editor-workbench/plugins")) {
 });
 
 [
+  "json.table.action-list",
+  "json.table.risk-register",
+  "json.table.endpoint-list",
+  "json.table.traceability-matrix",
+  "json.table.role-activity",
+  "json.model-graph.process",
+  "json.model-graph.architecture",
+  "json.model-graph.traceability",
+  "json.model-graph.dependency",
+  "json.profile",
+  "json.chart",
+  "xml.opml",
+  "xml.bpmn",
+  "xml.archimate-exchange"
+].forEach((languageId) => {
+  assert.ok(packagedRegistry.getLanguages().some((language) => language.id === languageId), `${languageId} profile language is registered`);
+});
+
+[
   "json-tree-preview",
   "json-cytoscape-tree-preview",
   "xml-tree-preview",
@@ -114,13 +133,77 @@ const replacementPipelineIds = [
   "view-yaml-as-tree",
   "convert-yaml-to-json",
   "convert-json-to-yaml",
-  "normalize-openapi-yaml-to-json"
+  "normalize-openapi-yaml-to-json",
+  "view-markdown-outline-as-tree",
+  "view-markdown-table",
+  "view-markdown-tasks-as-action-list",
+  "markdown-actions-report",
+  "convert-markdown-outline-to-opml",
+  "view-indented-tree-as-action-list",
+  "indented-tree-actions-report",
+  "export-indented-tree-as-opml",
+  "convert-opml-to-indented-tree",
+  "view-opml-as-tree",
+  "view-opml-as-mind-map",
+  "json-table-markdown-report",
+  "model-graph-markdown-report",
+  "profile-json-table",
+  "json-table-profile-report",
+  "view-json-table-chart",
+  "export-json-table-chart-svg",
+  "export-json-table-chart-png",
+  "csv-profile-report",
+  "view-csv-chart",
+  "export-csv-chart-png",
+  "view-json-chart-as-svg",
+  "export-json-chart-as-svg",
+  "view-indented-tree-as-process-graph",
+  "indented-tree-process-mermaid",
+  "view-process-graph",
+  "view-process-as-mermaid-svg",
+  "process-to-dot",
+  "process-role-activity-table",
+  "process-report",
+  "export-process-bpmn",
+  "view-bpmn-as-process-graph",
+  "bpmn-role-activity-table",
+  "bpmn-process-report",
+  "table-to-architecture-graph",
+  "csv-to-architecture-graph",
+  "view-architecture-graph",
+  "architecture-traceability-table",
+  "architecture-traceability-graph",
+  "architecture-report",
+  "export-architecture-archimate",
+  "view-archimate-as-architecture-graph",
+  "archimate-architecture-report",
+  "view-openapi-endpoints",
+  "openapi-endpoint-report",
+  "view-openapi-graph",
+  "openapi-markdown-report",
+  "view-openapi-yaml-endpoints",
+  "view-openapi-yaml-graph",
+  "package-dependency-graph",
+  "package-dependency-report",
+  "view-javascript-outline",
+  "view-javascript-import-graph",
+  "javascript-import-report",
+  "view-python-outline",
+  "view-python-import-graph",
+  "python-import-report"
 ];
 replacementPipelineIds.forEach((pipelineId) => {
   assert.ok(packagedRegistry.getContribution("pipeline", pipelineId), `${pipelineId} pipeline is registered`);
 });
 assert.equal(packagedRegistry.getContribution("transformer", "json-to-tree").visibility, "internal");
 assert.equal(packagedRegistry.getContribution("transformer", "yaml-to-tree").visibility, "internal");
+assert.equal(packagedRegistry.getContribution("transformer", "markdown-tasks-to-action-list").visibility, "internal");
+assert.equal(packagedRegistry.getContribution("transformer", "json-table-to-profile").visibility, "internal");
+assert.equal(packagedRegistry.getContribution("transformer", "process-graph-to-bpmn").visibility, "internal");
+assert.equal(packagedRegistry.getContribution("transformer", "architecture-graph-to-archimate").visibility, "internal");
+assert.equal(packagedRegistry.getContribution("transformer", "openapi-to-endpoint-table").visibility, "internal");
+assert.deepEqual(Array.from(packagedRegistry.getContribution("pipeline", "view-openapi-endpoints").menuPath), ["Tables", "OpenAPI", "Endpoints"]);
+assert.deepEqual(Array.from(packagedRegistry.getContribution("pipeline", "view-markdown-tasks-as-action-list").menuPath), ["Tables", "Markdown", "Tasks as Actions"]);
 
 const packagedLanguageRegistry = new context.LanguageRegistry();
 packagedLanguageRegistry.register({
@@ -144,6 +227,102 @@ const packagedPipelineRegistry = new context.PipelineRegistry(packagedRegistry, 
 replacementPipelineIds.forEach((pipelineId) => {
   assert.equal(packagedPipelineRegistry.validate(packagedPipelineRegistry.get(pipelineId)), true, `${pipelineId} pipeline validates`);
 });
+
+function transformResult(id, text, languageId, fileName) {
+  const transformer = packagedRegistry.getContribution("transformer", id);
+  assert.ok(transformer, `${id} transformer exists`);
+  return transformer.transform({
+    text,
+    languageId,
+    params: {},
+    document: {
+      text,
+      languageId,
+      fileName: fileName || "sample.txt",
+      mimeType: ""
+    },
+    context: {}
+  });
+}
+
+const markdownActions = transformResult(
+  "markdown-tasks-to-action-list",
+  "# Plan\n\n- [ ] Ship menu @alex due 2026-06-01\n- [x] Write tests",
+  "text.markdown",
+  "plan.md"
+);
+assert.equal(markdownActions.languageId, "json.table.action-list");
+assert.equal(JSON.parse(markdownActions.text).rows.length, 2);
+
+const opmlTree = transformResult(
+  "opml-to-tree",
+  "<?xml version=\"1.0\"?><opml><body><outline text=\"Root\"><outline text=\"Child\"/></outline></body></opml>",
+  "xml.opml",
+  "outline.opml"
+);
+assert.equal(opmlTree.languageId, "json.tree");
+assert.equal(JSON.parse(opmlTree.text).root.children[0].label, "Root");
+
+const sampleTable = JSON.stringify({
+  format: "json.table",
+  columns: [{ id: "name", label: "Name" }, { id: "value", label: "Value" }],
+  rows: [
+    { id: "row-1", cells: ["A", "10"] },
+    { id: "row-2", cells: ["B", "20"] }
+  ]
+});
+const profile = transformResult("json-table-to-profile", sampleTable, "json.table", "data.table.json");
+assert.equal(profile.languageId, "json.profile");
+assert.equal(JSON.parse(profile.text).summary.rows, 2);
+const chart = transformResult("json-table-to-chart", sampleTable, "json.table", "data.table.json");
+assert.equal(chart.languageId, "json.chart");
+const chartSvg = transformResult("json-chart-to-svg", chart.text, "json.chart", "data.chart.json");
+assert.equal(chartSvg.languageId, "xml.svg");
+assert.match(chartSvg.text, /<svg/);
+
+const bpmnGraph = transformResult(
+  "bpmn-to-process-graph",
+  "<bpmn:definitions><bpmn:process><bpmn:startEvent id=\"start\" name=\"Start\"/><bpmn:task id=\"task\" name=\"Do work\"/><bpmn:sequenceFlow id=\"flow\" sourceRef=\"start\" targetRef=\"task\"/></bpmn:process></bpmn:definitions>",
+  "xml.bpmn",
+  "process.bpmn"
+);
+assert.equal(bpmnGraph.languageId, "json.model-graph.process");
+assert.equal(JSON.parse(bpmnGraph.text).edges.length, 1);
+
+const archimateGraph = transformResult(
+  "archimate-to-architecture-graph",
+  "<model><elements><element identifier=\"app\" xsi:type=\"ApplicationComponent\"><name>App</name></element></elements><relationships><relationship identifier=\"r1\" source=\"app\" target=\"db\" xsi:type=\"ServingRelationship\"/></relationships></model>",
+  "xml.archimate-exchange",
+  "model.archimate"
+);
+assert.equal(archimateGraph.languageId, "json.model-graph.architecture");
+assert.equal(JSON.parse(archimateGraph.text).nodes[0].label, "App");
+
+const openapi = JSON.stringify({
+  openapi: "3.1.0",
+  info: { title: "API", version: "1" },
+  paths: { "/users": { get: { operationId: "listUsers", responses: { "200": { description: "ok" } } } } },
+  components: { schemas: { User: { type: "object" } } }
+});
+const endpoints = transformResult("openapi-to-endpoint-table", openapi, "json.openapi", "openapi.json");
+assert.equal(endpoints.languageId, "json.table.endpoint-list");
+assert.equal(JSON.parse(endpoints.text).rows[0].cells[1], "/users");
+
+const packageGraph = transformResult(
+  "package-json-to-dependency-graph",
+  JSON.stringify({ name: "pkg", dependencies: { leftpad: "1.0.0" } }),
+  "text.json",
+  "package.json"
+);
+assert.equal(packageGraph.languageId, "json.model-graph.dependency");
+assert.equal(JSON.parse(packageGraph.text).edges[0].label, "runtime");
+
+const jsOutline = transformResult("javascript-to-outline-tree", "import x from 'x';\nexport function run() {}\nconst other = () => {}", "text.javascript", "app.js");
+assert.equal(jsOutline.languageId, "json.tree");
+assert.equal(JSON.parse(jsOutline.text).root.children.length, 2);
+const pyImports = transformResult("python-imports-to-dependency-graph", "import os\nfrom pathlib import Path\n\ndef run():\n    pass", "text.python", "app.py");
+assert.equal(pyImports.languageId, "json.model-graph.dependency");
+assert.equal(JSON.parse(pyImports.text).edges.length, 2);
 
 const languageRegistry = new context.LanguageRegistry();
 languageRegistry.register({

@@ -793,6 +793,46 @@
           description: "Reusable JSON table dialect for tabular previews and exports."
         },
         {
+          id: "json.table.action-list",
+          name: "Action List Table",
+          parentLanguageId: "json.table",
+          fileExtensions: [".actions.table.json"],
+          mediaType: "application/json",
+          description: "JSON Table profile for action registers."
+        },
+        {
+          id: "json.table.risk-register",
+          name: "Risk Register Table",
+          parentLanguageId: "json.table",
+          fileExtensions: [".risks.table.json"],
+          mediaType: "application/json",
+          description: "JSON Table profile for risk registers."
+        },
+        {
+          id: "json.table.endpoint-list",
+          name: "Endpoint List Table",
+          parentLanguageId: "json.table",
+          fileExtensions: [".endpoints.table.json"],
+          mediaType: "application/json",
+          description: "JSON Table profile for OpenAPI endpoint lists."
+        },
+        {
+          id: "json.table.traceability-matrix",
+          name: "Traceability Matrix",
+          parentLanguageId: "json.table",
+          fileExtensions: [".traceability.table.json"],
+          mediaType: "application/json",
+          description: "JSON Table profile for traceability matrices."
+        },
+        {
+          id: "json.table.role-activity",
+          name: "Role Activity Table",
+          parentLanguageId: "json.table",
+          fileExtensions: [".role-activity.table.json"],
+          mediaType: "application/json",
+          description: "JSON Table profile for process role/activity matrices."
+        },
+        {
           id: "json.indented-tree",
           name: "Indented Tree JSON",
           parentLanguageId: "text.json",
@@ -809,12 +849,84 @@
           description: "Reusable semantic graph dialect."
         },
         {
+          id: "json.model-graph.process",
+          name: "Process Model Graph",
+          parentLanguageId: "json.model-graph",
+          fileExtensions: [".process.model-graph.json"],
+          mediaType: "application/json",
+          description: "Model graph profile for process models."
+        },
+        {
+          id: "json.model-graph.architecture",
+          name: "Architecture Model Graph",
+          parentLanguageId: "json.model-graph",
+          fileExtensions: [".architecture.model-graph.json"],
+          mediaType: "application/json",
+          description: "Model graph profile for architecture models."
+        },
+        {
+          id: "json.model-graph.traceability",
+          name: "Traceability Model Graph",
+          parentLanguageId: "json.model-graph",
+          fileExtensions: [".traceability.model-graph.json"],
+          mediaType: "application/json",
+          description: "Model graph profile for traceability models."
+        },
+        {
+          id: "json.model-graph.dependency",
+          name: "Dependency Model Graph",
+          parentLanguageId: "json.model-graph",
+          fileExtensions: [".dependency.model-graph.json"],
+          mediaType: "application/json",
+          description: "Model graph profile for package and source dependencies."
+        },
+        {
+          id: "json.profile",
+          name: "JSON Profile",
+          parentLanguageId: "text.json",
+          fileExtensions: [".profile.json"],
+          mediaType: "application/json",
+          description: "Reusable JSON profile/statistics dialect."
+        },
+        {
+          id: "json.chart",
+          name: "JSON Chart",
+          parentLanguageId: "text.json",
+          fileExtensions: [".chart.json"],
+          mediaType: "application/json",
+          description: "Reusable JSON chart specification dialect."
+        },
+        {
           id: "json.openapi",
           name: "OpenAPI JSON",
           parentLanguageId: "text.json",
           fileExtensions: [".openapi.json"],
           mediaType: "application/vnd.oai.openapi+json",
           description: "OpenAPI documents normalized as JSON."
+        },
+        {
+          id: "xml.opml",
+          name: "OPML",
+          parentLanguageId: "text.xml",
+          fileExtensions: [".opml"],
+          mediaType: "text/x-opml",
+          description: "Outline Processor Markup Language documents."
+        },
+        {
+          id: "xml.bpmn",
+          name: "BPMN XML",
+          parentLanguageId: "text.xml",
+          fileExtensions: [".bpmn", ".bpmn20.xml"],
+          mediaType: "application/xml",
+          description: "BPMN process model XML."
+        },
+        {
+          id: "xml.archimate-exchange",
+          name: "ArchiMate Exchange XML",
+          parentLanguageId: "text.xml",
+          fileExtensions: [".archimate", ".archimate.xml"],
+          mediaType: "application/xml",
+          description: "ArchiMate Exchange XML model documents."
         }
       ],
       editors: [],

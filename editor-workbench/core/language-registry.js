@@ -44,7 +44,9 @@
         fileExtensions: list(language.fileExtensions).map(normalizeExtension).filter(Boolean),
         mediaType: language.mediaType || list(language.mediaTypes)[0] || "",
         mediaTypes: list(language.mediaTypes).length ? list(language.mediaTypes).slice() : (language.mediaType ? [language.mediaType] : []),
-        description: language.description || ""
+        description: language.description || "",
+        category: language.category || "",
+        menuPath: language.menuPath || undefined
       };
     }
 

@@ -173,6 +173,112 @@ input[type="text"] {
   align-items: center;
 }
 
+.toolbar-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.toolbar-menu-button::after,
+.toolbar-menu-group-button::after {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 8px;
+  border-top: 4px solid currentColor;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+  vertical-align: middle;
+}
+
+.toolbar-menu-panel,
+.toolbar-submenu {
+  position: absolute;
+  z-index: 20;
+  display: none;
+  min-width: 220px;
+  max-width: min(420px, calc(100vw - 24px));
+  max-height: min(520px, calc(100vh - 80px));
+  overflow: auto;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.18);
+}
+
+.toolbar-menu-panel {
+  top: calc(100% + 4px);
+  left: 0;
+}
+
+.toolbar-submenu {
+  top: -1px;
+  left: calc(100% - 2px);
+}
+
+.toolbar-menu.is-open > .toolbar-menu-panel,
+.toolbar-menu-group:hover > .toolbar-submenu,
+.toolbar-menu-group:focus-within > .toolbar-submenu {
+  display: block;
+}
+
+.toolbar-menu-list {
+  display: grid;
+  gap: 2px;
+  padding: 4px;
+}
+
+.toolbar-menu-group {
+  position: relative;
+}
+
+.toolbar-menu-item,
+.toolbar-menu-group-button,
+.toolbar-menu-empty {
+  width: 100%;
+  min-height: 30px;
+  border: 0;
+  border-radius: 4px;
+  padding: 0 9px;
+  background: transparent;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.toolbar-menu-empty {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  cursor: default;
+}
+
+.toolbar-menu-item:hover,
+.toolbar-menu-item:focus,
+.toolbar-menu-group-button:hover,
+.toolbar-menu-group-button:focus {
+  background: var(--surface-strong);
+  outline: none;
+}
+
+.toolbar-menu-item.is-selected {
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.toolbar-menu-item.is-selected::before {
+  content: "\2713";
+  display: inline-block;
+  width: 16px;
+  margin-right: 4px;
+}
+
+.toolbar-menu-item:not(.is-selected)::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  margin-right: 4px;
+}
+
 .toolbar-label {
   color: var(--muted);
   font-size: 12px;

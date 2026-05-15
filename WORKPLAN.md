@@ -4,6 +4,34 @@
 
 Implementation completed for the v1 shell, plugin infrastructure, dependency vendoring workflow, CodeMirror editor integration, Markdown plugin, Mermaid plugin, Graphviz plugin, SVG plugin, Markdown inline diagram rendering, lazy plugin-owned runtime bundles, JSON/XML/JavaScript/CSV/Python plugins, SVG PNG export, and standalone SVG pan/zoom. The Big Refactor implementation has migrated packaged plugins to contribution records, added editor contributions, pipelines, pipeline documents, canonical diagnostics, and read-only jsMind rendering. Static and contract verification passed on 2026-05-15; browser smoke was attempted but blocked by the available browser tool/client policy, and manual unpacked extension testing remains pending.
 
+## Remaining Whitepaper Core Tracker
+
+This tracker covers the remaining non-optional phases from `localedit_languages_plugins_prioritization_expanded_streamlining_v2.md`, excluding the optional renderer expansion pack.
+
+### Core Rest Scope
+
+- [x] Record selected scope: implement UI menu navigation plus Markdown/business/OPML, data profiling/charts, process/BPMN, architecture/ArchiMate, and OpenAPI/package/source-analysis plugins.
+- [x] UI slice: replace long toolbar selects with multilevel menus for language, editor, closed-document reopen, and pipeline/action selection.
+- [x] Markdown/business/OPML slice: add structured Markdown extraction, business table profiles, OPML import/export, and related pipelines.
+- [x] Data profiling/chart slice: add table profiling, chart JSON/SVG support, report generation, and related pipelines.
+- [x] Process/BPMN slice: add process graph profile transforms, BPMN XML import/export, role/activity tables, reports, and related pipelines.
+- [x] Architecture/ArchiMate slice: add architecture graph profile transforms, traceability tables, ArchiMate Exchange XML import/export, reports, and related pipelines.
+- [x] OpenAPI/package/source-analysis slice: add endpoint/schema/dependency/source outline transforms, reports, and related pipelines.
+- [ ] Update `README.md` after each slice with shipped language IDs, plugin capabilities, menu behavior, dependencies, and pipeline behavior.
+
+### Core Rest Verification
+
+- [x] After each implementation slice, run build, syntax verification, contract verification, JSON parse checks, and `git diff --check`.
+- [x] Extend contract tests for menu metadata, hidden internal contributions, all new profile languages, pipeline validation, and representative transform outputs.
+- [ ] Browser smoke remains best-effort; previous in-app Browser attempts were blocked by URL/client policy.
+- [x] UI slice verification passed on 2026-05-15 with bundled `npm run build:libs`, `npm run verify:syntax`, `npm run verify:contracts`, JSON parse checks, and `git diff --check`.
+- [x] Markdown/business/OPML contract verification passed on 2026-05-15; initial syntax check timed out at 120 seconds while scanning bundled files and needs rerun with a longer timeout.
+- [x] Data profiling/chart contract verification passed on 2026-05-15. The implementation uses dependency-free SVG chart generation through `xml.svg`, so no new chart runtime bundle was needed.
+- [x] Process/BPMN contract verification passed on 2026-05-15.
+- [x] Architecture/ArchiMate contract verification passed on 2026-05-15.
+- [x] OpenAPI/package/source-analysis contract verification passed on 2026-05-15.
+- [x] Final verification passed on 2026-05-15 with bundled `npm run build:libs`, `npm run verify:syntax` (97 JavaScript files), `npm run verify:contracts`, JSON parse checks for `package-lock.json` and `editor-workbench/manifest.json`, and `git diff --check`.
+
 ## Plugin Streamlining Foundation And YAML Tracker
 
 This tracker covers the current implementation pass from `localedit_plugin_streamlining_foundation_whitepaper.md` and `localedit_languages_plugins_prioritization_expanded_streamlining_v2.md`.

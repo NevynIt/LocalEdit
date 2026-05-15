@@ -10,7 +10,7 @@ Editor Workbench is a local-first structured text editor that runs from disk or 
 - Plugin manager with packaged plugins and local `.js` plugin upload in local mode.
 - Canonical `text`-rooted language hierarchy with inherited tool matching, alias compatibility, and hierarchical language labels.
 - Shared foundation dialects for `json.tree`, `json.table`, `json.indented-tree`, and `json.model-graph`.
-- Diagnostics panel, a single pipeline menu, preview/render windows with document-aware titles and metadata, manual refresh, and 3-second stable-source auto-refresh.
+- Diagnostics panel, multilevel toolbar menus, preview/render windows with document-aware titles and metadata, manual refresh, and 3-second stable-source auto-refresh.
 - Document-scoped diagnostics and document-bound preview windows with source metadata chrome.
 - Pipeline-backed transform, render, export, and editor actions, with automatic single-step pipeline entries for registered transformers, renderers, and exporters.
 - Transformers now declare explicit output languages, and transformer-final pipelines automatically open their final text result as a new document.
@@ -22,6 +22,11 @@ Editor Workbench is a local-first structured text editor that runs from disk or 
 - JSON and XML linting, shared tree-preview pipelines, prettify, and compact transforms.
 - YAML linting, syntax highlighting, JSON conversion, OpenAPI YAML normalization, and shared tree-preview pipelines.
 - Indented Tree parsing, linting, shared tree/graph pipelines, and JSON/Cytoscape export pipelines.
+- Structured Markdown extraction, business table profile linting, OPML import/export, and Markdown report pipelines.
+- Table profiling plus dependency-free JSON chart to SVG/PNG pipelines through the shared SVG renderer/exporter.
+- Process model graph pipelines for Indented Tree and BPMN, including Mermaid/DOT projections, role/activity tables, BPMN export, and reports.
+- Architecture graph pipelines for tables/CSV and ArchiMate Exchange XML, including traceability tables/graphs, reports, and ArchiMate export.
+- OpenAPI endpoint/schema views, package dependency graphs, and lightweight JavaScript/Python outline/import analysis.
 - Read-only jsMind rendering from Indented Tree through a local pinned jsMind bundle.
 - Cytoscape JSON linting, graph preview, formatting, and compacting.
 - JavaScript formatting through local Prettier.
@@ -68,9 +73,11 @@ Extension mode:
 
 ## Pipeline UX
 
-- The toolbar exposes one pipeline surface instead of separate transform, render, export, and pipeline menus.
+- The toolbar exposes multilevel menus for Language, Editor, Reopen, and Actions so large language and pipeline inventories remain grouped and readable.
+- The Actions menu is one pipeline surface instead of separate transform, render, export, and pipeline menus.
 - Registered transformers, renderers, and exporters are surfaced automatically as synthetic single-step pipeline actions for the current language.
 - User-defined and packaged multi-step pipelines appear in the same list.
+- Contributions can provide `category` or `menuPath` metadata to place commands intentionally; unannotated actions are grouped from their kind, language, and action name.
 - The `Discover` action opens an `.itt` contribution catalog organized by the language hierarchy, with consuming contributions nested under each format and transformer cross links pointing to produced formats.
 - Preview refresh and auto-refresh continue to operate on preview windows bound to the active document.
 - Render windows show the bound document name in the window title, display the last update timestamp in the render chrome, and can request a targeted refresh from inside the render window.
@@ -99,7 +106,7 @@ Current packaged canonical ids include:
 - `json.jsmind` with alias compatibility for `jsmind-json`
 - `localedit.pipeline-json` with alias compatibility for `localedit-pipeline-json`
 
-Reusable intermediate dialects include `json.tree`, `json.table`, `json.indented-tree`, `json.model-graph`, and `json.openapi`. YAML profile dialects include `yaml.openapi`, `yaml.frontmatter`, and `yaml.config`.
+Reusable intermediate dialects include `json.tree`, `json.table`, `json.indented-tree`, `json.model-graph`, `json.profile`, `json.chart`, and `json.openapi`. Table profiles include `json.table.action-list`, `json.table.risk-register`, `json.table.endpoint-list`, `json.table.traceability-matrix`, and `json.table.role-activity`. Graph profiles include `json.model-graph.process`, `json.model-graph.architecture`, `json.model-graph.traceability`, and `json.model-graph.dependency`. XML profiles include `xml.opml`, `xml.bpmn`, and `xml.archimate-exchange`. YAML profile dialects include `yaml.openapi`, `yaml.frontmatter`, and `yaml.config`.
 
 ## Build And Verification
 
@@ -137,6 +144,11 @@ The app does not load from npm, a CDN, or a server at runtime.
 | Indented Tree | `text.indented-tree` | Syntax, parser linting, shared tree/graph pipelines, JSON/Cytoscape export pipelines |
 | XML | `text.xml` | Syntax, DOMParser linting, shared tree pipeline, Prettier format, compact |
 | YAML | `text.yaml`, `yaml.openapi`, `yaml.frontmatter`, `yaml.config` | Syntax, parse linting, JSON conversion, OpenAPI YAML normalization, shared tree pipeline |
+| Structured Docs | `xml.opml`, table profiles | Markdown outline/table/task extraction, action/risk/traceability table profile linting, OPML conversion/export, table and graph Markdown reports |
+| Data Profile | `json.profile`, `json.chart` | JSON Table profiling, profile Markdown reports, bar chart JSON generation, chart SVG preview/export, chart PNG export |
+| Process Model | `xml.bpmn`, `json.model-graph.process`, `json.table.role-activity` | Indented Tree/BPMN to process graphs, Cytoscape preview, Mermaid/DOT conversion, role/activity tables, BPMN XML export, reports |
+| Architecture Model | `xml.archimate-exchange`, `json.model-graph.architecture`, `json.model-graph.traceability`, `json.table.traceability-matrix` | Table/CSV and ArchiMate import, architecture graph preview, traceability table/graph views, ArchiMate XML export, reports |
+| Code and API Analysis | `json.openapi`, `yaml.openapi`, `json.model-graph.dependency`, `json.table.endpoint-list` | OpenAPI endpoint tables, OpenAPI dependency graphs/reports, package dependency graphs, JavaScript/Python outlines and import graphs |
 | JavaScript | `text.javascript` | Syntax, Prettier format |
 | CSV | `text.csv` | Row-width linting and shared table pipeline |
 | Python | `text.python` | Syntax, Ruff WASM format |
@@ -200,6 +212,8 @@ All runtime dependencies are bundled locally. Key dependencies include:
 - `yaml` and `@codemirror/lang-yaml` for YAML parsing/stringifying and syntax highlighting.
 - Ruff WASM for Python formatting.
 - jsMind for read-only mind-map rendering.
+
+Charts are generated as local SVG from `json.chart` without an additional runtime charting dependency.
 
 See `editor-workbench/libs/THIRD_PARTY.md` for attribution notes.
 
