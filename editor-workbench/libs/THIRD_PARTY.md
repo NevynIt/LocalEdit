@@ -29,6 +29,15 @@ The runtime files under `editor-workbench/libs/` and `editor-workbench/plugins/*
 - PapaParse: MIT license
 - YAML parser/stringifier package `yaml`: ISC license
 - Ruff WASM web bindings: MIT license
+- Sigma.js graph renderer: MIT license
+- Graphology graph data structure and standard-library packages: MIT license
+  - `graphology`
+  - `graphology-layout`
+  - `graphology-layout-forceatlas2`
+  - `graphology-layout-noverlap`
+  - `graphology-metrics`
+  - `graphology-communities-louvain`
+  - `graphology-gexf`
 
 Generated bundles may include additional package notices in adjacent `.LEGAL.txt` files. Keep those files with the matching bundles when packaging the app.
 

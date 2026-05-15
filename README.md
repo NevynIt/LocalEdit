@@ -29,6 +29,8 @@ Editor Workbench is a local-first structured text editor that runs from disk or 
 - Process model graph pipelines for Indented Tree and BPMN, including Mermaid/DOT projections, role/activity tables, BPMN export, and reports.
 - Architecture graph pipelines for tables/CSV and ArchiMate Exchange XML, including traceability tables/graphs, reports, and ArchiMate export.
 - OpenAPI endpoint/schema views, package dependency graphs, and lightweight JavaScript/Python outline/import analysis.
+- Gephi GEXF conversion pipelines for model graphs, Cytoscape JSON, JSON trees, jsMind, DOT, Mermaid flowcharts, OPML, tables/CSV, OpenAPI, BPMN, ArchiMate, and source import graphs.
+- Sigma/Graphology graph explorer with ForceAtlas2, Noverlap, circular/random layouts, degree/PageRank sizing, Louvain community coloring, search, neighborhood focus, and GEXF download.
 - Read-only jsMind rendering from Indented Tree through a local pinned jsMind bundle.
 - Cytoscape JSON linting, graph preview, formatting, and compacting.
 - JavaScript formatting through local Prettier.
@@ -151,6 +153,8 @@ The app does not load from npm, a CDN, or a server at runtime.
 | Process Model | `xml.bpmn`, `json.model-graph.process`, `json.table.role-activity` | Indented Tree/BPMN to process graphs, Cytoscape preview, Mermaid/DOT conversion, role/activity tables, BPMN XML export, reports |
 | Architecture Model | `xml.archimate-exchange`, `json.model-graph.architecture`, `json.model-graph.traceability`, `json.table.traceability-matrix` | Table/CSV and ArchiMate import, architecture graph preview, traceability table/graph views, ArchiMate XML export, reports |
 | Code and API Analysis | `json.openapi`, `yaml.openapi`, `json.model-graph.dependency`, `json.table.endpoint-list` | OpenAPI endpoint tables, OpenAPI dependency graphs/reports, package dependency graphs, JavaScript/Python outlines and import graphs |
+| Gephi GEXF | `xml.gexf` | GEXF language/lint/export plus conversion pipelines from graph, tree, table, process, architecture, and dependency formats |
+| Sigma Graph Explorer | graph dialects and `xml.gexf` | Interactive sigma.js/graphology preview with layouts, metrics, community coloring, search, focus, and GEXF download |
 | JavaScript | `text.javascript` | Syntax, Prettier format |
 | CSV | `text.csv` | Row-width linting and shared table pipeline |
 | Python | `text.python` | Syntax, Ruff WASM format |

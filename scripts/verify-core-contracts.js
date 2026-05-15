@@ -95,7 +95,8 @@ for (const pluginFile of walkPluginFiles("editor-workbench/plugins")) {
   "json.chart",
   "xml.opml",
   "xml.bpmn",
-  "xml.archimate-exchange"
+  "xml.archimate-exchange",
+  "xml.gexf"
 ].forEach((languageId) => {
   assert.ok(packagedRegistry.getLanguages().some((language) => language.id === languageId), `${languageId} profile language is registered`);
 });
@@ -190,7 +191,46 @@ const replacementPipelineIds = [
   "javascript-import-report",
   "view-python-outline",
   "view-python-import-graph",
-  "python-import-report"
+  "python-import-report",
+  "convert-model-graph-to-gephi-gexf",
+  "convert-cytoscape-to-gephi-gexf",
+  "convert-json-tree-to-gephi-gexf",
+  "convert-jsmind-to-gephi-gexf",
+  "convert-graphviz-to-gephi-gexf",
+  "convert-mermaid-flowchart-to-gephi-gexf",
+  "convert-indented-tree-to-gephi-gexf",
+  "convert-opml-to-gephi-gexf",
+  "convert-json-to-gephi-gexf",
+  "convert-yaml-to-gephi-gexf",
+  "convert-markdown-outline-to-gephi-gexf",
+  "convert-json-table-relations-to-gephi-gexf",
+  "convert-csv-relations-to-gephi-gexf",
+  "convert-openapi-to-gephi-gexf",
+  "convert-openapi-yaml-to-gephi-gexf",
+  "convert-package-json-to-gephi-gexf",
+  "convert-javascript-imports-to-gephi-gexf",
+  "convert-python-imports-to-gephi-gexf",
+  "convert-bpmn-to-gephi-gexf",
+  "convert-archimate-to-gephi-gexf",
+  "view-model-graph-sigma",
+  "view-gephi-gexf-sigma",
+  "view-cytoscape-sigma",
+  "view-json-tree-sigma",
+  "view-jsmind-sigma",
+  "view-indented-tree-sigma",
+  "view-opml-sigma",
+  "view-markdown-outline-sigma",
+  "view-json-sigma",
+  "view-yaml-sigma",
+  "view-json-table-relations-sigma",
+  "view-csv-relations-sigma",
+  "view-openapi-sigma",
+  "view-openapi-yaml-sigma",
+  "view-package-json-sigma",
+  "view-javascript-imports-sigma",
+  "view-python-imports-sigma",
+  "view-bpmn-sigma",
+  "view-archimate-sigma"
 ];
 replacementPipelineIds.forEach((pipelineId) => {
   assert.ok(packagedRegistry.getContribution("pipeline", pipelineId), `${pipelineId} pipeline is registered`);
@@ -202,6 +242,9 @@ assert.equal(packagedRegistry.getContribution("transformer", "json-table-to-prof
 assert.equal(packagedRegistry.getContribution("transformer", "process-graph-to-bpmn").visibility, "internal");
 assert.equal(packagedRegistry.getContribution("transformer", "architecture-graph-to-archimate").visibility, "internal");
 assert.equal(packagedRegistry.getContribution("transformer", "openapi-to-endpoint-table").visibility, "internal");
+assert.equal(packagedRegistry.getContribution("transformer", "model-graph-to-gephi-gexf").visibility, "internal");
+assert.equal(packagedRegistry.getContribution("renderer", "sigma-graphology-renderer").outputKind, "custom");
+assert.equal(packagedRegistry.getContribution("renderer", "sigma-graphology-renderer").visibility, "internal");
 assert.deepEqual(Array.from(packagedRegistry.getContribution("pipeline", "view-openapi-endpoints").menuPath), ["Tables", "OpenAPI", "Endpoints"]);
 assert.deepEqual(Array.from(packagedRegistry.getContribution("pipeline", "view-markdown-tasks-as-action-list").menuPath), ["Tables", "Markdown", "Tasks as Actions"]);
 
@@ -316,6 +359,18 @@ const packageGraph = transformResult(
 );
 assert.equal(packageGraph.languageId, "json.model-graph.dependency");
 assert.equal(JSON.parse(packageGraph.text).edges[0].label, "runtime");
+const gephi = transformResult("model-graph-to-gephi-gexf", packageGraph.text, "json.model-graph.dependency", "package.model-graph.json");
+assert.equal(gephi.languageId, "xml.gexf");
+assert.match(gephi.text, /<gexf\b/);
+assert.match(gephi.text, /<node id="package"/);
+assert.match(gephi.text, /<edge\b[^>]*source="package"[^>]*target="dep-leftpad"/);
+const dotGephi = transformResult("graphviz-to-gephi-gexf", "digraph G { A -> B [label=\"uses\"]; }", "text.graphviz-dot", "graph.dot");
+assert.equal(dotGephi.languageId, "xml.gexf");
+assert.match(dotGephi.text, /<edge\b[^>]*source="A"[^>]*target="B"[^>]*label="uses"/);
+const mermaidGephi = transformResult("mermaid-flowchart-to-gephi-gexf", "flowchart LR\nA[Start]-->B[Done]", "text.mermaid", "flow.mmd");
+assert.equal(mermaidGephi.languageId, "xml.gexf");
+assert.match(mermaidGephi.text, /<node id="A" label="Start"/);
+assert.match(mermaidGephi.text, /<edge\b[^>]*source="A"[^>]*target="B"/);
 
 const jsOutline = transformResult("javascript-to-outline-tree", "import x from 'x';\nexport function run() {}\nconst other = () => {}", "text.javascript", "app.js");
 assert.equal(jsOutline.languageId, "json.tree");

@@ -195,6 +195,12 @@ async function main() {
     "EditorWorkbenchJsMindBundle"
   );
 
+  await buildBundle(
+    path.join(root, "tools", "bundle-src", "sigma-graphology-bundle.js"),
+    path.join(root, "editor-workbench", "plugins", "sigma-graphology", "runtime", "sigma-graphology.bundle.js"),
+    "EditorWorkbenchSigmaGraphologyBundle"
+  );
+
   await fs.mkdir(path.join(root, "editor-workbench", "plugins", "jsmind", "runtime"), { recursive: true });
   await fs.copyFile(
     path.join(root, "node_modules", "jsmind", "style", "jsmind.css"),

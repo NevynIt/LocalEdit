@@ -127,6 +127,16 @@
         path: "plugins/python/python.plugin.js",
         known: true,
         autoLoad: true
+      },
+      {
+        path: "plugins/gephi/gephi.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
+        path: "plugins/sigma-graphology/sigma-graphology.plugin.js",
+        known: true,
+        autoLoad: true
       }
     ];
   }

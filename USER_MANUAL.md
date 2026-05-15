@@ -45,10 +45,10 @@ flowchart LR
 
 ### What LocalEdit is good at
 
-- Editing text formats such as Markdown, JSON, YAML, XML, CSV, JavaScript, Python, Mermaid, Graphviz, SVG, and Indented Tree.
+- Editing text formats such as Markdown, JSON, YAML, XML, CSV, JavaScript, Python, Mermaid, Graphviz, SVG, Gephi GEXF, and Indented Tree.
 - Converting one representation into another through reusable pipelines.
 - Opening derived results as new documents so you can keep working instead of losing intermediate output.
-- Rendering local previews without depending on a backend service.
+- Rendering local previews and interactive graph explorers without depending on a backend service.
 - Managing multiple open documents in one workspace.
 
 ### What LocalEdit is not
@@ -265,6 +265,7 @@ If the wrong language is selected:
 - JSON and derived JSON dialects
 - YAML and derived YAML dialects
 - XML and derived XML dialects
+- Gephi GEXF
 - SVG
 - CSV
 - JavaScript
