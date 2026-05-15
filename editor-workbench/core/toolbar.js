@@ -20,9 +20,12 @@
       var root = this.layout.toolbar;
       root.textContent = "";
 
+      this.elements.newButton = this.createButton("New", () => this.app.newDocument());
       this.elements.openButton = this.createButton("Open", () => this.app.openFile());
+      this.elements.openButton.title = "Click to choose a file or drop a file here";
+      this.installOpenDropTarget(this.elements.openButton);
       this.elements.saveButton = this.createButton("Save", () => this.app.saveSourceAsDownload());
-      root.appendChild(this.group([this.elements.openButton, this.elements.saveButton]));
+      root.appendChild(this.group([this.elements.newButton, this.elements.openButton, this.elements.saveButton]));
 
       this.elements.languageSelect = document.createElement("select");
       this.elements.languageSelect.addEventListener("change", () => {
@@ -36,63 +39,63 @@
       });
       root.appendChild(this.group([this.label("Editor"), this.elements.editorSelect]));
 
+      this.elements.reopenSelect = document.createElement("select");
+      this.elements.reopenButton = this.createButton("Reopen", () => {
+        this.app.reopenClosedDocument(this.elements.reopenSelect.value);
+      });
+      root.appendChild(this.group([this.label("Closed"), this.elements.reopenSelect, this.elements.reopenButton]));
+
       this.elements.lintButton = this.createButton("Lint", () => this.app.runLinters());
       root.appendChild(this.group([this.elements.lintButton]));
 
-      this.elements.transformSelect = document.createElement("select");
-      this.elements.transformButton = this.createButton("Run", () => {
-        this.app.runTransformer(this.elements.transformSelect.value);
-      });
-      root.appendChild(this.group([this.label("Transform"), this.elements.transformSelect, this.elements.transformButton]));
-
-      this.elements.rendererSelect = document.createElement("select");
-      this.elements.rendererButton = this.createButton("Open", () => {
-        this.app.openRenderer(this.elements.rendererSelect.value);
-      });
       this.elements.refreshButton = this.createButton("Refresh", () => this.app.refreshRenderers());
       this.elements.autoRefreshToggle = document.createElement("input");
       this.elements.autoRefreshToggle.type = "checkbox";
       this.elements.autoRefreshToggle.addEventListener("change", () => {
         this.app.setAutoRefresh(this.elements.autoRefreshToggle.checked);
       });
+      this.elements.intermediateToggle = document.createElement("input");
+      this.elements.intermediateToggle.type = "checkbox";
+      this.elements.intermediateToggle.addEventListener("change", () => {
+        this.app.setOpenIntermediateDocuments(this.elements.intermediateToggle.checked);
+      });
       var autoRefreshLabel = document.createElement("label");
       autoRefreshLabel.className = "toolbar-check";
       autoRefreshLabel.appendChild(this.elements.autoRefreshToggle);
       autoRefreshLabel.appendChild(document.createTextNode(" Auto 3s"));
-      root.appendChild(this.group([this.label("Render"), this.elements.rendererSelect, this.elements.rendererButton, this.elements.refreshButton, autoRefreshLabel]));
-
-      this.elements.exporterSelect = document.createElement("select");
-      this.elements.exporterButton = this.createButton("Export", () => {
-        this.app.runExporter(this.elements.exporterSelect.value);
-      });
-      root.appendChild(this.group([this.label("Export"), this.elements.exporterSelect, this.elements.exporterButton]));
+      var intermediateLabel = document.createElement("label");
+      intermediateLabel.className = "toolbar-check";
+      intermediateLabel.appendChild(this.elements.intermediateToggle);
+      intermediateLabel.appendChild(document.createTextNode(" Steps"));
 
       this.elements.pipelineSelect = document.createElement("select");
       this.elements.pipelineButton = this.createButton("Run", () => {
-        this.app.runPipeline(this.elements.pipelineSelect.value);
+        this.app.runPipelineAction(this.elements.pipelineSelect.value);
       });
-      root.appendChild(this.group([this.label("Pipeline"), this.elements.pipelineSelect, this.elements.pipelineButton]));
+      root.appendChild(this.group([this.label("Pipeline"), this.elements.pipelineSelect, this.elements.pipelineButton, this.elements.refreshButton, autoRefreshLabel, intermediateLabel]));
 
       this.elements.pluginsButton = this.createButton("Plugins", () => this.app.togglePluginManagerPanel());
       root.appendChild(this.group([this.elements.pluginsButton]));
     }
 
     update(state) {
-      this.populateSelect(this.elements.languageSelect, state.languages, state.languageId, "id", "name");
+      this.populateSelect(this.elements.languageSelect, state.languages, state.languageId, "id", "displayName");
       this.populateProviderSelect(this.elements.editorSelect, state.editors, "No editors");
-      this.populateProviderSelect(this.elements.transformSelect, state.transformers, "No transformers");
-      this.populateProviderSelect(this.elements.rendererSelect, state.renderers, "No renderers");
-      this.populateProviderSelect(this.elements.exporterSelect, state.exporters, "No exporters");
-      this.populateProviderSelect(this.elements.pipelineSelect, state.pipelines, "No pipelines");
+      this.populateProviderSelect(this.elements.reopenSelect, state.closedDocuments, "No closed tabs");
+      this.populateProviderSelect(this.elements.pipelineSelect, state.pipelineActions, "No pipelines");
       this.elements.editorSelect.value = state.editorId || "";
 
+      this.elements.saveButton.disabled = !state.hasDocument;
+      this.elements.languageSelect.disabled = !state.hasDocument;
       this.elements.editorSelect.disabled = state.editors.length === 0;
-      this.elements.transformButton.disabled = state.transformers.length === 0;
-      this.elements.rendererButton.disabled = state.renderers.length === 0;
+      this.elements.reopenButton.disabled = state.closedDocuments.length === 0;
+      this.elements.lintButton.disabled = !state.hasDocument;
       this.elements.refreshButton.disabled = !state.hasRenderSessions;
+      this.elements.autoRefreshToggle.disabled = !state.hasDocument;
       this.elements.autoRefreshToggle.checked = Boolean(state.autoRefreshEnabled);
-      this.elements.exporterButton.disabled = state.exporters.length === 0;
-      this.elements.pipelineButton.disabled = state.pipelines.length === 0;
+      this.elements.intermediateToggle.disabled = !state.hasDocument;
+      this.elements.intermediateToggle.checked = Boolean(state.openIntermediateDocuments);
+      this.elements.pipelineButton.disabled = state.pipelineActions.length === 0;
     }
 
     populateSelect(select, items, selectedValue, valueKey, labelKey) {
@@ -123,6 +126,39 @@
       button.textContent = label;
       button.addEventListener("click", handler);
       return button;
+    }
+
+    installOpenDropTarget(button) {
+      function hasFiles(event) {
+        var types = event.dataTransfer && event.dataTransfer.types;
+        return types && Array.prototype.indexOf.call(types, "Files") !== -1;
+      }
+
+      button.addEventListener("dragenter", function (event) {
+        if (!hasFiles(event)) {
+          return;
+        }
+        event.preventDefault();
+        button.classList.add("is-drop-target");
+      });
+      button.addEventListener("dragover", function (event) {
+        if (!hasFiles(event)) {
+          return;
+        }
+        event.preventDefault();
+        button.classList.add("is-drop-target");
+      });
+      button.addEventListener("dragleave", function () {
+        button.classList.remove("is-drop-target");
+      });
+      button.addEventListener("drop", (event) => {
+        if (!hasFiles(event)) {
+          return;
+        }
+        event.preventDefault();
+        button.classList.remove("is-drop-target");
+        this.app.openDroppedFiles(event.dataTransfer.files);
+      });
     }
 
     label(text) {

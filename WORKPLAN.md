@@ -4,6 +4,131 @@
 
 Implementation completed for the v1 shell, plugin infrastructure, dependency vendoring workflow, CodeMirror editor integration, Markdown plugin, Mermaid plugin, Graphviz plugin, SVG plugin, Markdown inline diagram rendering, lazy plugin-owned runtime bundles, JSON/XML/JavaScript/CSV/Python plugins, SVG PNG export, and standalone SVG pan/zoom. The Big Refactor implementation has migrated packaged plugins to contribution records, added editor contributions, pipelines, pipeline documents, canonical diagnostics, and read-only jsMind rendering. Static and contract verification passed on 2026-05-15; browser smoke was attempted but blocked by the available browser tool/client policy, and manual unpacked extension testing remains pending.
 
+## Multi-Document Workspace And Language Hierarchy Tracker
+
+This tracker covers the next breaking workstream: inheritance-aware language definitions plus a multi-document workspace model with document-scoped tabs, diagnostics, autosave, render bindings, and preview metadata. The separate language-plugin prioritization proposal is intentionally out of scope for this tracker.
+
+### Follow-Up Scope Update
+
+This tracker also covers the requested follow-up simplification pass:
+
+- replace unsaved-close warnings and long-lived dirty-state UX with a session-only hidden-document cache for recently closed tabs;
+- collapse transform, render, and export actions into a single pipeline-driven toolbar surface;
+- stop replacing the active document with pipeline output and always open pipeline results as new documents instead;
+- allow pipeline runs to optionally expose intermediate transformer results as additional documents for step-by-step inspection.
+
+### Follow-Up UX Pass 2
+
+This tracker also covers the next usability pass:
+
+- make the closed-document reopen list more descriptive by including user-facing names and close times in reverse chronological order;
+- support opening files by dragging them onto the `Open` control, and add an explicit `New` command;
+- automatically discard the initial blank untitled document when opening a real file into an otherwise empty workspace;
+- allow file-name renaming directly from document tabs.
+
+### Follow-Up Reliability Fix
+
+This tracker also covers the current reliability correction:
+
+- stop implicitly creating a blank untitled document at startup when no file is open;
+- restore the active persisted document back into the mounted editor on reload;
+- ensure workspace persistence flushes the active editor text back into the workspace model before writing storage.
+
+### Follow-Up Preview UX Fix
+
+This tracker also covers the current preview-window polish pass:
+
+- show the real source document name in render-window chrome and window title from the first render;
+- surface the last refresh timestamp inside the render shell;
+- allow a render window to request a targeted refresh from its owning document binding.
+
+### Execution Rules
+
+- [x] Update this workplan before implementation starts.
+- [x] Keep this tracker current while implementation is in progress.
+- [x] Update `README.md` after implementation and verification are complete.
+
+### Phase Checklist
+
+- [x] Phase 0: Record scope, rollout order, verification checkpoints, and known risks.
+- [x] Phase 1: Add language hierarchy foundation with canonical ids, aliases, and ancestry queries.
+- [x] Phase 2: Make contribution and pipeline matching inheritance-aware and specificity-sorted.
+- [x] Phase 3: Update language/tool UI state and contract coverage for canonical hierarchy behavior.
+- [x] Phase 4: Add workspace state management for multiple document records.
+- [x] Phase 5: Keep one mounted editor while enabling document switching.
+- [x] Phase 6: Add document tabs and active-document-aware workspace chrome.
+- [x] Phase 7: Route file-open, examples, and terminal document actions through workspace APIs.
+- [x] Phase 8: Replace single-document autosave with workspace persistence and one-time restore migration.
+- [x] Phase 9: Make diagnostics document-scoped.
+- [x] Phase 10: Replace global render sessions with document-bound render bindings and scoped refresh.
+- [x] Phase 11: Refresh pipeline previews by rerunning the bound source pipeline into the same session.
+- [x] Phase 12: Add render-shell source metadata chrome.
+- [x] Phase 13: Finalize document close lifecycle, cleanup, and active-tab fallback behavior.
+- [x] Phase 14: Run regression and acceptance verification for hierarchy and workspace behavior.
+- [x] Phase 15: Update README for shipped workspace and language model behavior.
+- [x] Phase 16: Replace close warnings with a session-only hidden document cache and reopen flow.
+- [x] Phase 17: Collapse transform, render, and export UI into one pipeline surface with auto-generated single-step pipelines.
+- [x] Phase 18: Route pipeline and transform outputs to new documents only, with optional intermediate-result documents.
+- [x] Phase 19: Re-run regression checks and update README for the simplified workspace/pipeline UX.
+- [x] Phase 20: Improve reopen labels and preserve reverse-chronological session reopen ordering.
+- [x] Phase 21: Add `New` plus drag-drop file open on the toolbar `Open` control.
+- [x] Phase 22: Auto-close the initial blank untitled document when opening a real file into an otherwise empty workspace.
+- [x] Phase 23: Add direct tab-driven document rename support.
+- [x] Phase 24: Re-run regression checks and refresh README for the UX pass.
+- [x] Phase 25: Remove implicit startup blank-document creation and allow an empty workspace state.
+- [x] Phase 26: Restore persisted active-document text into the mounted editor on reload.
+- [x] Phase 27: Flush active editor text into workspace persistence before storage writes.
+- [x] Phase 28: Re-run regression checks and refresh README/workplan for the reliability fix.
+- [x] Phase 29: Fix render-window titles and metadata to show the actual source document from first open.
+- [x] Phase 30: Add last-updated metadata plus in-window refresh requests for render bindings.
+- [x] Phase 31: Re-run regression checks and refresh README/workplan for the preview UX fix.
+
+### Verification Log
+
+- [x] Baseline git status captured on 2026-05-15 after the first implementation slices: `WORKPLAN.md`, `editor-workbench/core/app.js`, `editor-workbench/core/contribution-registry.js`, `editor-workbench/core/document-model.js`, `editor-workbench/core/language-registry.js`, `editor-workbench/core/pipeline-registry.js`, `editor-workbench/core/plugin-types.js`, and `scripts/verify-core-contracts.js` are modified.
+- [x] Initial `node scripts\verify-core-contracts.js` pass completed on 2026-05-15 after the canonical `text` / `text.plain` registry foundation landed.
+- [x] Follow-up `node scripts\verify-core-contracts.js` pass completed on 2026-05-15 after inheritance-aware contribution and pipeline matching landed.
+- [x] `node scripts\verify-js-syntax.js` pass completed on 2026-05-15 after the initial hierarchy implementation slices; 84 JavaScript files checked.
+- [x] Canonical id migration pass completed on 2026-05-15 for remaining core defaults plus packaged `graphviz.dot`, `xml.svg`, and `json.cytoscape` language ids, with alias compatibility retained for the old ids.
+- [x] Toolbar-facing language list now renders in hierarchy order with depth-based labels from the language registry.
+- [x] `npm run verify:syntax` passes after the landed workspace, diagnostics, and render-shell phases that edited core or shell files.
+- [x] `npm run verify:contracts` passes after the landed hierarchy/UI, document-scoped diagnostics, and render-binding phases.
+- [x] Contract coverage now includes canonical ids, alias resolution, ancestry queries, inherited language matching, specificity ordering, and ancestor-compatible pipeline validation.
+- [x] Contract coverage includes document-scoped diagnostics isolation.
+- [x] Contract coverage now also checks pipeline intermediate-result propagation for downstream UI behavior.
+- [ ] Manual acceptance coverage includes duplicate-file tabs, preview binding, tab-switch auto-refresh, diagnostics isolation, pipeline preview refresh, and close-with-preview cleanup.
+- [x] Automated regression coverage was rerun after the persistence, diagnostics, render-binding, pipeline-refresh, and README phases on 2026-05-15.
+- [x] Legacy autosave restore is rewritten into workspace persistence, with validation still pending on a real pre-migration saved state.
+- [x] Follow-up simplification regression coverage reran on 2026-05-15 after the hidden-tab cache, unified pipeline toolbar, and intermediate-document changes.
+- [x] UX pass regression coverage reran on 2026-05-15 after the descriptive reopen list, drag-drop/new workflow, disposable blank-tab cleanup, and tab rename changes.
+- [x] Reliability-fix regression coverage reran on 2026-05-15 after removing implicit startup tabs, restoring editor state after reload, and flushing active editor text before persistence writes.
+- [x] Preview UX regression coverage reran on 2026-05-15 after render-window title, timestamp, and in-window refresh-request changes.
+
+### Current Progress Notes
+
+- Initial language hierarchy foundation is in place: `LanguageRegistry` now supports canonical ids, aliases, ancestry queries, specificity distance, and longest-extension inference against canonical ids.
+- Core startup now registers `text` and `text.plain`, with `plain-text` retained as an alias rather than the canonical core language id.
+- Contribution lookup and pipeline validation now honor ancestor language matches and prefer more specific contributions before generic parents.
+- Packaged plugin migration has started for canonical language ids and aliases; the current pass covers `graphviz.dot`, `xml.svg`, and `json.cytoscape`, while broader dialect/profile additions remain future work.
+- Workspace records, active-tab switching, duplicate display-name handling, per-document version state, and tab-strip chrome are now active in the app shell.
+- Workspace persistence now writes `workspaceState` plus per-document storage records, restores that state on startup, and removes the legacy single-document autosave keys after migration.
+- Diagnostics are now keyed per document, preserving independent linter output across open tabs and allowing navigation to switch documents before selecting the range.
+- Direct render previews are now bound to their source document record, refresh only from the active document's bindings, and show document/pipeline metadata in the render shell.
+- Close-confirm warnings are replaced by a session-only hidden-document cache that supports explicit reopen without persisting closed tabs across reloads.
+- Transform, render, export, and explicit pipelines now share one toolbar pipeline surface, with registered single-step contributions synthesized automatically for the active language.
+- Text-producing pipeline results now always open as new documents, and the toolbar can optionally open intermediate transformer outputs as additional documents for step-by-step inspection.
+- The reopen list now shows descriptive document labels plus close timestamps in reverse chronological order for the current session.
+- The toolbar now supports `New`, drag-drop file open on the `Open` button, and auto-removes the disposable startup blank tab when a real file is opened into an otherwise empty workspace.
+- Document file labels can now be renamed directly by double-clicking a tab title.
+- Render windows now receive document-aware metadata on first open, update their window titles and last-refresh timestamps accordingly, and can request a targeted refresh through their owning binding.
+- The app no longer creates an implicit startup document, restored workspace documents are pushed back into the mounted editor after reload, and active editor text is flushed into persistence before storage writes and page unload.
+
+### Known Risks
+
+- The current app owns one `DocumentModel`, one autosave timer, one auto-refresh timer, and a flat `renderSessions` array, so workspace refactoring will touch several central paths.
+- Exact-match language checks currently sit in the contribution and pipeline registries; hierarchy work must land before workspace flows rely on canonical language behavior.
+- Pipeline preview refresh will need session reuse or a narrow render-into-session path to avoid reopening windows on every refresh.
+
 ## Big Refactor Tracker
 
 This tracker covers the breaking migration from legacy plugin arrays to a text-centered language workbench with contribution records, editor contributions, pipelines, terminal steps, pipeline documents, and read-only jsMind rendering.

@@ -13,7 +13,7 @@
 
     async export(exporterId, input, params) {
       var documentModel = input && input.sourceDocument;
-      var languageId = documentModel ? documentModel.languageId : "plain-text";
+      var languageId = documentModel ? documentModel.languageId : "text.plain";
       var exporter = this.registry.getContribution("exporter", exporterId);
       if (!exporter) {
         throw new Error("Exporter was not found.");

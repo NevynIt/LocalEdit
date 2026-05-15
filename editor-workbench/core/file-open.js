@@ -14,6 +14,21 @@
     });
   }
 
+  async function documentFromFile(file) {
+    if (!file) {
+      throw new Error("No file selected.");
+    }
+
+    var text = await readFileAsText(file);
+    return new DocumentModel({
+      text: text,
+      languageId: "text.plain",
+      fileName: file.name,
+      mimeType: file.type || "text/plain",
+      lastModified: file.lastModified
+    });
+  }
+
   async function openTextFile() {
     return new Promise(function (resolve, reject) {
       var input = document.createElement("input");
@@ -30,14 +45,7 @@
             return;
           }
 
-          var text = await readFileAsText(file);
-          resolve(new DocumentModel({
-            text: text,
-            languageId: "plain-text",
-            fileName: file.name,
-            mimeType: file.type || "text/plain",
-            lastModified: file.lastModified
-          }));
+          resolve(await documentFromFile(file));
         } catch (error) {
           reject(error);
         }
@@ -47,6 +55,7 @@
     });
   }
 
+  global.documentFromFile = documentFromFile;
   global.openTextFile = openTextFile;
 })(window);
 

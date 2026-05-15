@@ -10,7 +10,7 @@
     getExampleDocument: function () {
       return {
         fileName: "example.txt",
-        languageId: "plain-text",
+        languageId: "text.plain",
         mimeType: "text/plain",
         text: "Example smoke plugin text.\n"
       };

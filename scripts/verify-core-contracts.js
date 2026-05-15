@@ -21,6 +21,8 @@ function load(file) {
 
 [
   "editor-workbench/core/document-model.js",
+  "editor-workbench/core/workspace-manager.js",
+  "editor-workbench/core/language-registry.js",
   "editor-workbench/core/plugin-types.js",
   "editor-workbench/core/parameter-schema.js",
   "editor-workbench/core/contribution-registry.js",
@@ -60,15 +62,113 @@ for (const pluginFile of walkPluginFiles("editor-workbench/plugins")) {
 assert.ok(packagedRegistry.getLanguages().some((language) => language.id === "localedit-pipeline-json"));
 assert.ok(packagedRegistry.getLanguages().some((language) => language.id === "jsmind-json"));
 
-const registry = new context.ContributionRegistry();
+const languageRegistry = new context.LanguageRegistry();
+languageRegistry.register({
+  id: "text",
+  name: "Text",
+  parentLanguageId: null,
+  mediaType: "text/plain"
+});
+languageRegistry.register({
+  id: "text.plain",
+  name: "Plain Text",
+  parentLanguageId: "text",
+  aliases: ["plain-text"],
+  fileExtensions: ["txt", ".log"],
+  mediaType: "text/plain"
+});
+languageRegistry.register({
+  id: "json",
+  name: "JSON",
+  parentLanguageId: "text",
+  fileExtensions: ["json"],
+  mediaType: "application/json"
+});
+languageRegistry.register({
+  id: "json.table",
+  name: "JSON Table",
+  parentLanguageId: "json",
+  fileExtensions: ["table.json"],
+  mediaType: "application/json"
+});
+
+assert.equal(languageRegistry.getCanonicalId("plain-text"), "text.plain");
+assert.equal(languageRegistry.get("plain-text").id, "text.plain");
+assert.deepEqual(Array.from(languageRegistry.getAncestors("json.table")), ["json", "text"]);
+assert.equal(languageRegistry.isSameOrDescendantOf("json.table", "json"), true);
+assert.equal(languageRegistry.isSameOrDescendantOf("json.table", "text"), true);
+assert.equal(languageRegistry.getSpecificityDistance("json.table", "json"), 1);
+assert.deepEqual(Array.from(languageRegistry.listApplicableLanguages("json.table")), ["json.table", "json", "text"]);
+assert.equal(languageRegistry.inferFromFileName("report.table.json"), "json.table");
+assert.equal(languageRegistry.inferFromFileName("notes.txt"), "text.plain");
+const listedLanguages = Array.from(languageRegistry.list()).map((language) => language.id);
+assert.equal(listedLanguages[0], "text");
+assert.ok(listedLanguages.indexOf("json") < listedLanguages.indexOf("json.table"));
+assert.ok(listedLanguages.indexOf("text") < listedLanguages.indexOf("text.plain"));
+
+const workspace = new context.WorkspaceManager();
+const firstRecord = workspace.openDocument(new context.DocumentModel({
+  text: "one",
+  languageId: "text.plain",
+  fileName: "notes.txt"
+}), { source: "test" });
+assert.equal(workspace.getActiveDocumentId(), firstRecord.id);
+assert.equal(workspace.getActiveDocument().text, "one");
+workspace.updateText(firstRecord.id, "two");
+assert.equal(workspace.getActiveDocument().text, "two");
+const secondRecord = workspace.openDocument(new context.DocumentModel({
+  text: "three",
+  languageId: "text.plain",
+  fileName: "notes.txt"
+}), { source: "test" });
+assert.equal(workspace.getActiveRecord().displayName, "notes.txt (2)");
+workspace.setActiveDocument(firstRecord.id);
+assert.equal(workspace.getActiveRecord().displayName, "notes.txt");
+workspace.replaceDocument(firstRecord.id, new context.DocumentModel({
+  text: "four",
+  languageId: "text.plain",
+  fileName: "renamed.txt"
+}), { preserveClean: true });
+assert.equal(workspace.getRecord(firstRecord.id).document.text, "four");
+assert.equal(workspace.getRecord(firstRecord.id).displayName, "renamed.txt");
+workspace.renameDocument(firstRecord.id, "final.txt");
+assert.equal(workspace.getRecord(firstRecord.id).document.fileName, "final.txt");
+assert.equal(workspace.getRecord(firstRecord.id).displayName, "final.txt");
+assert.equal(workspace.closeDocument(secondRecord.id).id, secondRecord.id);
+assert.equal(workspace.listRecords().length, 1);
+
+languageRegistry.register({
+  id: "alpha",
+  name: "Alpha",
+  parentLanguageId: "text",
+  fileExtensions: ["a"],
+  mediaType: "text/x-alpha"
+});
+languageRegistry.register({
+  id: "alpha.child",
+  name: "Alpha Child",
+  parentLanguageId: "alpha",
+  fileExtensions: ["child.a"],
+  mediaType: "text/x-alpha-child"
+});
+languageRegistry.register({
+  id: "beta",
+  name: "Beta",
+  parentLanguageId: "text",
+  fileExtensions: ["b"],
+  mediaType: "text/x-beta"
+});
+
+const registry = new context.ContributionRegistry(languageRegistry);
 registry.registerPlugin({
   id: "test-plugin",
   name: "Test Plugin",
   version: "1.0.0",
   contributes: {
     languages: [
-      { id: "alpha", name: "Alpha", fileExtensions: [".a"], mediaType: "text/x-alpha" },
-      { id: "beta", name: "Beta", fileExtensions: [".b"], mediaType: "text/x-beta" }
+      { id: "alpha", name: "Alpha", parentLanguageId: "text", fileExtensions: [".a"], mediaType: "text/x-alpha" },
+      { id: "alpha.child", name: "Alpha Child", parentLanguageId: "alpha", fileExtensions: [".child.a"], mediaType: "text/x-alpha-child" },
+      { id: "beta", name: "Beta", parentLanguageId: "text", fileExtensions: [".b"], mediaType: "text/x-beta" }
     ],
     editors: [
       {
@@ -171,6 +271,22 @@ registry.registerPlugin({
     ],
     renderers: [
       {
+        id: "alpha-renderer",
+        name: "Alpha Renderer",
+        accepts: ["alpha"],
+        render() {
+          return { kind: "text", content: "alpha", mimeType: "text/plain" };
+        }
+      },
+      {
+        id: "alpha-child-renderer",
+        name: "Alpha Child Renderer",
+        accepts: ["alpha.child"],
+        render() {
+          return { kind: "text", content: "alpha child", mimeType: "text/plain" };
+        }
+      },
+      {
         id: "beta-renderer",
         name: "Beta Renderer",
         accepts: ["beta"],
@@ -229,15 +345,25 @@ registry.registerPlugin({
           { use: "alpha-to-beta", params: { suffix: "?" } },
           { use: "capture", params: {} }
         ]
+      },
+      {
+        id: "alpha-child-capture",
+        name: "Alpha Child Capture",
+        inputLanguage: "alpha.child",
+        steps: [
+          { use: "alpha-to-beta", params: { suffix: "!" } },
+          { use: "capture", params: {} }
+        ]
       }
     ]
   }
 });
 
-assert.equal(registry.getLanguages().length, 2);
+assert.equal(registry.getLanguages().length, 3);
 assert.equal(registry.getEditors("alpha").length, 2);
 assert.equal(registry.getTransformers("alpha")[0].id, "alpha-to-beta");
 assert.equal(registry.getRenderers("beta")[0].id, "beta-renderer");
+assert.deepEqual(Array.from(registry.getRenderers("alpha.child")).map((renderer) => renderer.id), ["alpha-child-renderer", "alpha-renderer"]);
 assert.equal(registry.getExporters("beta")[0].id, "beta-exporter");
 assert.equal(registry.getLinters("alpha")[0].id, "alpha-linter");
 assert.equal(
@@ -267,20 +393,49 @@ assert.equal(registry.getAvailability(registry.getContribution("transformer", "r
 
 const diagnostics = new context.DiagnosticsService(registry, {});
 const documentModel = new context.DocumentModel({ text: "abc", languageId: "alpha" });
-diagnostics.runLinters(documentModel).then(async (items) => {
+diagnostics.runLinters(documentModel, "doc-1").then(async (items) => {
   assert.equal(items.length, 1);
   assert.equal(items[0].range.start.offset, 0);
   assert.equal(items[0].range.end.offset, 1);
+  assert.equal(items[0].target.documentId, "doc-1");
+
+  const secondItems = await diagnostics.runLinters(new context.DocumentModel({ text: "xyz", languageId: "alpha" }), "doc-2");
+  assert.equal(secondItems.length, 1);
+  assert.equal(diagnostics.list("doc-1").length, 1);
+  assert.equal(diagnostics.list("doc-2").length, 1);
+  assert.equal(diagnostics.list().length, 2);
 
   const pipelineRegistry = new context.PipelineRegistry(registry);
   const pipeline = pipelineRegistry.get("alpha-capture");
   assert.equal(pipelineRegistry.validate(pipeline), true);
+  const childPipeline = pipelineRegistry.get("alpha-child-capture");
+  assert.equal(pipelineRegistry.validate(childPipeline), true);
   const executor = new context.PipelineExecutor(registry, pipelineRegistry, {});
   const result = await executor.execute("alpha-capture", documentModel);
   assert.equal(result.action, "capture");
   assert.equal(result.text, "abc?");
   assert.equal(result.languageId, "beta");
   assert.equal(result.diagnostics.length, 1);
+  assert.equal(result.intermediateResults.length, 1);
+
+  const preparedRenderInput = await executor.prepareTerminalInput({
+    id: "alpha-preview",
+    name: "Alpha Preview",
+    inputLanguage: "alpha",
+    steps: [
+      { use: "alpha-to-beta", params: { suffix: "#" } },
+      { use: "beta-renderer", params: {} }
+    ]
+  }, documentModel);
+  assert.equal(preparedRenderInput.contribution.id, "beta-renderer");
+  assert.equal(preparedRenderInput.input.text, "abc#");
+  assert.equal(preparedRenderInput.input.languageId, "beta");
+
+  const childDocumentModel = new context.DocumentModel({ text: "xyz", languageId: "alpha.child" });
+  const childResult = await executor.execute("alpha-child-capture", childDocumentModel);
+  assert.equal(childResult.action, "capture");
+  assert.equal(childResult.text, "xyz!");
+  assert.equal(childResult.languageId, "beta");
 
   const editorManager = new context.EditorManager(registry, {});
   const container = { textContent: "", mounted: "" };

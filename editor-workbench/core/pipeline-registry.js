@@ -18,16 +18,31 @@
     return list(contribution.accepts || contribution.languages || contribution.inputLanguages);
   }
 
+  function acceptsLanguage(languageRegistry, currentLanguage, inputs) {
+    var acceptedInputs = list(inputs);
+    if (!currentLanguage || acceptedInputs.length === 0 || acceptedInputs.indexOf("*") !== -1) {
+      return true;
+    }
+    if (!languageRegistry) {
+      return acceptedInputs.indexOf(currentLanguage) !== -1;
+    }
+    return acceptedInputs.some(function (supportedLanguageId) {
+      return languageRegistry.isSameOrDescendantOf(currentLanguage, supportedLanguageId);
+    });
+  }
+
   class PipelineRegistry {
-    constructor(registry) {
+    constructor(registry, languageRegistry) {
       this.registry = registry;
+      this.languageRegistry = languageRegistry || registry && registry.languageRegistry || null;
       this.userPipelines = new Map();
     }
 
     list(languageId) {
       var pluginPipelines = this.registry.getPipelines(languageId);
+      var languageRegistry = this.languageRegistry;
       var userPipelines = Array.from(this.userPipelines.values()).filter(function (pipeline) {
-        return !languageId || pipeline.inputLanguage === languageId;
+        return !languageId || acceptsLanguage(languageRegistry, languageId, [pipeline.inputLanguage]);
       });
       return pluginPipelines.concat(userPipelines).sort(function (a, b) {
         return (a.name || a.id).localeCompare(b.name || b.id);
@@ -59,7 +74,7 @@
           throw new Error("Pipeline " + pipeline.id + " references missing contribution " + step.use + ".");
         }
         var inputs = contributionInputLanguages(contribution);
-        if (inputs.length && inputs.indexOf("*") === -1 && inputs.indexOf(currentLanguage) === -1) {
+        if (!acceptsLanguage(this.languageRegistry, currentLanguage, inputs)) {
           throw new Error("Pipeline " + pipeline.id + " step " + step.use + " does not accept " + currentLanguage + ".");
         }
         if (global.ParameterSchema) {

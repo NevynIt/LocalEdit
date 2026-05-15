@@ -4,7 +4,7 @@
   function makeDocument(text, languageId, sourceDocument) {
     return new DocumentModel({
       text: text || "",
-      languageId: languageId || "plain-text",
+      languageId: languageId || "text.plain",
       fileName: sourceDocument && sourceDocument.fileName,
       mimeType: sourceDocument && sourceDocument.mimeType,
       lastModified: sourceDocument && sourceDocument.lastModified
@@ -19,6 +19,11 @@
     }
 
     async execute(pipelineOrId, documentModel) {
+      var prepared = await this.prepareTerminalInput(pipelineOrId, documentModel);
+      return this.executeTerminal(prepared.contribution, prepared.input);
+    }
+
+    async prepareTerminalInput(pipelineOrId, documentModel) {
       var pipeline = typeof pipelineOrId === "string" ? this.pipelineRegistry.get(pipelineOrId) : pipelineOrId;
       if (!pipeline) {
         throw new Error("Pipeline was not found.");
@@ -61,17 +66,21 @@
           continue;
         }
 
-        return this.executeTerminal(contribution, {
+        return {
           pipeline: pipeline,
-          step: step,
-          stepIndex: index,
-          text: currentText,
-          languageId: currentLanguageId,
-          params: params,
-          sourceDocument: documentModel,
-          diagnostics: diagnostics,
-          intermediateResults: intermediateResults
-        });
+          contribution: contribution,
+          input: {
+            pipeline: pipeline,
+            step: step,
+            stepIndex: index,
+            text: currentText,
+            languageId: currentLanguageId,
+            params: params,
+            sourceDocument: documentModel,
+            diagnostics: diagnostics,
+            intermediateResults: intermediateResults
+          }
+        };
       }
 
       throw new Error("Pipeline " + pipeline.id + " did not end in a terminal step.");
@@ -97,7 +106,7 @@
           diagnostics: input.diagnostics,
           intermediateResults: input.intermediateResults
         });
-        return { action: "render", session: session, diagnostics: input.diagnostics };
+        return { action: "render", session: session, diagnostics: input.diagnostics, intermediateResults: input.intermediateResults.slice() };
       }
 
       if (contribution.kind === "exporter") {
@@ -108,7 +117,7 @@
           document: documentModel,
           context: this.createContext(input.pipeline, input.step, input.stepIndex)
         });
-        return { action: "export", result: exported, diagnostics: input.diagnostics };
+        return { action: "export", result: exported, diagnostics: input.diagnostics, intermediateResults: input.intermediateResults.slice() };
       }
 
       if (contribution.kind === "editor") {
@@ -116,14 +125,17 @@
           throw new Error("Editor manager is not available.");
         }
         await this.services.editorManager.switchEditor(contribution.id, input.text, input.languageId);
-        return { action: "editor", diagnostics: input.diagnostics };
+        return { action: "editor", diagnostics: input.diagnostics, intermediateResults: input.intermediateResults.slice() };
       }
 
       if (contribution.kind === "terminal-step" && typeof contribution.run === "function") {
-        return contribution.run(Object.assign({}, input, {
+        var terminalResult = await contribution.run(Object.assign({}, input, {
           document: documentModel,
           context: this.createContext(input.pipeline, input.step, input.stepIndex)
         }));
+        return Object.assign({}, terminalResult || {}, {
+          intermediateResults: input.intermediateResults.slice()
+        });
       }
 
       throw new Error("Unsupported terminal contribution " + contribution.id + ".");

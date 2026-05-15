@@ -10,12 +10,13 @@
       this.activeEditor = null;
       this.changeHandlers = [];
       this.languageRequestId = 0;
-      this.languageId = "plain-text";
+      this.languageId = "text.plain";
+      this.editable = true;
     }
 
     async mount(container, languageId) {
       this.container = container;
-      this.languageId = languageId || "plain-text";
+      this.languageId = languageId || "text.plain";
       var editors = this.listEditors(this.languageId);
       var preferred = editors.find(function (editor) {
         return editor.id === "codemirror";
@@ -75,12 +76,15 @@
         this.emitChange(nextText);
       });
       this.activeEditor.setText(currentText, languageId || this.languageId, {});
+      if (typeof this.activeEditor.setEditable === "function") {
+        this.activeEditor.setEditable(this.editable);
+      }
       await this.applyLanguage(languageId || this.languageId);
       this.focus();
     }
 
     async applyLanguage(languageId) {
-      this.languageId = languageId || "plain-text";
+      this.languageId = languageId || "text.plain";
       if (!this.activeEditor || !this.activeContribution) {
         return;
       }
@@ -138,6 +142,13 @@
     setDiagnostics(diagnostics) {
       if (this.activeEditor && typeof this.activeEditor.setDiagnostics === "function") {
         this.activeEditor.setDiagnostics(diagnostics);
+      }
+    }
+
+    setEditable(editable) {
+      this.editable = editable !== false;
+      if (this.activeEditor && typeof this.activeEditor.setEditable === "function") {
+        this.activeEditor.setEditable(this.editable);
       }
     }
 

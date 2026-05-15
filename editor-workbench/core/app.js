@@ -19,14 +19,26 @@
       this.pipelineRegistry = null;
       this.pipelineExecutor = null;
       this.toolbar = null;
+      this.tabs = null;
       this.pluginPanel = null;
       this.diagnosticsPanel = null;
-      this.document = new DocumentModel({ text: "", languageId: "plain-text" });
+      this.workspace = new WorkspaceManager();
+      this.document = new DocumentModel({
+        text: "",
+        languageId: "text.plain",
+        fileName: "untitled.txt",
+        mimeType: "text/plain"
+      });
+      this.persistedDocumentIds = new Set();
+      this.closedDocuments = [];
       this.autosaveTimer = 0;
-      this.autoRefreshTimer = 0;
+      this.autoRefreshTimersByDocumentId = new Map();
       this.autoRefreshEnabled = false;
+      this.openIntermediateDocuments = false;
       this.renderRefreshDelayMs = 3000;
-      this.renderSessions = [];
+      this.pipelineActionsById = new Map();
+      this.unloadPersistenceBound = false;
+      this.renderMessageBound = false;
     }
 
     async start() {
@@ -38,7 +50,7 @@
         await this.storage.init();
 
         this.languageRegistry = new LanguageRegistry();
-        this.pluginRegistry = new ContributionRegistry();
+        this.pluginRegistry = new ContributionRegistry(this.languageRegistry);
         this.runtimeLoader = new RuntimeLoader(this.host);
         this.registerCoreContributions();
         this.registerPluginLanguages();
@@ -49,7 +61,7 @@
         this.transformManager = new TransformManager(this.pluginRegistry, this.runtimeLoader);
         this.renderManager = new RenderManager(this.pluginRegistry, this.host);
         this.exportManager = new ExportManager(this.pluginRegistry, this.runtimeLoader);
-        this.pipelineRegistry = new PipelineRegistry(this.pluginRegistry);
+        this.pipelineRegistry = new PipelineRegistry(this.pluginRegistry, this.languageRegistry);
         this.pipelineExecutor = new PipelineExecutor(this.pluginRegistry, this.pipelineRegistry, {
           app: this,
           diagnostics: this.diagnosticsManager,
@@ -66,15 +78,21 @@
 
         this.editor = new EditorManager(this.pluginRegistry, this.runtimeLoader);
         this.pipelineExecutor.services.editorManager = this.editor;
-        await this.editor.mount(this.layout.editorContainer, this.document.languageId);
+        await this.editor.mount(this.layout.editorContainer, this.getDocument() ? this.getDocument().languageId : "text.plain");
         this.editor.onDidChange((text) => {
-          this.document = this.document.cloneWith({ text: text });
+          if (!this.getActiveDocumentId()) {
+            return;
+          }
+          this.updateDocumentText(this.getActiveDocumentId(), text);
           this.scheduleAutosave();
           this.scheduleAutoRefresh();
           this.updateStatus("Editing " + this.displayFileName() + ".");
         });
+        this.bindUnloadPersistence();
+        this.bindRenderWindowMessages();
 
         this.toolbar = new Toolbar(this.layout, this);
+        this.tabs = new DocumentTabs(this.layout, this);
         this.pluginPanel = new PluginManagerPanel(this.layout, this);
         this.diagnosticsPanel = new DiagnosticsPanel(this.layout, {
           onClose: () => {
@@ -91,6 +109,7 @@
         });
 
         await this.restoreState();
+  this.reloadActiveDocumentIntoEditor();
         await this.pluginManager.loadKnownPlugins();
         await this.pluginManager.loadStartupPlugins();
         await this.loadUserPipelines();
@@ -112,8 +131,18 @@
         contributes: {
           languages: [
             {
-              id: "plain-text",
+              id: "text",
+              name: "Text",
+              parentLanguageId: null,
+              fileExtensions: [],
+              mediaType: "text/plain",
+              description: "Root language for all text-based documents."
+            },
+            {
+              id: "text.plain",
               name: "Plain Text",
+              parentLanguageId: "text",
+              aliases: ["plain-text"],
               fileExtensions: [".txt", ".text", ".log"],
               mediaType: "text/plain",
               description: "Unstructured plain text."
@@ -149,11 +178,15 @@
               accepts: ["*"],
               run: function (input) {
                 var app = input.context.services.app;
-                app.setDocument(input.sourceDocument.cloneWith({
+                var record = app.openPipelineDocument(new DocumentModel({
                   text: input.text,
-                  languageId: input.languageId
-                }));
-                return { action: "replace-current-text", diagnostics: input.diagnostics || [] };
+                  languageId: input.languageId,
+                  fileName: app.buildDerivedDocumentName(input.sourceDocument, input.languageId, input.step && input.step.use),
+                  mimeType: app.getLanguageMediaType(input.languageId) || input.sourceDocument && input.sourceDocument.mimeType || "text/plain"
+                }), {
+                  source: "pipeline-legacy-replace"
+                });
+                return { action: "open-new-document", documentId: record.id, document: record.document, diagnostics: input.diagnostics || [], intermediateResults: (input.intermediateResults || []).slice() };
               }
             },
             {
@@ -162,13 +195,15 @@
               accepts: ["*"],
               run: function (input) {
                 var app = input.context.services.app;
-                app.setDocument(new DocumentModel({
+                var record = app.openPipelineDocument(new DocumentModel({
                   text: input.text,
                   languageId: input.languageId,
-                  fileName: "pipeline-output.txt",
-                  mimeType: "text/plain"
-                }));
-                return { action: "open-new-document", diagnostics: input.diagnostics || [] };
+                  fileName: app.buildDerivedDocumentName(input.sourceDocument, input.languageId, input.step && input.step.use),
+                  mimeType: app.getLanguageMediaType(input.languageId) || input.sourceDocument && input.sourceDocument.mimeType || "text/plain"
+                }), {
+                  source: "pipeline-output"
+                });
+                return { action: "open-new-document", documentId: record.id, document: record.document, diagnostics: input.diagnostics || [], intermediateResults: (input.intermediateResults || []).slice() };
               }
             },
             {
@@ -203,11 +238,23 @@
     }
 
     async restoreState() {
+      var workspaceState = await this.storage.get("workspaceState");
+      if (workspaceState) {
+        await this.restoreWorkspace(workspaceState);
+        return;
+      }
+
       var savedDocument = await this.storage.get("autosaveDocument");
       var selectedLanguage = await this.storage.get("selectedLanguage");
 
       if (savedDocument) {
-        this.setDocument(new DocumentModel(savedDocument));
+        var restoredDocument = new DocumentModel(savedDocument);
+        this.openDocument(restoredDocument.cloneWith({
+          languageId: this.languageRegistry.getCanonicalId(restoredDocument.languageId) || restoredDocument.languageId
+        }), {
+          source: "legacy-restore"
+        });
+        await this.persistWorkspace();
       }
 
       if (selectedLanguage) {
@@ -237,30 +284,627 @@
       this.updateUi();
     }
 
+    async restoreWorkspace(workspaceState) {
+      if (!workspaceState || !Array.isArray(workspaceState.order)) {
+        return;
+      }
+
+      this.workspace = new WorkspaceManager();
+      this.persistedDocumentIds = new Set(workspaceState.order);
+
+      for (var index = 0; index < workspaceState.order.length; index += 1) {
+        var documentId = workspaceState.order[index];
+        var metadata = Array.isArray(workspaceState.documents)
+          ? workspaceState.documents.find(function (item) { return item.id === documentId; })
+          : null;
+        var storedDocument = await this.storage.get("document:" + documentId);
+        if (!storedDocument) {
+          continue;
+        }
+
+        var record = this.workspace.openDocument(new DocumentModel(storedDocument), {
+          source: metadata && metadata.source || "workspace-restore",
+          editorId: metadata && metadata.editorId || "codemirror"
+        });
+        this.workspace.records.delete(record.id);
+        record.id = documentId;
+        record.version = metadata && Number.isFinite(metadata.version) ? metadata.version : 0;
+        record.viewState = metadata && metadata.viewState || null;
+        record.displayName = metadata && metadata.displayName || record.displayName;
+        this.workspace.records.set(documentId, record);
+        this.workspace.order[this.workspace.order.length - 1] = documentId;
+      }
+
+      if (workspaceState.activeDocumentId) {
+        this.workspace.setActiveDocument(workspaceState.activeDocumentId);
+      }
+      if (!this.workspace.getActiveRecord() && this.workspace.order.length) {
+        this.workspace.setActiveDocument(this.workspace.order[0]);
+      }
+      this.document = this.getDocument() || new DocumentModel({
+        text: "",
+        languageId: "text.plain",
+        fileName: "untitled.txt",
+        mimeType: "text/plain"
+      });
+    }
+
+    serializeWorkspaceState() {
+      return {
+        version: 1,
+        activeDocumentId: this.getActiveDocumentId(),
+        order: this.workspace.order.slice(),
+        documents: this.workspace.listRecords().map(function (record) {
+          return {
+            id: record.id,
+            displayName: record.displayName,
+            fileName: record.document.fileName || "untitled.txt",
+            languageId: record.document.languageId,
+            mimeType: record.document.mimeType || "text/plain",
+            version: record.version,
+            editorId: record.editorId,
+            source: record.source,
+            viewState: record.viewState || null
+          };
+        })
+      };
+    }
+
+    syncActiveEditorToWorkspace() {
+      if (!this.editor) {
+        return;
+      }
+      var activeDocumentId = this.getActiveDocumentId();
+      if (!activeDocumentId) {
+        return;
+      }
+      this.updateDocumentText(activeDocumentId, this.editor.getText());
+    }
+
+    bindUnloadPersistence() {
+      if (this.unloadPersistenceBound) {
+        return;
+      }
+      this.unloadPersistenceBound = true;
+
+      var flush = () => {
+        this.syncActiveEditorToWorkspace();
+        this.persistDocument();
+      };
+
+      global.addEventListener("pagehide", flush);
+      global.addEventListener("beforeunload", flush);
+    }
+
+    async persistWorkspace() {
+      if (!this.storage) {
+        return;
+      }
+
+      this.syncActiveEditorToWorkspace();
+
+      var currentDocumentIds = new Set();
+      var records = this.workspace.listRecords();
+      for (var index = 0; index < records.length; index += 1) {
+        var record = records[index];
+        currentDocumentIds.add(record.id);
+        await this.storage.set("document:" + record.id, {
+          id: record.id,
+          text: record.document.text || "",
+          languageId: record.document.languageId,
+          fileName: record.document.fileName,
+          mimeType: record.document.mimeType,
+          lastModified: record.document.lastModified
+        });
+      }
+
+      var previousIds = Array.from(this.persistedDocumentIds);
+      for (var cleanupIndex = 0; cleanupIndex < previousIds.length; cleanupIndex += 1) {
+        if (!currentDocumentIds.has(previousIds[cleanupIndex])) {
+          await this.storage.remove("document:" + previousIds[cleanupIndex]);
+        }
+      }
+
+      await this.storage.set("workspaceState", this.serializeWorkspaceState());
+      await this.storage.remove("autosaveDocument");
+      await this.storage.remove("selectedLanguage");
+      this.persistedDocumentIds = currentDocumentIds;
+    }
+
     async openFile() {
       try {
         var nextDocument = await openTextFile();
-        var inferredLanguage = this.languageRegistry.inferFromFileName(nextDocument.fileName) || "plain-text";
-        this.setDocument(nextDocument.cloneWith({ languageId: inferredLanguage }));
-        await this.persistDocument();
+        await this.openImportedDocument(nextDocument, { source: "file-picker" });
         this.updateStatus("Opened " + this.displayFileName() + ".");
       } catch (error) {
         this.updateStatus(error && error.message ? error.message : String(error));
       }
     }
 
+    async openDroppedFiles(fileList) {
+      try {
+        var files = Array.from(fileList || []);
+        if (files.length === 0) {
+          throw new Error("No file selected.");
+        }
+        for (var index = 0; index < files.length; index += 1) {
+          var nextDocument = await documentFromFile(files[index]);
+          await this.openImportedDocument(nextDocument, { source: "file-drop" });
+        }
+        this.updateStatus("Opened " + files.length + " file" + (files.length === 1 ? "." : "s."));
+      } catch (error) {
+        this.updateStatus(error && error.message ? error.message : String(error));
+      }
+    }
+
+    isDisposableBlankRecord(record) {
+      return Boolean(
+        record
+        && record.source === "startup"
+        && (!record.document.fileName || record.document.fileName === "untitled.txt")
+        && !(record.document.text || "").trim()
+        && record.document.languageId === "text.plain"
+        && this.workspace.listRecords().length === 1
+      );
+    }
+
+    discardDisposableBlankRecord() {
+      var record = this.getActiveRecord();
+      if (!this.isDisposableBlankRecord(record)) {
+        return false;
+      }
+      this.workspace.closeDocument(record.id);
+      this.document = this.getDocument();
+      return true;
+    }
+
+    async openImportedDocument(documentModel, options) {
+      this.discardDisposableBlankRecord();
+      var inferredLanguage = this.languageRegistry.inferFromFileName(documentModel.fileName) || documentModel.languageId || "text.plain";
+      var record = this.openDocument(documentModel.cloneWith({ languageId: inferredLanguage }), options || { source: "import" });
+      this.switchDocument(record.id);
+      await this.persistDocument();
+      return record;
+    }
+
+    newDocument() {
+      var record = this.openDocument(new DocumentModel({
+        text: "",
+        languageId: "text.plain",
+        fileName: "untitled.txt",
+        mimeType: "text/plain"
+      }), {
+        source: "new-document"
+      });
+      this.persistWorkspace();
+      this.updateStatus("New document opened.");
+      return record;
+    }
+
     async saveSourceAsDownload() {
-      var fileName = this.document.fileName || "untitled.txt";
-      downloadText(fileName, this.editor.getText(), this.document.mimeType || "text/plain");
+      if (!this.getActiveDocumentId()) {
+        this.updateStatus("Open or create a document first.");
+        return;
+      }
+      var documentModel = this.getDocument();
+      var fileName = documentModel.fileName || "untitled.txt";
+      downloadText(fileName, this.editor.getText(), documentModel.mimeType || "text/plain");
       this.updateStatus("Downloaded " + fileName + ".");
     }
 
+    getActiveDocumentId() {
+      return this.workspace.getActiveDocumentId();
+    }
+
+    getActiveRecord() {
+      return this.workspace.getActiveRecord();
+    }
+
     getDocument() {
-      return this.document;
+      return this.workspace.getActiveDocument() || this.document;
+    }
+
+    reloadActiveDocumentIntoEditor() {
+      if (!this.editor) {
+        return;
+      }
+      var record = this.getActiveRecord();
+      if (!record) {
+        this.document = new DocumentModel({
+          text: "",
+          languageId: "text.plain",
+          fileName: "untitled.txt",
+          mimeType: "text/plain"
+        });
+        this.editor.setText("", "text.plain");
+        this.editor.applyLanguage("text.plain");
+        this.editor.setDiagnostics([]);
+        if (this.layout && this.layout.isDiagnosticsPanelOpen() && this.diagnosticsPanel) {
+          this.diagnosticsPanel.render([], this.document);
+        }
+        return;
+      }
+      this.document = record.document;
+      this.editor.setText(record.document.text, record.document.languageId);
+      this.editor.applyLanguage(record.document.languageId);
+      this.editor.setDiagnostics(record.diagnostics || []);
+      if (this.layout && this.layout.isDiagnosticsPanelOpen() && this.diagnosticsPanel) {
+        this.diagnosticsPanel.render(record.diagnostics || [], record.document);
+      }
+    }
+
+    makeRenderMetadata(record, binding) {
+      return {
+        documentId: record.id,
+        documentDisplayName: record.displayName,
+        documentFileName: record.document.fileName || "untitled.txt",
+        documentLanguageId: record.document.languageId,
+        documentVersion: record.version,
+        rendererId: binding && binding.rendererId || null,
+        pipelineId: binding && binding.pipelineId || null,
+        bindingId: binding && binding.id || null,
+        generatedAt: new Date().toISOString(),
+        lastUpdatedAt: binding && binding.lastUpdatedAt || null
+      };
+    }
+
+    bindRenderWindowMessages() {
+      if (this.renderMessageBound) {
+        return;
+      }
+      this.renderMessageBound = true;
+
+      global.addEventListener("message", (event) => {
+        var message = event.data;
+        if (!message || message.type !== "render-refresh-request" || !message.bindingId) {
+          return;
+        }
+        this.refreshRenderBinding(message.bindingId);
+      });
+    }
+
+    findRenderBinding(bindingId) {
+      var records = this.workspace.listRecords();
+      for (var index = 0; index < records.length; index += 1) {
+        var bindings = this.workspace.getRenderBindings(records[index].id);
+        for (var bindingIndex = 0; bindingIndex < bindings.length; bindingIndex += 1) {
+          if (bindings[bindingIndex].id === bindingId) {
+            return { record: records[index], binding: bindings[bindingIndex] };
+          }
+        }
+      }
+      return null;
+    }
+
+    async createRenderDocumentForBinding(binding, record) {
+      var renderDocument = record.document;
+      if (binding.pipelineId) {
+        var pipelineRef = binding.pipelineDefinition || binding.pipelineId;
+        var prepared = await this.pipelineExecutor.prepareTerminalInput(pipelineRef, record.document);
+        renderDocument = new DocumentModel({
+          text: prepared.input.text,
+          languageId: prepared.input.languageId,
+          fileName: record.document.fileName,
+          mimeType: record.document.mimeType,
+          lastModified: record.document.lastModified
+        });
+      }
+      return renderDocument;
+    }
+
+    async refreshRenderBinding(bindingId) {
+      var found = this.findRenderBinding(bindingId);
+      if (!found || !found.binding.session || !found.binding.session.isOpen()) {
+        this.updateStatus("Render window is no longer available.");
+        return;
+      }
+
+      try {
+        var renderDocument = await this.createRenderDocumentForBinding(found.binding, found.record);
+        found.binding.lastUpdatedAt = new Date().toISOString();
+        found.binding.session.updateMetadata(this.makeRenderMetadata(found.record, found.binding));
+        found.binding.session.refresh(renderDocument);
+        found.binding.lastRenderedVersion = found.record.version;
+        this.updateStatus("Render window refreshed.");
+      } catch (error) {
+        this.updateStatus(error && error.message ? error.message : String(error));
+      }
+    }
+
+    getLanguageMediaType(languageId) {
+      var language = this.languageRegistry && this.languageRegistry.get(languageId);
+      return language && Array.isArray(language.mediaTypes) && language.mediaTypes[0]
+        ? language.mediaTypes[0]
+        : language && language.mediaType || "text/plain";
+    }
+
+    getLanguageExtension(languageId) {
+      var language = this.languageRegistry && this.languageRegistry.get(languageId);
+      var extension = language && Array.isArray(language.fileExtensions) && language.fileExtensions[0]
+        ? language.fileExtensions[0]
+        : ".txt";
+      return extension.charAt(0) === "." ? extension : "." + extension;
+    }
+
+    buildDerivedDocumentName(sourceDocument, languageId, fallbackBase) {
+      var baseName = sourceDocument && sourceDocument.fileName ? String(sourceDocument.fileName) : String(fallbackBase || "pipeline-output");
+      baseName = baseName.replace(/\.[^.]+$/, "");
+      return baseName + this.getLanguageExtension(languageId);
+    }
+
+    openPipelineDocument(documentModel, options) {
+      var record = this.openDocument(documentModel, options);
+      this.persistWorkspace();
+      return record;
+    }
+
+    listClosedDocuments() {
+      return this.closedDocuments.slice().sort(function (a, b) {
+        return (b.closedAt || 0) - (a.closedAt || 0);
+      }).map(function (item) {
+        var closedDate = new Date(item.closedAt || Date.now());
+        return Object.assign({}, item, {
+          name: (item.displayName || item.document.fileName || "untitled.txt") + " - closed " + closedDate.toLocaleString()
+        });
+      });
+    }
+
+    stashClosedDocument(record) {
+      this.closedDocuments.unshift({
+        id: record.id,
+        displayName: record.displayName,
+        document: new DocumentModel(record.document),
+        diagnostics: Array.isArray(record.diagnostics) ? record.diagnostics.slice() : [],
+        editorId: record.editorId,
+        source: record.source,
+        version: record.version,
+        closedAt: Date.now()
+      });
+    }
+
+    reopenClosedDocument(documentId) {
+      var index = this.closedDocuments.findIndex(function (item) {
+        return item.id === documentId;
+      });
+      if (index === -1) {
+        return null;
+      }
+
+      var cached = this.closedDocuments.splice(index, 1)[0];
+      var record = this.openDocument(new DocumentModel(cached.document), {
+        source: cached.source || "reopen-closed",
+        editorId: cached.editorId || "codemirror"
+      });
+      record.version = cached.version || 0;
+      record.diagnostics = cached.diagnostics || [];
+      this.persistWorkspace();
+      this.updateStatus("Reopened " + (record.displayName || record.document.fileName || "document") + ".");
+      return record;
+    }
+
+    renameDocument(documentId) {
+      var record = this.workspace.getRecord(documentId);
+      if (!record) {
+        return;
+      }
+      if (documentId !== this.getActiveDocumentId()) {
+        this.switchDocument(documentId);
+      }
+      var currentName = record.document.fileName || "untitled.txt";
+      var nextName = global.prompt ? global.prompt("Rename document", currentName) : currentName;
+      if (!nextName) {
+        return;
+      }
+      this.workspace.renameDocument(documentId, nextName.trim() || currentName);
+      this.document = this.getDocument();
+      this.updateUi();
+      this.persistWorkspace();
+      this.updateStatus("Renamed to " + (this.getActiveRecord() && this.getActiveRecord().displayName || nextName) + ".");
+    }
+
+    setOpenIntermediateDocuments(enabled) {
+      this.openIntermediateDocuments = Boolean(enabled);
+      this.updateUi();
+    }
+
+    buildPipelineActions(languageId) {
+      var self = this;
+      var actions = [];
+      this.pipelineActionsById = new Map();
+
+      function pushAction(action) {
+        self.pipelineActionsById.set(action.id, action);
+        actions.push(action);
+      }
+
+      this.transformManager.list(languageId).forEach(function (transformer) {
+        pushAction({
+          id: "synthetic:transformer:" + transformer.id,
+          name: "Transform: " + (transformer.name || transformer.id),
+          pipeline: {
+            id: "direct-transform-" + transformer.id,
+            name: "Run " + transformer.id,
+            inputLanguage: languageId,
+            steps: [
+              { use: transformer.id, params: {} },
+              { use: "open-new-document", params: {} }
+            ]
+          }
+        });
+      });
+
+      this.renderManager.list(languageId).forEach(function (renderer) {
+        pushAction({
+          id: "synthetic:renderer:" + renderer.id,
+          name: "Preview: " + (renderer.name || renderer.id),
+          pipeline: {
+            id: "direct-render-" + renderer.id,
+            name: "Render " + renderer.id,
+            inputLanguage: languageId,
+            steps: [
+              { use: renderer.id, params: {} }
+            ]
+          }
+        });
+      });
+
+      this.exportManager.list(languageId).forEach(function (exporter) {
+        pushAction({
+          id: "synthetic:exporter:" + exporter.id,
+          name: "Export: " + (exporter.name || exporter.id),
+          pipeline: {
+            id: "direct-export-" + exporter.id,
+            name: "Export " + exporter.id,
+            inputLanguage: languageId,
+            steps: [
+              { use: exporter.id, params: {} }
+            ]
+          }
+        });
+      });
+
+      this.pipelineRegistry.list(languageId).forEach(function (pipeline) {
+        pushAction({
+          id: pipeline.id,
+          name: pipeline.name || pipeline.id,
+          pipelineId: pipeline.id
+        });
+      });
+
+      return actions.sort(function (a, b) {
+        return a.name.localeCompare(b.name);
+      });
+    }
+
+    openIntermediateResultDocuments(intermediateResults, finalDocument, restoreDocumentId) {
+      var results = Array.isArray(intermediateResults) ? intermediateResults : [];
+      for (var index = 0; index < results.length; index += 1) {
+        var item = results[index];
+        if (!item || typeof item.text !== "string") {
+          continue;
+        }
+        if (finalDocument && item.text === finalDocument.text && item.languageId === finalDocument.languageId) {
+          continue;
+        }
+        this.openPipelineDocument(new DocumentModel({
+          text: item.text,
+          languageId: item.languageId,
+          fileName: this.buildDerivedDocumentName(this.getDocument(), item.languageId, item.step || ("step-" + (index + 1))),
+          mimeType: this.getLanguageMediaType(item.languageId)
+        }), {
+          source: "pipeline-intermediate"
+        });
+      }
+      if (restoreDocumentId) {
+        this.switchDocument(restoreDocumentId);
+      }
+    }
+
+    openDocument(documentModel, options) {
+      var record = this.workspace.openDocument(documentModel, options);
+      this.document = this.getDocument();
+      this.reloadActiveDocumentIntoEditor();
+      this.updateUi();
+      return record;
+    }
+
+    switchDocument(documentId) {
+      if (!documentId || documentId === this.getActiveDocumentId()) {
+        return;
+      }
+
+      var currentDocumentId = this.getActiveDocumentId();
+      if (currentDocumentId) {
+        this.updateDocumentText(currentDocumentId, this.editor.getText());
+      }
+
+      var record = this.workspace.setActiveDocument(documentId);
+      if (!record) {
+        return;
+      }
+
+      this.reloadActiveDocumentIntoEditor();
+      this.updateUi();
+      this.updateStatus("Switched to " + this.displayFileName() + ".");
+      this.persistWorkspace();
+    }
+
+    closeDocument(documentId) {
+      var record = this.workspace.getRecord(documentId);
+      if (!record) {
+        return;
+      }
+
+      if (documentId === this.getActiveDocumentId() && this.editor) {
+        this.updateDocumentText(documentId, this.editor.getText());
+        record = this.workspace.getRecord(documentId);
+      }
+
+      var wasActive = documentId === this.getActiveDocumentId();
+      this.pruneRenderBindings(documentId).forEach(function (binding) {
+        binding.session.close();
+      });
+      global.clearTimeout(this.autoRefreshTimersByDocumentId.get(documentId));
+      this.autoRefreshTimersByDocumentId.delete(documentId);
+      this.stashClosedDocument(record);
+      this.workspace.closeDocument(documentId);
+
+      this.document = this.getDocument() || new DocumentModel({
+        text: "",
+        languageId: "text.plain",
+        fileName: "untitled.txt",
+        mimeType: "text/plain"
+      });
+      if (wasActive) {
+        this.reloadActiveDocumentIntoEditor();
+      }
+      this.updateUi();
+      this.updateStatus("Closed document. Use Reopen to restore it this session.");
+      this.persistWorkspace();
+    }
+
+    updateDocumentText(documentId, text) {
+      if (!documentId) {
+        this.document = this.document.cloneWith({ text: text || "" });
+        return null;
+      }
+      var record = this.workspace.updateText(documentId, text);
+      this.document = this.getDocument();
+      return record;
+    }
+
+    replaceDocument(documentId, documentModel) {
+      var record = this.workspace.replaceDocument(documentId, documentModel);
+      this.document = this.getDocument();
+      return record;
+    }
+
+    setDocumentLanguage(documentId, languageId) {
+      if (!documentId) {
+        this.document = this.document.cloneWith({ languageId: languageId || "text.plain" });
+        return null;
+      }
+      var record = this.workspace.setLanguage(documentId, languageId);
+      this.document = this.getDocument();
+      return record;
     }
 
     setDocument(documentModel) {
-      this.document = new DocumentModel(documentModel);
+      var nextDocument = new DocumentModel(documentModel);
+      var canonicalLanguageId = this.languageRegistry && this.languageRegistry.getCanonicalId(nextDocument.languageId);
+      if (!this.getActiveDocumentId()) {
+        this.document = nextDocument.cloneWith({
+          languageId: canonicalLanguageId || nextDocument.languageId
+        });
+        this.editor.setText(this.document.text, this.document.languageId);
+        this.updateUi();
+        this.scheduleAutosave();
+        return;
+      }
+      this.workspace.replaceActiveDocument(nextDocument.cloneWith({
+        languageId: canonicalLanguageId || nextDocument.languageId
+      }));
+      this.document = this.getDocument();
       this.editor.setText(this.document.text, this.document.languageId);
       this.updateUi();
       this.scheduleAutosave();
@@ -268,8 +912,9 @@
 
     setLanguage(languageId) {
       var language = this.languageRegistry.get(languageId);
-      var nextLanguageId = language ? language.id : languageId || "plain-text";
-      this.document = this.document.cloneWith({ languageId: nextLanguageId });
+      var nextLanguageId = language ? language.id : languageId || "text.plain";
+      this.setDocumentLanguage(this.getActiveDocumentId(), nextLanguageId);
+      this.document = this.getDocument();
       if (this.editor) {
         this.editor.applyLanguage(nextLanguageId);
       }
@@ -277,11 +922,12 @@
         this.storage.set("selectedLanguage", nextLanguageId);
       }
       this.updateUi();
+      this.persistWorkspace();
     }
 
     async switchEditor(editorId) {
       try {
-        await this.editor.switchEditor(editorId, this.editor.getText(), this.document.languageId);
+        await this.editor.switchEditor(editorId, this.editor.getText(), this.getDocument() ? this.getDocument().languageId : "text.plain");
         this.updateUi();
         this.updateStatus("Editor changed.");
       } catch (error) {
@@ -290,9 +936,17 @@
     }
 
     async runLinters() {
-      var diagnostics = await this.diagnosticsManager.runLinters(this.document);
+      if (!this.getActiveDocumentId()) {
+        this.updateStatus("Open or create a document first.");
+        return;
+      }
+      var documentModel = this.getDocument();
+      var diagnostics = await this.diagnosticsManager.runLinters(documentModel, this.getActiveDocumentId());
+      if (this.getActiveRecord()) {
+        this.getActiveRecord().diagnostics = diagnostics.slice();
+      }
       this.editor.setDiagnostics(diagnostics);
-      this.diagnosticsPanel.render(diagnostics, this.document);
+      this.diagnosticsPanel.render(diagnostics, documentModel);
       this.layout.setDiagnosticsPanelOpen(true);
       this.updateStatus("Diagnostics complete: " + diagnostics.length + " result" + (diagnostics.length === 1 ? "." : "s."));
     }
@@ -305,6 +959,10 @@
       if (!diagnostic) {
         return;
       }
+      var documentId = diagnostic.target && diagnostic.target.documentId;
+      if (documentId && documentId !== this.getActiveDocumentId()) {
+        this.switchDocument(documentId);
+      }
       var start = diagnostic.range && diagnostic.range.start;
       var end = diagnostic.range && diagnostic.range.end;
       var from = start && Number.isFinite(start.offset) ? start.offset : 0;
@@ -312,65 +970,34 @@
       this.editor.selectRange(from, to);
     }
 
-    async runTransformer(transformerId) {
-      if (!transformerId) {
-        return;
-      }
-
-      try {
-        await this.executePipeline({
-          id: "direct-transform-" + transformerId,
-          name: "Run " + transformerId,
-          inputLanguage: this.document.languageId,
-          steps: [
-            { use: transformerId, params: {} },
-            { use: "replace-current-text", params: {} }
-          ]
-        });
-        this.updateStatus("Transformer complete.");
-      } catch (error) {
-        this.updateStatus(error && error.message ? error.message : String(error));
-      }
-    }
-
-    async openRenderer(rendererId) {
-      if (!rendererId) {
-        return;
-      }
-
-      try {
-        var result = await this.executePipeline({
-          id: "direct-render-" + rendererId,
-          name: "Render " + rendererId,
-          inputLanguage: this.document.languageId,
-          steps: [
-            { use: rendererId, params: {} }
-          ]
-        });
-        if (result && result.session) {
-          this.renderSessions.push(result.session);
-          this.pruneRenderSessions();
-        }
-        this.updateUi();
-        this.updateStatus("Render window opened.");
-      } catch (error) {
-        this.updateStatus(error && error.message ? error.message : String(error));
-      }
-    }
-
     refreshRenderers() {
-      this.pruneRenderSessions();
-      if (this.renderSessions.length === 0) {
+      var documentId = this.getActiveDocumentId();
+      if (!documentId) {
+        this.updateStatus("Open or create a document first.");
+        this.updateUi();
+        return;
+      }
+      var bindings = this.pruneRenderBindings(documentId);
+      if (bindings.length === 0) {
         this.updateStatus("No open render windows to refresh.");
         this.updateUi();
         return;
       }
 
-      this.renderSessions.forEach((session) => {
-        session.refresh(this.document);
+      var record = this.getActiveRecord();
+      Promise.all(bindings.map(async (binding) => {
+        var renderDocument = await this.createRenderDocumentForBinding(binding, record);
+        binding.lastUpdatedAt = new Date().toISOString();
+        binding.session.updateMetadata(this.makeRenderMetadata(record, binding));
+        binding.session.refresh(renderDocument);
+        binding.lastRenderedVersion = record.version;
+      })).then(() => {
+        this.updateStatus("Refreshed " + bindings.length + " render window" + (bindings.length === 1 ? "." : "s."));
+        this.updateUi();
+      }).catch((error) => {
+        this.updateStatus(error && error.message ? error.message : String(error));
+        this.updateUi();
       });
-      this.updateStatus("Refreshed " + this.renderSessions.length + " render window" + (this.renderSessions.length === 1 ? "." : "s."));
-      this.updateUi();
     }
 
     setAutoRefresh(enabled) {
@@ -379,7 +1006,10 @@
         this.scheduleAutoRefresh();
         this.updateStatus("Auto-refresh enabled after " + this.renderRefreshDelayMs / 1000 + "s of stable source.");
       } else {
-        global.clearTimeout(this.autoRefreshTimer);
+        this.autoRefreshTimersByDocumentId.forEach(function (timerId) {
+          global.clearTimeout(timerId);
+        });
+        this.autoRefreshTimersByDocumentId.clear();
         this.updateStatus("Auto-refresh disabled.");
       }
       this.updateUi();
@@ -389,12 +1019,16 @@
       if (!exporterId) {
         return;
       }
+      if (!this.getActiveDocumentId()) {
+        this.updateStatus("Open or create a document first.");
+        return;
+      }
 
       try {
         var result = await this.executePipeline({
           id: "direct-export-" + exporterId,
           name: "Export " + exporterId,
-          inputLanguage: this.document.languageId,
+          inputLanguage: this.getDocument().languageId,
           steps: [
             { use: exporterId, params: {} }
           ]
@@ -407,13 +1041,48 @@
       }
     }
 
+    async runPipelineAction(actionId) {
+      if (!actionId) {
+        return;
+      }
+
+      var action = this.pipelineActionsById.get(actionId);
+      await this.runPipeline(action && action.pipeline ? action.pipeline : action && action.pipelineId || actionId);
+    }
+
     async runPipeline(pipelineId) {
       if (!pipelineId) {
         return;
       }
+      if (!this.getActiveDocumentId()) {
+        this.updateStatus("Open or create a document first.");
+        return;
+      }
 
+      var restoreDocumentId = this.getActiveDocumentId();
       try {
         var result = await this.executePipeline(pipelineId);
+        if (this.openIntermediateDocuments && result && Array.isArray(result.intermediateResults) && result.intermediateResults.length) {
+          this.openIntermediateResultDocuments(result.intermediateResults, result.document || null, result.action === "open-new-document" ? result.documentId : restoreDocumentId);
+        }
+        if (result && result.action === "render" && result.session) {
+          var activeRecord = this.getActiveRecord();
+          if (activeRecord) {
+            var binding = {
+              id: "binding-" + Math.random().toString(36).slice(2, 10),
+              documentId: activeRecord.id,
+              session: result.session,
+              rendererId: result.session.rendererId,
+              pipelineId: typeof pipelineId === "string" ? pipelineId : pipelineId.id,
+              pipelineDefinition: typeof pipelineId === "string" ? null : pipelineId,
+              lastRenderedVersion: activeRecord.version,
+              lastUpdatedAt: new Date().toISOString()
+            };
+            result.session.updateMetadata(this.makeRenderMetadata(activeRecord, binding));
+            this.workspace.addRenderBinding(activeRecord.id, binding);
+            this.refreshRenderBinding(binding.id);
+          }
+        }
         if (result && result.action === "export") {
           this.downloadExportResult(result.result);
         }
@@ -429,7 +1098,7 @@
     }
 
     async executePipeline(pipelineOrId) {
-      return this.pipelineExecutor.execute(pipelineOrId, this.document);
+      return this.pipelineExecutor.execute(pipelineOrId, this.getDocument());
     }
 
     downloadExportResult(result) {
@@ -488,12 +1157,14 @@
           throw new Error("Plugin example file is invalid.");
         }
 
-        this.setDocument(new DocumentModel({
+        var record = this.openDocument(new DocumentModel({
           text: example.text,
-          languageId: example.languageId || plugin.languages[0] || "plain-text",
+          languageId: example.languageId || plugin.languages[0] || "text.plain",
           fileName: example.fileName || "example.txt",
           mimeType: example.mimeType || "text/plain"
-        }));
+        }), {
+          source: "plugin-example"
+        });
         await this.persistDocument();
         this.updateStatus("Example file loaded.");
       } catch (error) {
@@ -521,25 +1192,37 @@
     }
 
     updateUi() {
-      if (!this.toolbar || !this.pluginPanel || !this.pluginManager) {
+      if (!this.toolbar || !this.tabs || !this.pluginPanel || !this.pluginManager) {
         return;
       }
 
-      var languageId = this.document.languageId;
+      var documentModel = this.getDocument();
+      var hasDocument = Boolean(this.getActiveDocumentId());
+      var languageId = documentModel ? documentModel.languageId : "text.plain";
       if (this.editor) {
+        this.editor.setEditable(hasDocument);
         this.editor.applyLanguage(languageId);
       }
+      if (this.layout && this.layout.editorContainer) {
+        this.layout.editorContainer.classList.toggle("is-empty-workspace", !hasDocument);
+        this.layout.editorContainer.setAttribute("data-empty-message", "No document open. Use New, Open, or Reopen.");
+      }
       this.toolbar.update({
+        hasDocument: hasDocument,
         languageId: languageId,
         languages: this.languageRegistry.list(),
         editorId: this.editor ? this.editor.getActiveEditorId() : "",
         editors: this.editor ? this.editor.listEditors(languageId) : [],
-        transformers: this.transformManager.list(languageId),
-        renderers: this.renderManager.list(languageId),
-        exporters: this.exportManager.list(languageId),
-        pipelines: this.pipelineRegistry.list(languageId),
+        closedDocuments: this.listClosedDocuments(),
+        pipelineActions: hasDocument ? this.buildPipelineActions(languageId) : [],
         autoRefreshEnabled: this.autoRefreshEnabled,
+        openIntermediateDocuments: this.openIntermediateDocuments,
         hasRenderSessions: this.hasOpenRenderSessions()
+      });
+
+      this.tabs.render({
+        activeDocumentId: this.getActiveDocumentId(),
+        records: this.workspace.listRecords()
       });
 
       this.pluginPanel.render({
@@ -569,14 +1252,29 @@
     }
 
     scheduleAutoRefresh() {
-      global.clearTimeout(this.autoRefreshTimer);
+      var documentId = this.getActiveDocumentId();
+      global.clearTimeout(this.autoRefreshTimersByDocumentId.get(documentId));
       if (!this.autoRefreshEnabled) {
         return;
       }
 
-      this.autoRefreshTimer = global.setTimeout(() => {
+      var timerId = global.setTimeout(() => {
         this.refreshRenderers();
       }, this.renderRefreshDelayMs);
+      this.autoRefreshTimersByDocumentId.set(documentId, timerId);
+    }
+
+    pruneRenderBindings(documentId) {
+      var bindings = this.workspace.getRenderBindings(documentId).slice();
+      var openBindings = [];
+      for (var index = 0; index < bindings.length; index += 1) {
+        if (bindings[index].session && bindings[index].session.isOpen()) {
+          openBindings.push(bindings[index]);
+        } else {
+          this.workspace.removeRenderBinding(documentId, bindings[index].id);
+        }
+      }
+      return openBindings;
     }
 
     pruneRenderSessions() {
@@ -586,21 +1284,22 @@
     }
 
     hasOpenRenderSessions() {
-      this.pruneRenderSessions();
-      return this.renderSessions.length > 0;
+      if (!this.getActiveDocumentId()) {
+        return false;
+      }
+      return this.pruneRenderBindings(this.getActiveDocumentId()).length > 0;
     }
 
     async persistDocument() {
-      if (!this.storage) {
-        return;
-      }
-
-      await this.storage.set("autosaveDocument", this.document);
-      await this.storage.set("selectedLanguage", this.document.languageId);
+      await this.persistWorkspace();
     }
 
     displayFileName() {
-      return this.document.fileName || "untitled.txt";
+      var record = this.getActiveRecord();
+      if (record && record.displayName) {
+        return record.displayName;
+      }
+      return this.getActiveDocumentId() ? this.getDocument().fileName || "untitled.txt" : "no document";
     }
 
     updateStatus(message) {

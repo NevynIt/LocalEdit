@@ -10,6 +10,7 @@
   <body>
     <div id="app" class="app-shell">
       <header id="toolbar" class="toolbar" aria-label="Editor toolbar"></header>
+      <nav id="document-tabs" class="document-tabs" aria-label="Open documents"></nav>
       <main class="workspace">
         <section id="editor-container" class="editor-region" aria-label="Source editor"></section>
         <aside id="plugin-manager-panel" class="side-panel is-hidden" aria-label="Plugin manager"></aside>
@@ -21,6 +22,7 @@
     <script src="libs/codemirror/editor.bundle.js"></script>
     <script src="core/host-adapter.js"></script>
     <script src="core/document-model.js"></script>
+    <script src="core/workspace-manager.js"></script>
     <script src="core/language-registry.js"></script>
     <script src="core/plugin-types.js"></script>
     <script src="core/contribution-registry.js"></script>
@@ -43,6 +45,7 @@
     <script src="core/pipeline-registry.js"></script>
     <script src="core/pipeline-executor.js"></script>
     <script src="core/toolbar.js"></script>
+    <script src="core/document-tabs.js"></script>
     <script src="core/plugin-manager-panel.js"></script>
     <script src="core/diagnostics-panel.js"></script>
     <script src="core/editor-layout.js"></script>

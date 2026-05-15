@@ -34,8 +34,11 @@
    * @typedef {Object} LanguageContribution
    * @property {string} id
    * @property {string} name
+    * @property {string=} parentLanguageId
+    * @property {string[]=} aliases
    * @property {string[]=} fileExtensions
    * @property {string=} mediaType
+    * @property {string[]=} mediaTypes
    * @property {string=} description
    */
 
@@ -154,11 +157,14 @@
     return {
       id: definition.id,
       name: definition.name || definition.label || definition.id,
+      parentLanguageId: definition.parentLanguageId || definition.parent || undefined,
+      aliases: list(definition.aliases),
       fileExtensions: list(definition.fileExtensions || definition.extensions).map(function (extension) {
         var value = String(extension || "");
         return value.charAt(0) === "." ? value : "." + value;
       }),
-      mediaType: definition.mediaType || list(definition.mimeTypes)[0] || "",
+      mediaType: definition.mediaType || definition.mediaTypes && definition.mediaTypes[0] || list(definition.mimeTypes)[0] || "",
+      mediaTypes: list(definition.mediaTypes || definition.mimeTypes),
       description: definition.description || ""
     };
   }

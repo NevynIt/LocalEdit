@@ -17,25 +17,63 @@
     return Array.isArray(value) ? value : [];
   }
 
-  function matchesLanguage(contribution, languageId) {
-    if (!languageId) {
-      return true;
+  function contributionLanguages(contribution) {
+    if (!contribution) {
+      return [];
     }
 
     var kind = contribution.kind;
     if (kind === "pipeline") {
-      return contribution.inputLanguage === languageId;
+      return contribution.inputLanguage ? [contribution.inputLanguage] : [];
     }
     if (kind === "transformer") {
-      return contribution.inputLanguage === languageId || list(contribution.inputLanguages).indexOf(languageId) !== -1;
+      return contribution.inputLanguage ? [contribution.inputLanguage] : list(contribution.inputLanguages);
     }
     if (kind === "editor-extension") {
-      var extensionLanguages = list(contribution.languages || contribution.accepts);
-      return extensionLanguages.length === 0 || extensionLanguages.indexOf("*") !== -1 || extensionLanguages.indexOf(languageId) !== -1;
+      return list(contribution.languages || contribution.accepts);
     }
 
-    var accepted = list(contribution.accepts || contribution.languages || contribution.inputLanguages);
-    return accepted.length === 0 || accepted.indexOf("*") !== -1 || accepted.indexOf(languageId) !== -1;
+    return list(contribution.accepts || contribution.languages || contribution.inputLanguages);
+  }
+
+  function matchesLanguage(contribution, languageId, languageRegistry) {
+    if (!languageId || !contribution) {
+      return true;
+    }
+
+    var accepted = contributionLanguages(contribution);
+    if (accepted.length === 0 || accepted.indexOf("*") !== -1) {
+      return true;
+    }
+
+    if (!languageRegistry) {
+      return accepted.indexOf(languageId) !== -1;
+    }
+
+    return accepted.some(function (supportedLanguageId) {
+      return languageRegistry.isSameOrDescendantOf(languageId, supportedLanguageId);
+    });
+  }
+
+  function languageSpecificity(contribution, languageId, languageRegistry) {
+    var accepted = contributionLanguages(contribution);
+    if (!languageId || accepted.length === 0 || accepted.indexOf("*") !== -1) {
+      return Number.MAX_SAFE_INTEGER;
+    }
+
+    if (!languageRegistry) {
+      return accepted.indexOf(languageId) !== -1 ? 0 : Number.MAX_SAFE_INTEGER;
+    }
+
+    var distances = accepted.map(function (supportedLanguageId) {
+      return languageRegistry.getSpecificityDistance(languageId, supportedLanguageId);
+    }).filter(function (distance) {
+      return distance >= 0;
+    });
+    if (!distances.length) {
+      return Number.MAX_SAFE_INTEGER;
+    }
+    return Math.min.apply(Math, distances);
   }
 
   function cloneContribution(contribution, metadata) {
@@ -48,7 +86,8 @@
   }
 
   class ContributionRegistry {
-    constructor() {
+    constructor(languageRegistry) {
+      this.languageRegistry = languageRegistry || null;
       this.plugins = new Map();
       this.contributions = new Map();
       this.disabledContributions = new Set();
@@ -202,7 +241,7 @@
         if (!plugin || !plugin.active) {
           return;
         }
-        if (!matchesLanguage(contribution, languageId)) {
+        if (!matchesLanguage(contribution, languageId, this.languageRegistry)) {
           return;
         }
         if (this.getAvailability(contribution).state !== "available") {
@@ -210,7 +249,13 @@
         }
         result.push(contribution);
       });
+      var languageRegistry = this.languageRegistry;
       return result.sort(function (a, b) {
+        var specificityA = languageSpecificity(a, languageId, languageRegistry);
+        var specificityB = languageSpecificity(b, languageId, languageRegistry);
+        if (specificityA !== specificityB) {
+          return specificityA - specificityB;
+        }
         return (a.name || a.id).localeCompare(b.name || b.id);
       });
     }

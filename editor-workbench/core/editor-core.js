@@ -5,9 +5,10 @@
     constructor() {
       this.container = null;
       this.textarea = null;
-      this.languageId = "plain-text";
+      this.languageId = "text.plain";
       this.diagnostics = [];
       this.changeHandlers = [];
+      this.editable = true;
     }
 
     mount(container) {
@@ -19,6 +20,7 @@
       this.textarea.addEventListener("input", () => {
         this.emitChange();
       });
+      this.setEditable(this.editable);
       container.appendChild(this.textarea);
     }
 
@@ -99,7 +101,7 @@
     }
 
     setLanguage(languageId) {
-      this.languageId = languageId || "plain-text";
+      this.languageId = languageId || "text.plain";
       if (this.textarea) {
         this.textarea.dataset.languageId = this.languageId;
       }
@@ -109,8 +111,16 @@
       this.diagnostics = Array.isArray(diagnostics) ? diagnostics : [];
     }
 
-    focus() {
+    setEditable(editable) {
+      this.editable = editable !== false;
       if (this.textarea) {
+        this.textarea.readOnly = !this.editable;
+        this.textarea.classList.toggle("is-readonly", !this.editable);
+      }
+    }
+
+    focus() {
+      if (this.textarea && this.editable) {
         this.textarea.focus();
       }
     }
@@ -121,9 +131,12 @@
       this.container = null;
       this.view = null;
       this.languageCompartment = null;
-      this.languageId = "plain-text";
+      this.editableCompartment = null;
+      this.readOnlyCompartment = null;
+      this.languageId = "text.plain";
       this.diagnostics = [];
       this.changeHandlers = [];
+      this.editable = true;
     }
 
     mount(container) {
@@ -134,6 +147,8 @@
       }
 
       this.languageCompartment = new codeMirror.Compartment();
+      this.editableCompartment = new codeMirror.Compartment();
+      this.readOnlyCompartment = new codeMirror.Compartment();
       this.view = new codeMirror.EditorView({
         state: codeMirror.EditorState.create({
           doc: "",
@@ -141,6 +156,8 @@
             codeMirror.basicSetup,
             codeMirror.EditorView.lineWrapping,
             this.languageCompartment.of([]),
+            this.editableCompartment.of(codeMirror.EditorView.editable.of(this.editable)),
+            this.readOnlyCompartment.of(codeMirror.EditorState.readOnly.of(!this.editable)),
             codeMirror.EditorView.updateListener.of((update) => {
               if (update.docChanged) {
                 this.emitChange();
@@ -158,6 +175,8 @@
       }
       this.view = null;
       this.languageCompartment = null;
+      this.editableCompartment = null;
+      this.readOnlyCompartment = null;
       this.container = null;
     }
 
@@ -230,7 +249,7 @@
     }
 
     setLanguage(languageId, context) {
-      this.languageId = languageId || "plain-text";
+      this.languageId = languageId || "text.plain";
       if (!this.view || !this.languageCompartment) {
         return;
       }
@@ -245,8 +264,25 @@
       this.diagnostics = Array.isArray(diagnostics) ? diagnostics : [];
     }
 
+    setEditable(editable) {
+      this.editable = editable !== false;
+      if (!this.view || !this.editableCompartment || !this.readOnlyCompartment) {
+        return;
+      }
+      var codeMirror = global.EditorWorkbenchCodeMirror;
+      this.view.dispatch({
+        effects: [
+          this.editableCompartment.reconfigure(codeMirror.EditorView.editable.of(this.editable)),
+          this.readOnlyCompartment.reconfigure(codeMirror.EditorState.readOnly.of(!this.editable))
+        ]
+      });
+      if (this.view.dom) {
+        this.view.dom.classList.toggle("is-readonly", !this.editable);
+      }
+    }
+
     focus() {
-      if (this.view) {
+      if (this.view && this.editable) {
         this.view.focus();
       }
     }

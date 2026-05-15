@@ -5,10 +5,14 @@ Editor Workbench is a local-first structured text editor that runs from disk or 
 ## Features
 
 - CodeMirror editor contribution with local syntax-highlighting bundles and textarea fallback editor contribution.
-- IndexedDB autosave, selected-language persistence, file open, and source download.
+- Multi-document workspace with tabbed document instances, duplicate-name disambiguation, active-document switching, close fallback behavior, session-only reopen for hidden closed tabs, tab-driven rename, and an intentionally empty startup workspace until a document is opened or created.
+- Workspace-scoped IndexedDB persistence for open documents, active tab, selected languages, file open, and source download.
 - Plugin manager with packaged plugins and local `.js` plugin upload in local mode.
-- Diagnostics panel, transformer menu, preview/render windows, exporter menu, manual refresh, and 3-second stable-source auto-refresh.
-- Pipeline-backed transform, render, export, editor, clipboard, and document actions.
+- Canonical language hierarchy with inherited tool matching, alias compatibility, and hierarchical language labels.
+- Diagnostics panel, a single pipeline menu, preview/render windows with document-aware titles and metadata, manual refresh, and 3-second stable-source auto-refresh.
+- Document-scoped diagnostics and document-bound preview windows with source metadata chrome.
+- Pipeline-backed transform, render, export, editor, clipboard, and document actions, with automatic single-step pipeline entries for registered transformers, renderers, and exporters.
+- Text-producing pipeline results always open as new documents, and pipeline runs can optionally open intermediate transformer steps as additional documents.
 - Pipeline JSON documents for defining and running custom data-only pipelines.
 - Markdown preview/export with sanitized HTML and inline Mermaid/Graphviz fenced diagrams.
 - Mermaid and Graphviz standalone SVG preview/export.
@@ -33,8 +37,9 @@ Editor Workbench is a local-first structured text editor that runs from disk or 
 Local mode:
 
 1. Open `editor-workbench/index.html` directly in a browser.
-2. Use `Open` to load a local text file.
-3. Use `Save` or plugin exporters to download output.
+2. Use `New` to create a blank document or `Open` to load a local text file.
+3. You can also drag a local file onto the `Open` button.
+4. Use `Save` or plugin exporters to download output.
 
 Extension mode:
 
@@ -42,6 +47,41 @@ Extension mode:
 2. Enable developer mode.
 3. Load `editor-workbench/` as an unpacked extension.
 4. Click the extension action to open `editor.html`.
+
+## Workspace Model
+
+- Each opened file becomes a new workspace document instance, even when the same local file is opened multiple times.
+- The editor mounts a single active editing surface and switches it between open tabs.
+- Tabs are disambiguated by display name such as `notes.md`, `notes.md (2)`, and `notes.md (3)`.
+- Double-click a tab name to rename the document file label.
+- Diagnostics, autosave state, and preview bindings are tracked per document instance.
+- Closing a tab hides that document for the rest of the current session and makes it available through the `Reopen` control.
+- The `Reopen` list shows the most recently closed documents first and includes the time each document was closed.
+- Hidden closed tabs are not persisted and are lost when the page reloads.
+- Opening a real file into a workspace that only contains the initial blank untitled tab automatically removes that disposable blank tab.
+- The app can also start with no open documents at all; document-specific actions stay disabled until a file is opened or a new document is created.
+- Closing a tab closes any preview windows bound to that document instance.
+- Active document text is restored into the editor on reload, and persistence now flushes the current editor contents before workspace storage writes and during page unload.
+
+## Pipeline UX
+
+- The toolbar exposes one pipeline surface instead of separate transform, render, export, and pipeline menus.
+- Registered transformers, renderers, and exporters are surfaced automatically as synthetic single-step pipeline actions for the current language.
+- User-defined and packaged multi-step pipelines appear in the same list.
+- Preview refresh and auto-refresh continue to operate on preview windows bound to the active document.
+- Render windows show the bound document name in the window title, display the last update timestamp in the render chrome, and can request a targeted refresh from inside the render window.
+- The optional `Steps` toggle opens intermediate transformer outputs as separate documents so pipeline execution can be inspected step by step.
+
+## Language Model
+
+Languages are inheritance-aware. LocalEdit treats plain text as `text.plain`, which inherits from the root `text` language. Parent contributions automatically apply to descendant languages, so generic tools for `json`, `xml`, or `text` remain available to specialized dialects.
+
+Current packaged canonical ids that changed during this rollout include:
+
+- `text.plain` with alias compatibility for `plain-text`
+- `graphviz.dot` with alias compatibility for `graphviz`
+- `xml.svg` with alias compatibility for `svg`
+- `json.cytoscape` with alias compatibility for `cytoscape`
 
 ## Build And Verification
 
@@ -62,7 +102,7 @@ npm run verify:contracts
 
 The app does not load from npm, a CDN, or a server at runtime.
 
-`npm run verify:contracts` checks packaged plugin registration, contribution lookup, parameter defaults, canonical diagnostic normalization, and basic pipeline execution.
+`npm run verify:contracts` checks packaged plugin registration, inheritance-aware language lookup, parameter defaults, canonical diagnostic normalization, document-scoped diagnostics isolation, workspace bookkeeping, and pipeline execution metadata including intermediate results.
 
 ## Packaged Plugins
 
@@ -70,10 +110,10 @@ The app does not load from npm, a CDN, or a server at runtime.
 | --- | --- | --- |
 | Markdown | `markdown` | Syntax, sanitized HTML preview/export, Mermaid/Graphviz fenced diagrams |
 | Mermaid | `mermaid` | SVG preview/export |
-| Graphviz | `graphviz` | DOT syntax, local WASM SVG preview/export |
-| SVG | `svg` | SVG syntax, sanitized SVG preview/export, PNG export |
+| Graphviz | `graphviz.dot` | DOT syntax, local WASM SVG preview/export |
+| SVG | `xml.svg` | SVG syntax, sanitized SVG preview/export, PNG export |
 | JSON | `json` | Syntax, parse linting, HTML tree preview, Cytoscape tree preview, format, compact |
-| Cytoscape JSON | `cytoscape` | JSON syntax, graph-shape linting, Cytoscape preview, format, compact |
+| Cytoscape JSON | `json.cytoscape` | JSON syntax, graph-shape linting, Cytoscape preview, format, compact |
 | Indented Tree | `indented-tree` | Syntax, parser linting, outline preview, Cytoscape preview, JSON/Cytoscape export |
 | XML | `xml` | Syntax, DOMParser linting, tree preview, Prettier format, compact |
 | JavaScript | `javascript` | Syntax, Prettier format |
@@ -98,9 +138,9 @@ Supported contribution collections:
 - `contributes.terminalSteps`
 - `contributes.pipelines`
 
-Language records use `{ id, name, fileExtensions, mediaType, description }`. Diagnostics use `{ source, severity, message, languageId, range, target, step }`; legacy `{ from, to }` offsets are normalized inside core services, but they are not the plugin-facing contract.
+Language records use `{ id, name, parentLanguageId, fileExtensions, mediaTypes, aliases, description }`. Diagnostics use `{ source, severity, message, languageId, range, target, step }`; legacy `{ from, to }` offsets are normalized inside core services, but they are not the plugin-facing contract.
 
-Contribution parameters are schema records and every parameter must include a `default`. Pipelines are data-only JSON documents that reference contribution ids with optional parameter overrides; the final pipeline step determines the user-visible action.
+Contribution parameters are schema records and every parameter must include a `default`. Pipelines are data-only JSON documents that reference contribution ids with optional parameter overrides; text-producing terminal steps open new documents rather than replacing the active source document.
 
 Providers receive a `context.runtime` loader and can call `ensureScripts(...)` to load local runtime bundles only when needed. This keeps startup small and avoids eager loading large libraries such as Mermaid, Graphviz, Prettier, PapaParse, and Ruff WASM.
 

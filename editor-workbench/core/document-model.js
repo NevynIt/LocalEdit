@@ -5,7 +5,7 @@
     constructor(data) {
       var source = data || {};
       this.text = typeof source.text === "string" ? source.text : "";
-      this.languageId = source.languageId || "plain-text";
+      this.languageId = source.languageId || "text.plain";
       this.fileName = source.fileName || undefined;
       this.mimeType = source.mimeType || undefined;
       this.lastModified = source.lastModified || undefined;

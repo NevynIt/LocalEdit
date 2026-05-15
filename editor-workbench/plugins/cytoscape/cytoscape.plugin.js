@@ -328,7 +328,7 @@
     var value = parseJson(documentModel.text || "");
     return {
       text: compact ? JSON.stringify(value) : JSON.stringify(value, null, 2),
-      languageId: "cytoscape",
+      languageId: "json.cytoscape",
       fileName: cytoscapeFileName(documentModel.fileName),
       mode: "replace-current"
     };
@@ -362,7 +362,7 @@
     getExampleDocument: function () {
       return {
         fileName: "example.cy.json",
-        languageId: "cytoscape",
+        languageId: "json.cytoscape",
         mimeType: "application/vnd.cytoscape+json",
         text: JSON.stringify({
           format: "cytoscape-js-document",
@@ -389,11 +389,13 @@
         }, null, 2)
       };
     },
-    languages: ["cytoscape"],
+    languages: ["json.cytoscape"],
     languageDefinitions: [
       {
-        id: "cytoscape",
+        id: "json.cytoscape",
         label: "Cytoscape JSON",
+        parent: "json",
+        aliases: ["cytoscape"],
         extensions: ["cy.json", "cytoscape.json", "cyjs"],
         mimeTypes: ["application/vnd.cytoscape+json"]
       }
@@ -402,7 +404,7 @@
       {
         id: "cytoscape-json-codemirror",
         name: "Cytoscape JSON syntax",
-        languages: ["cytoscape"],
+        languages: ["json.cytoscape"],
         getCodeMirrorExtensions: async function (context) {
           await requireRuntime(context).ensureScripts(RUNTIME_PATHS.codeMirror);
           return [requireCodeMirrorTools().json()];
@@ -413,7 +415,7 @@
       {
         id: "cytoscape-json-linter",
         name: "Cytoscape JSON shape",
-        languages: ["cytoscape"],
+        languages: ["json.cytoscape"],
         lint: lintCytoscape
       }
     ],
@@ -421,7 +423,7 @@
       {
         id: "cytoscape-json-format",
         name: "Format Cytoscape JSON",
-        inputLanguages: ["cytoscape"],
+        inputLanguages: ["json.cytoscape"],
         transform: function (documentModel) {
           return formatJson(documentModel, false);
         }
@@ -429,7 +431,7 @@
       {
         id: "cytoscape-json-compact",
         name: "Compact Cytoscape JSON",
-        inputLanguages: ["cytoscape"],
+        inputLanguages: ["json.cytoscape"],
         transform: function (documentModel) {
           return formatJson(documentModel, true);
         }
@@ -439,7 +441,7 @@
       {
         id: "cytoscape-graph-preview",
         name: "Cytoscape Graph Preview",
-        inputLanguages: ["cytoscape"],
+        inputLanguages: ["json.cytoscape"],
         outputKind: "custom",
         render: renderCytoscape
       }

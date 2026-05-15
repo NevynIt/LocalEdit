@@ -52,7 +52,7 @@
     getExampleDocument: function () {
       return {
         fileName: "example.dot",
-        languageId: "graphviz",
+        languageId: "graphviz.dot",
         mimeType: "text/vnd.graphviz",
         text: [
           "digraph Example {",
@@ -62,11 +62,13 @@
         ].join("\n")
       };
     },
-    languages: ["graphviz"],
+    languages: ["graphviz.dot"],
     languageDefinitions: [
       {
-        id: "graphviz",
+        id: "graphviz.dot",
         label: "Graphviz DOT",
+        parent: "text",
+        aliases: ["graphviz"],
         extensions: ["dot", "gv"],
         mimeTypes: ["text/vnd.graphviz"]
       }
@@ -75,7 +77,7 @@
       {
         id: "graphviz-codemirror",
         name: "DOT syntax",
-        languages: ["graphviz"],
+        languages: ["graphviz.dot"],
         getCodeMirrorExtensions: async function (context) {
           await requireRuntime(context).ensureScripts(RUNTIME_PATHS.codeMirror);
           return [requireCodeMirrorTools().dot()];
@@ -88,7 +90,7 @@
       {
         id: "graphviz-svg-preview",
         name: "Graphviz SVG Preview",
-        inputLanguages: ["graphviz"],
+        inputLanguages: ["graphviz.dot"],
         outputKind: "svg",
         render: async function (documentModel, context) {
           return {
@@ -103,7 +105,7 @@
       {
         id: "graphviz-svg-export",
         name: "Graphviz SVG",
-        languages: ["graphviz"],
+        languages: ["graphviz.dot"],
         inputKinds: ["source"],
         outputFileExtension: "svg",
         mimeType: "image/svg+xml",

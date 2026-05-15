@@ -11,6 +11,10 @@
       this.metadata = Object.assign({}, metadata || {});
     }
 
+    updateMetadata(metadata) {
+      this.metadata = Object.assign({}, this.metadata || {}, metadata || {});
+    }
+
     send(documentModel) {
       var message = {
         type: "render",

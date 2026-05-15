@@ -21,6 +21,10 @@
     return { line: line, column: column, offset: safeOffset };
   }
 
+  function diagnosticKey(documentId, source) {
+    return String(documentId || "active") + "::" + String(source || "unknown");
+  }
+
   class DiagnosticsService {
     constructor(registry, runtime) {
       this.registry = registry;
@@ -45,33 +49,42 @@
       });
     }
 
-    publish(source, diagnostics, documentModel) {
+    publish(source, diagnostics, documentModel, documentId) {
       var normalized = list(diagnostics).map((diagnostic) => {
-        return this.normalize(diagnostic, source, documentModel);
+        return this.normalize(diagnostic, source, documentModel, documentId);
       });
-      this.bySource.set(source || "unknown", normalized);
+      this.bySource.set(diagnosticKey(documentId, source), normalized);
       this.emit();
       return normalized;
     }
 
-    clear(source) {
-      if (source) {
-        this.bySource.delete(source);
+    clear(documentId, source) {
+      if (documentId && source) {
+        this.bySource.delete(diagnosticKey(documentId, source));
+      } else if (documentId) {
+        var prefix = String(documentId) + "::";
+        Array.from(this.bySource.keys()).forEach((key) => {
+          if (key.indexOf(prefix) === 0) {
+            this.bySource.delete(key);
+          }
+        });
       } else {
         this.bySource.clear();
       }
       this.emit();
     }
 
-    list() {
+    list(documentId) {
       var diagnostics = [];
-      this.bySource.forEach(function (items) {
-        diagnostics = diagnostics.concat(items);
+      this.bySource.forEach(function (items, key) {
+        if (!documentId || key.indexOf(String(documentId) + "::") === 0) {
+          diagnostics = diagnostics.concat(items);
+        }
       });
       return diagnostics;
     }
 
-    normalize(diagnostic, source, documentModel) {
+    normalize(diagnostic, source, documentModel, documentId) {
       var item = diagnostic || {};
       var text = documentModel && documentModel.text || "";
       var range = item.range;
@@ -94,17 +107,17 @@
         source: item.source || source || "unknown",
         severity: item.severity || "information",
         message: item.message || "",
-        languageId: item.languageId || documentModel && documentModel.languageId || "plain-text",
+        languageId: item.languageId || documentModel && documentModel.languageId || "text.plain",
         range: range,
-        target: item.target || undefined,
+        target: item.target || (documentId ? { documentId: documentId } : undefined),
         step: item.step || undefined
       };
     }
 
-    async runLinters(documentModel) {
+    async runLinters(documentModel, documentId) {
       var linters = this.registry.getLinters(documentModel.languageId);
       var diagnostics = [];
-      this.clear();
+      this.clear(documentId);
 
       for (var index = 0; index < linters.length; index += 1) {
         var linter = linters[index];
@@ -120,13 +133,13 @@
               runtime: this.runtime
             }
           });
-          diagnostics = diagnostics.concat(this.publish(source, result, documentModel));
+          diagnostics = diagnostics.concat(this.publish(source, result, documentModel, documentId));
         } catch (error) {
           diagnostics = diagnostics.concat(this.publish(source, [{
             severity: "warning",
             message: error && error.message ? error.message : String(error),
             languageId: documentModel.languageId
-          }], documentModel));
+          }], documentModel, documentId));
         }
       }
 

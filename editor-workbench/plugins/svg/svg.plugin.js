@@ -147,7 +147,7 @@
     getExampleDocument: function () {
       return {
         fileName: "example.svg",
-        languageId: "svg",
+        languageId: "xml.svg",
         mimeType: "image/svg+xml",
         text: [
           "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 240 120\">",
@@ -159,11 +159,13 @@
         ].join("\n")
       };
     },
-    languages: ["svg"],
+    languages: ["xml.svg"],
     languageDefinitions: [
       {
-        id: "svg",
+        id: "xml.svg",
         label: "SVG",
+        parent: "xml",
+        aliases: ["svg"],
         extensions: ["svg"],
         mimeTypes: ["image/svg+xml"]
       }
@@ -172,7 +174,7 @@
       {
         id: "svg-codemirror",
         name: "SVG syntax",
-        languages: ["svg"],
+        languages: ["xml.svg"],
         getCodeMirrorExtensions: async function (context) {
           await requireRuntime(context).ensureScripts(RUNTIME_PATHS.codeMirror);
           return [requireCodeMirrorTools().html({ selfClosingTags: true })];
@@ -185,7 +187,7 @@
       {
         id: "svg-preview",
         name: "SVG Preview",
-        inputLanguages: ["svg"],
+        inputLanguages: ["xml.svg"],
         outputKind: "svg",
         render: async function (documentModel, context) {
           return {
@@ -200,7 +202,7 @@
       {
         id: "svg-sanitized-export",
         name: "Sanitized SVG",
-        languages: ["svg"],
+        languages: ["xml.svg"],
         inputKinds: ["source"],
         outputFileExtension: "svg",
         mimeType: "image/svg+xml",
@@ -216,7 +218,7 @@
       {
         id: "svg-png-export",
         name: "SVG PNG",
-        languages: ["svg"],
+        languages: ["xml.svg"],
         inputKinds: ["source"],
         outputFileExtension: "png",
         mimeType: "image/png",

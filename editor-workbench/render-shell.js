@@ -1,8 +1,10 @@
 (function (global) {
   "use strict";
 
+  var metadataBar = document.getElementById("render-metadata");
   var output = document.getElementById("render-output");
   var activeRenderCleanup = null;
+  var latestMetadata = null;
   var host = global.chrome && global.chrome.runtime ? new ExtensionHostAdapter() : new LocalHostAdapter();
   var registry = new PluginRegistry();
   var runtime = new RuntimeLoader(host);
@@ -26,6 +28,65 @@
       cleanup();
     }
     output.textContent = "";
+  }
+
+  function formatTimestamp(value) {
+    if (!value) {
+      return null;
+    }
+    var date = new Date(value);
+    if (!Number.isFinite(date.getTime())) {
+      return null;
+    }
+    return date.toLocaleString();
+  }
+
+  function requestRefresh() {
+    if (!latestMetadata || !latestMetadata.bindingId || !global.opener || global.opener.closed) {
+      return;
+    }
+    global.opener.postMessage({
+      type: "render-refresh-request",
+      bindingId: latestMetadata.bindingId
+    }, "*");
+  }
+
+  function displayMetadata(metadata) {
+    if (!metadataBar) {
+      return;
+    }
+    var item = metadata || {};
+    latestMetadata = item;
+    var documentLabel = item.documentDisplayName || item.documentFileName || "Untitled document";
+    var shortId = item.documentId ? String(item.documentId).slice(0, 8) : "";
+    var updatedLabel = formatTimestamp(item.lastUpdatedAt || item.generatedAt);
+    var parts = [
+      "Rendering: " + documentLabel + (shortId ? " · " + shortId : ""),
+      item.pipelineId ? "Pipeline: " + item.pipelineId : null,
+      item.rendererId ? "Renderer: " + item.rendererId : null,
+      Number.isFinite(item.documentVersion) ? "v" + item.documentVersion : null
+    ].filter(Boolean);
+
+    document.title = documentLabel + " - Render";
+
+    metadataBar.textContent = "";
+    var details = document.createElement("div");
+    details.className = "render-metadata-details";
+    details.textContent = parts.join("  |  ");
+    metadataBar.appendChild(details);
+
+    var actions = document.createElement("div");
+    actions.className = "render-metadata-actions";
+    var updated = document.createElement("span");
+    updated.className = "render-metadata-updated";
+    updated.textContent = updatedLabel ? "Last update: " + updatedLabel : "Last update: pending";
+    var refreshButton = createButton("Refresh", "Request refresh from the source document");
+    refreshButton.className = "render-metadata-refresh";
+    refreshButton.disabled = !item.bindingId;
+    refreshButton.addEventListener("click", requestRefresh);
+    actions.appendChild(updated);
+    actions.appendChild(refreshButton);
+    metadataBar.appendChild(actions);
   }
 
   function setText(message) {
@@ -352,6 +413,7 @@
     }
 
     try {
+      displayMetadata(message.metadata || {});
       setText("Rendering...");
       await loadPluginSpecs(message.pluginLoadSpecs, message.pluginPaths);
       var documentModel = new DocumentModel(message.document);

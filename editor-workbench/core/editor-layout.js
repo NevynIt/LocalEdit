@@ -4,12 +4,13 @@
   class EditorLayout {
     constructor() {
       this.toolbar = document.getElementById("toolbar");
+      this.documentTabs = document.getElementById("document-tabs");
       this.editorContainer = document.getElementById("editor-container");
       this.pluginPanel = document.getElementById("plugin-manager-panel");
       this.diagnosticsPanel = document.getElementById("diagnostics-panel");
       this.statusBar = document.getElementById("status-bar");
 
-      if (!this.toolbar || !this.editorContainer || !this.pluginPanel || !this.diagnosticsPanel || !this.statusBar) {
+      if (!this.toolbar || !this.documentTabs || !this.editorContainer || !this.pluginPanel || !this.diagnosticsPanel || !this.statusBar) {
         throw new Error("Application layout is incomplete.");
       }
     }
