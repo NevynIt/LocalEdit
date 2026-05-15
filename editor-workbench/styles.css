@@ -199,7 +199,7 @@ input[type="text"] {
   min-width: 220px;
   max-width: min(420px, calc(100vw - 24px));
   max-height: min(520px, calc(100vh - 80px));
-  overflow: auto;
+  overflow: visible;
   border: 1px solid var(--border-strong);
   border-radius: 6px;
   background: var(--surface);
@@ -217,8 +217,7 @@ input[type="text"] {
 }
 
 .toolbar-menu.is-open > .toolbar-menu-panel,
-.toolbar-menu-group:hover > .toolbar-submenu,
-.toolbar-menu-group:focus-within > .toolbar-submenu {
+.toolbar-submenu.is-open {
   display: block;
 }
 
@@ -226,6 +225,12 @@ input[type="text"] {
   display: grid;
   gap: 2px;
   padding: 4px;
+}
+
+.toolbar-menu-panel > .toolbar-menu-list,
+.toolbar-submenu > .toolbar-menu-list {
+  max-height: min(520px, calc(100vh - 80px));
+  overflow: auto;
 }
 
 .toolbar-menu-group {

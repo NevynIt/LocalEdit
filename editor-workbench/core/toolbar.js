@@ -58,6 +58,7 @@
       this.selectedValue = "";
       this.selectedLabel = "";
       this.items = [];
+      this.submenuEntries = [];
       this.root = document.createElement("div");
       this.root.className = "toolbar-menu";
       this.button = document.createElement("button");
@@ -88,6 +89,9 @@
           this.button.focus();
         }
       });
+      this.panel.addEventListener("scroll", () => {
+        this.closeSubmenusFromDepth(0);
+      });
       document.addEventListener("click", (event) => {
         if (!this.root.contains(event.target)) {
           this.close();
@@ -104,6 +108,7 @@
     }
 
     update(items, selectedValue, emptyLabel) {
+      this.disposeSubmenus();
       this.items = list(items);
       this.selectedValue = selectedValue || "";
       var selected = this.items.find((item) => item.id === this.selectedValue || item.value === this.selectedValue);
@@ -115,7 +120,7 @@
         empty.textContent = emptyLabel || "No items";
         this.panel.appendChild(empty);
       } else {
-        this.panel.appendChild(this.renderNodes(sortMenuNodes(this.buildTree(this.items))));
+        this.panel.appendChild(this.renderNodes(sortMenuNodes(this.buildTree(this.items)), 0, null));
       }
       this.updateButton();
     }
@@ -140,7 +145,7 @@
       return root.children;
     }
 
-    renderNodes(nodes) {
+    renderNodes(nodes, depth, ownerSubmenu) {
       var listNode = document.createElement("div");
       listNode.className = "toolbar-menu-list";
       nodes.forEach((node) => {
@@ -155,8 +160,15 @@
           wrapper.appendChild(groupButton);
           var submenu = document.createElement("div");
           submenu.className = "toolbar-submenu";
-          submenu.appendChild(this.renderNodes(node.children));
-          wrapper.appendChild(submenu);
+          submenu._toolbarParentSubmenu = ownerSubmenu;
+          submenu.appendChild(this.renderNodes(node.children, depth + 1, submenu));
+          this.root.appendChild(submenu);
+          this.installSubmenuBehavior({
+            depth: depth,
+            trigger: groupButton,
+            wrapper: wrapper,
+            submenu: submenu
+          });
           listNode.appendChild(wrapper);
           return;
         }
@@ -175,6 +187,88 @@
         listNode.appendChild(button);
       });
       return listNode;
+    }
+
+    installSubmenuBehavior(entry) {
+      this.submenuEntries.push(entry);
+
+      var open = () => {
+        this.openSubmenu(entry);
+      };
+      var close = (event) => {
+        if (this.isWithinSubmenuFamily(entry, event.relatedTarget)) {
+          return;
+        }
+        this.closeSubmenusFromDepth(entry.depth);
+      };
+
+      entry.wrapper.addEventListener("mouseenter", open);
+      entry.wrapper.addEventListener("mouseleave", close);
+      entry.wrapper.addEventListener("focusin", open);
+      entry.wrapper.addEventListener("focusout", close);
+      entry.submenu.addEventListener("mouseleave", close);
+      entry.submenu.addEventListener("focusout", close);
+    }
+
+    isWithinSubmenuFamily(entry, target) {
+      if (!target) {
+        return false;
+      }
+      if (entry.wrapper.contains(target) || entry.submenu.contains(target)) {
+        return true;
+      }
+      if (!target.closest) {
+        return false;
+      }
+      var submenu = target.closest(".toolbar-submenu");
+      while (submenu) {
+        if (submenu === entry.submenu) {
+          return true;
+        }
+        submenu = submenu._toolbarParentSubmenu || null;
+      }
+      return false;
+    }
+
+    openSubmenu(entry) {
+      this.closeSubmenusFromDepth(entry.depth);
+      entry.submenu.classList.add("is-open");
+
+      var triggerRect = entry.trigger.getBoundingClientRect();
+      var rootRect = this.root.getBoundingClientRect();
+      var left = triggerRect.right - rootRect.left - 2;
+      var top = triggerRect.top - rootRect.top - 1;
+
+      entry.submenu.style.left = left + "px";
+      entry.submenu.style.top = top + "px";
+
+      var submenuRect = entry.submenu.getBoundingClientRect();
+      if (submenuRect.right > window.innerWidth - 12) {
+        left = triggerRect.left - rootRect.left - submenuRect.width + 2;
+      }
+      if (submenuRect.bottom > window.innerHeight - 12) {
+        top = Math.max(4, top - (submenuRect.bottom - window.innerHeight + 12));
+      }
+
+      entry.submenu.style.left = left + "px";
+      entry.submenu.style.top = top + "px";
+    }
+
+    closeSubmenusFromDepth(depth) {
+      this.submenuEntries.forEach(function (entry) {
+        if (entry.depth >= depth) {
+          entry.submenu.classList.remove("is-open");
+        }
+      });
+    }
+
+    disposeSubmenus() {
+      this.submenuEntries.forEach(function (entry) {
+        if (entry.submenu.parentNode) {
+          entry.submenu.parentNode.removeChild(entry.submenu);
+        }
+      });
+      this.submenuEntries = [];
     }
 
     updateButton() {
@@ -198,6 +292,7 @@
     }
 
     close() {
+      this.closeSubmenusFromDepth(0);
       this.root.classList.remove("is-open");
       this.button.setAttribute("aria-expanded", "false");
     }
