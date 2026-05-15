@@ -33,6 +33,9 @@ This tracker covers the breaking migration from legacy plugin arrays to a text-c
 - [x] JSON parse checks passed for `editor-workbench/manifest.json` and `package-lock.json`.
 - [x] Static no-network/no-dynamic-code scans passed outside vendored bundles.
 - [x] Refined remote load-surface scan passed with no remote `src`, `href`, `ensureScripts`, dynamic import, or `importScripts` matches outside vendored bundles.
+- [x] jsMind viewer UI polish completed on 2026-05-15: corrected jsMind container nesting, added fit/zoom/100%/center controls, added text-size controls, improved node wrapping, spacing, drag panning, visual theme, and responsive toolbar layout.
+- [x] jsMind viewer layout follow-up completed on 2026-05-15: labels now use bounded content width, visible child subtrees are pushed beyond parent label edges, custom connectors anchor at label border centers, manual node moves keep expanders visible, double-click toggles fold/unfold, and zoom now ranges from 10% to 500%.
+- [x] jsMind viewer interaction follow-up completed on 2026-05-15: expander controls now have a dedicated z-layer and are refreshed after layout/moves, child spacing adapts to visible vertical spread, expander clicks preserve current zoom, and expand/collapse keeps the touched node anchored on screen.
 - [ ] Local browser smoke passed for core editing, plugins, pipelines, and jsMind rendering. Attempted on 2026-05-15, but Browser Use rejected direct `file://` access and blocked local `localhost`/`127.0.0.1` static-server URLs with `ERR_BLOCKED_BY_CLIENT`.
 - [ ] Extension smoke passed for unpacked Edge/Chrome extension mode. Still requires manual browser testing.
 
