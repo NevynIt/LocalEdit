@@ -176,6 +176,18 @@ async function main() {
       }
     }
   );
+
+  await buildBundle(
+    path.join(root, "tools", "bundle-src", "jsmind-bundle.js"),
+    path.join(root, "editor-workbench", "plugins", "jsmind", "runtime", "jsmind.bundle.js"),
+    "EditorWorkbenchJsMindBundle"
+  );
+
+  await fs.mkdir(path.join(root, "editor-workbench", "plugins", "jsmind", "runtime"), { recursive: true });
+  await fs.copyFile(
+    path.join(root, "node_modules", "jsmind", "style", "jsmind.css"),
+    path.join(root, "editor-workbench", "plugins", "jsmind", "runtime", "jsmind.css")
+  );
 }
 
 main().catch((error) => {

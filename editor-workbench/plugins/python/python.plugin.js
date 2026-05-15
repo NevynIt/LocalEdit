@@ -38,7 +38,7 @@
   }
 
   global.EditorPlugins = global.EditorPlugins || [];
-  global.EditorPlugins.push({
+  global.EditorPlugins.push(global.EditorPluginContracts.fromLegacy({
     id: "python-core",
     name: "Python",
     version: "0.1.0",
@@ -89,5 +89,5 @@
     ],
     renderers: [],
     exporters: []
-  });
+  }));
 })(window);

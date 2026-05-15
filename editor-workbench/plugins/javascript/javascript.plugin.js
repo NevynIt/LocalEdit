@@ -38,7 +38,7 @@
   }
 
   global.EditorPlugins = global.EditorPlugins || [];
-  global.EditorPlugins.push({
+  global.EditorPlugins.push(global.EditorPluginContracts.fromLegacy({
     id: "javascript-core",
     name: "JavaScript",
     version: "0.1.0",
@@ -91,5 +91,5 @@
     ],
     renderers: [],
     exporters: []
-  });
+  }));
 })(window);

@@ -30,6 +30,12 @@
       });
       root.appendChild(this.group([this.label("Language"), this.elements.languageSelect]));
 
+      this.elements.editorSelect = document.createElement("select");
+      this.elements.editorSelect.addEventListener("change", () => {
+        this.app.switchEditor(this.elements.editorSelect.value);
+      });
+      root.appendChild(this.group([this.label("Editor"), this.elements.editorSelect]));
+
       this.elements.lintButton = this.createButton("Lint", () => this.app.runLinters());
       root.appendChild(this.group([this.elements.lintButton]));
 
@@ -61,21 +67,32 @@
       });
       root.appendChild(this.group([this.label("Export"), this.elements.exporterSelect, this.elements.exporterButton]));
 
+      this.elements.pipelineSelect = document.createElement("select");
+      this.elements.pipelineButton = this.createButton("Run", () => {
+        this.app.runPipeline(this.elements.pipelineSelect.value);
+      });
+      root.appendChild(this.group([this.label("Pipeline"), this.elements.pipelineSelect, this.elements.pipelineButton]));
+
       this.elements.pluginsButton = this.createButton("Plugins", () => this.app.togglePluginManagerPanel());
       root.appendChild(this.group([this.elements.pluginsButton]));
     }
 
     update(state) {
-      this.populateSelect(this.elements.languageSelect, state.languages, state.languageId, "id", "label");
+      this.populateSelect(this.elements.languageSelect, state.languages, state.languageId, "id", "name");
+      this.populateProviderSelect(this.elements.editorSelect, state.editors, "No editors");
       this.populateProviderSelect(this.elements.transformSelect, state.transformers, "No transformers");
       this.populateProviderSelect(this.elements.rendererSelect, state.renderers, "No renderers");
       this.populateProviderSelect(this.elements.exporterSelect, state.exporters, "No exporters");
+      this.populateProviderSelect(this.elements.pipelineSelect, state.pipelines, "No pipelines");
+      this.elements.editorSelect.value = state.editorId || "";
 
+      this.elements.editorSelect.disabled = state.editors.length === 0;
       this.elements.transformButton.disabled = state.transformers.length === 0;
       this.elements.rendererButton.disabled = state.renderers.length === 0;
       this.elements.refreshButton.disabled = !state.hasRenderSessions;
       this.elements.autoRefreshToggle.checked = Boolean(state.autoRefreshEnabled);
       this.elements.exporterButton.disabled = state.exporters.length === 0;
+      this.elements.pipelineButton.disabled = state.pipelines.length === 0;
     }
 
     populateSelect(select, items, selectedValue, valueKey, labelKey) {

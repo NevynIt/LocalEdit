@@ -51,7 +51,13 @@
       if (Array.isArray(stored)) {
         stored.forEach(function (config) {
           if (config && (config.path || config.sourceText)) {
-            byPath.set(config.path || config.uploadId || config.fileName, normalizeKnownPlugin(config));
+            var key = config.path || config.uploadId || config.fileName;
+            var normalized = normalizeKnownPlugin(config);
+            var packagedDefault = config.path ? byPath.get(config.path) : null;
+            if (packagedDefault && packagedDefault.autoLoad) {
+              normalized.autoLoad = true;
+            }
+            byPath.set(key, normalized);
           }
         });
       }

@@ -16,6 +16,8 @@
       this.transformManager = null;
       this.renderManager = null;
       this.exportManager = null;
+      this.pipelineRegistry = null;
+      this.pipelineExecutor = null;
       this.toolbar = null;
       this.pluginPanel = null;
       this.diagnosticsPanel = null;
@@ -25,7 +27,6 @@
       this.autoRefreshEnabled = false;
       this.renderRefreshDelayMs = 3000;
       this.renderSessions = [];
-      this.editorLanguageRequestId = 0;
     }
 
     async start() {
@@ -37,24 +38,35 @@
         await this.storage.init();
 
         this.languageRegistry = new LanguageRegistry();
-        this.languageRegistry.register({
-          id: "plain-text",
-          label: "Plain Text",
-          extensions: ["txt", "text", "log"],
-          mimeTypes: ["text/plain"]
-        });
-
-        this.pluginRegistry = new PluginRegistry();
+        this.pluginRegistry = new ContributionRegistry();
         this.runtimeLoader = new RuntimeLoader(this.host);
+        this.registerCoreContributions();
+        this.registerPluginLanguages();
+
         this.pluginLoader = new PluginLoader(this.host, this.pluginRegistry);
         this.pluginManager = new PluginManager(this.host, this.storage, this.pluginLoader, this.pluginRegistry);
-        this.diagnosticsManager = new DiagnosticsManager(this.pluginRegistry, this.runtimeLoader);
+        this.diagnosticsManager = new DiagnosticsService(this.pluginRegistry, this.runtimeLoader);
         this.transformManager = new TransformManager(this.pluginRegistry, this.runtimeLoader);
         this.renderManager = new RenderManager(this.pluginRegistry, this.host);
         this.exportManager = new ExportManager(this.pluginRegistry, this.runtimeLoader);
+        this.pipelineRegistry = new PipelineRegistry(this.pluginRegistry);
+        this.pipelineExecutor = new PipelineExecutor(this.pluginRegistry, this.pipelineRegistry, {
+          app: this,
+          diagnostics: this.diagnosticsManager,
+          runtime: this.runtimeLoader,
+          renderManager: this.renderManager,
+          exportManager: this.exportManager,
+          editorManager: null,
+          storage: this.storage,
+          download: {
+            text: downloadText,
+            blob: downloadBlob
+          }
+        });
 
-        this.editor = new EditorCore();
-        this.editor.mount(this.layout.editorContainer);
+        this.editor = new EditorManager(this.pluginRegistry, this.runtimeLoader);
+        this.pipelineExecutor.services.editorManager = this.editor;
+        await this.editor.mount(this.layout.editorContainer, this.document.languageId);
         this.editor.onDidChange((text) => {
           this.document = this.document.cloneWith({ text: text });
           this.scheduleAutosave();
@@ -81,12 +93,113 @@
         await this.restoreState();
         await this.pluginManager.loadKnownPlugins();
         await this.pluginManager.loadStartupPlugins();
+        await this.loadUserPipelines();
+        this.registerPluginLanguages();
         this.updateUi();
         this.editor.focus();
         this.updateStatus("Ready in " + this.host.mode + " mode.");
       } catch (error) {
         this.updateStatus("Startup failed: " + (error && error.message ? error.message : String(error)));
       }
+    }
+
+    registerCoreContributions() {
+      this.pluginRegistry.registerPlugin({
+        id: "localedit-core",
+        name: "LocalEdit Core",
+        version: "0.2.0",
+        description: "Core languages, editors, and terminal pipeline steps.",
+        contributes: {
+          languages: [
+            {
+              id: "plain-text",
+              name: "Plain Text",
+              fileExtensions: [".txt", ".text", ".log"],
+              mediaType: "text/plain",
+              description: "Unstructured plain text."
+            }
+          ],
+          editors: [
+            {
+              id: "codemirror",
+              name: "CodeMirror",
+              accepts: ["*"],
+              createEditor: function () {
+                return new CodeMirrorEditor();
+              }
+            },
+            {
+              id: "textarea",
+              name: "Textarea",
+              accepts: ["*"],
+              createEditor: function () {
+                return new TextareaEditor();
+              }
+            }
+          ],
+          editorExtensions: [],
+          transformers: [],
+          renderers: [],
+          exporters: [],
+          linters: [],
+          terminalSteps: [
+            {
+              id: "replace-current-text",
+              name: "Replace Current Text",
+              accepts: ["*"],
+              run: function (input) {
+                var app = input.context.services.app;
+                app.setDocument(input.sourceDocument.cloneWith({
+                  text: input.text,
+                  languageId: input.languageId
+                }));
+                return { action: "replace-current-text", diagnostics: input.diagnostics || [] };
+              }
+            },
+            {
+              id: "open-new-document",
+              name: "Open New Document",
+              accepts: ["*"],
+              run: function (input) {
+                var app = input.context.services.app;
+                app.setDocument(new DocumentModel({
+                  text: input.text,
+                  languageId: input.languageId,
+                  fileName: "pipeline-output.txt",
+                  mimeType: "text/plain"
+                }));
+                return { action: "open-new-document", diagnostics: input.diagnostics || [] };
+              }
+            },
+            {
+              id: "copy-to-clipboard",
+              name: "Copy To Clipboard",
+              accepts: ["*"],
+              run: async function (input) {
+                if (!global.navigator || !global.navigator.clipboard || typeof global.navigator.clipboard.writeText !== "function") {
+                  throw new Error("Clipboard API is not available.");
+                }
+                await global.navigator.clipboard.writeText(input.text || "");
+                return { action: "copy-to-clipboard", diagnostics: input.diagnostics || [] };
+              }
+            },
+            {
+              id: "open-editor",
+              name: "Open Editor",
+              accepts: ["*"],
+              parameters: {
+                editorId: { type: "string", default: "codemirror" }
+              },
+              run: async function (input) {
+                var editorManager = input.context.services.editorManager;
+                await editorManager.switchEditor(input.params.editorId, input.text, input.languageId);
+                return { action: "open-editor", diagnostics: input.diagnostics || [] };
+              }
+            }
+          ],
+          pipelines: []
+        }
+      }, { path: "" });
     }
 
     async restoreState() {
@@ -100,6 +213,28 @@
       if (selectedLanguage) {
         this.setLanguage(selectedLanguage);
       }
+    }
+
+    async loadUserPipelines() {
+      var stored = await this.storage.get("userPipelines");
+      if (!Array.isArray(stored)) {
+        return;
+      }
+      stored.forEach((pipeline) => {
+        try {
+          this.pipelineRegistry.registerUserPipeline(pipeline);
+        } catch (error) {
+          // Invalid saved pipelines are ignored until the user edits them.
+        }
+      });
+    }
+
+    async registerUserPipeline(pipeline) {
+      this.pipelineRegistry.registerUserPipeline(pipeline);
+      await this.storage.set("userPipelines", this.pipelineRegistry.list().filter(function (item) {
+        return !item.pluginId;
+      }));
+      this.updateUi();
     }
 
     async openFile() {
@@ -126,8 +261,7 @@
 
     setDocument(documentModel) {
       this.document = new DocumentModel(documentModel);
-      this.editor.setText(this.document.text);
-      this.applyEditorLanguage();
+      this.editor.setText(this.document.text, this.document.languageId);
       this.updateUi();
       this.scheduleAutosave();
     }
@@ -137,7 +271,7 @@
       var nextLanguageId = language ? language.id : languageId || "plain-text";
       this.document = this.document.cloneWith({ languageId: nextLanguageId });
       if (this.editor) {
-        this.applyEditorLanguage();
+        this.editor.applyLanguage(nextLanguageId);
       }
       if (this.storage) {
         this.storage.set("selectedLanguage", nextLanguageId);
@@ -145,8 +279,18 @@
       this.updateUi();
     }
 
+    async switchEditor(editorId) {
+      try {
+        await this.editor.switchEditor(editorId, this.editor.getText(), this.document.languageId);
+        this.updateUi();
+        this.updateStatus("Editor changed.");
+      } catch (error) {
+        this.updateStatus(error && error.message ? error.message : String(error));
+      }
+    }
+
     async runLinters() {
-      var diagnostics = await this.diagnosticsManager.run(this.document);
+      var diagnostics = await this.diagnosticsManager.runLinters(this.document);
       this.editor.setDiagnostics(diagnostics);
       this.diagnosticsPanel.render(diagnostics, this.document);
       this.layout.setDiagnosticsPanelOpen(true);
@@ -161,14 +305,10 @@
       if (!diagnostic) {
         return;
       }
-      var from = Number(diagnostic.from);
-      var to = Number(diagnostic.to);
-      if (!Number.isFinite(from)) {
-        from = 0;
-      }
-      if (!Number.isFinite(to) || to < from) {
-        to = from;
-      }
+      var start = diagnostic.range && diagnostic.range.start;
+      var end = diagnostic.range && diagnostic.range.end;
+      var from = start && Number.isFinite(start.offset) ? start.offset : 0;
+      var to = end && Number.isFinite(end.offset) ? end.offset : from;
       this.editor.selectRange(from, to);
     }
 
@@ -178,20 +318,15 @@
       }
 
       try {
-        var result = await this.transformManager.run(transformerId, this.document);
-        if (!result || typeof result.text !== "string") {
-          throw new Error("Transformer returned no text.");
-        }
-
-        if (result.mode === "download") {
-          downloadText(result.fileName || "transformed.txt", result.text, "text/plain");
-        } else {
-          this.setDocument(this.document.cloneWith({
-            text: result.text,
-            languageId: result.languageId || this.document.languageId,
-            fileName: result.fileName || this.document.fileName
-          }));
-        }
+        await this.executePipeline({
+          id: "direct-transform-" + transformerId,
+          name: "Run " + transformerId,
+          inputLanguage: this.document.languageId,
+          steps: [
+            { use: transformerId, params: {} },
+            { use: "replace-current-text", params: {} }
+          ]
+        });
         this.updateStatus("Transformer complete.");
       } catch (error) {
         this.updateStatus(error && error.message ? error.message : String(error));
@@ -204,9 +339,18 @@
       }
 
       try {
-        var session = this.renderManager.open(rendererId, this.document);
-        this.renderSessions.push(session);
-        this.pruneRenderSessions();
+        var result = await this.executePipeline({
+          id: "direct-render-" + rendererId,
+          name: "Render " + rendererId,
+          inputLanguage: this.document.languageId,
+          steps: [
+            { use: rendererId, params: {} }
+          ]
+        });
+        if (result && result.session) {
+          this.renderSessions.push(result.session);
+          this.pruneRenderSessions();
+        }
         this.updateUi();
         this.updateStatus("Render window opened.");
       } catch (error) {
@@ -247,16 +391,56 @@
       }
 
       try {
-        var result = await this.exportManager.export(exporterId, {
-          sourceDocument: this.document
+        var result = await this.executePipeline({
+          id: "direct-export-" + exporterId,
+          name: "Export " + exporterId,
+          inputLanguage: this.document.languageId,
+          steps: [
+            { use: exporterId, params: {} }
+          ]
         });
-        var content = result.content;
-        var blob = content instanceof Blob ? content : new Blob([content], { type: result.mimeType || "application/octet-stream" });
-        downloadBlob(result.fileName, blob);
-        this.updateStatus("Exported " + result.fileName + ".");
+        if (result && result.action === "export") {
+          this.downloadExportResult(result.result);
+        }
       } catch (error) {
         this.updateStatus(error && error.message ? error.message : String(error));
       }
+    }
+
+    async runPipeline(pipelineId) {
+      if (!pipelineId) {
+        return;
+      }
+
+      try {
+        var result = await this.executePipeline(pipelineId);
+        if (result && result.action === "export") {
+          this.downloadExportResult(result.result);
+        }
+        if (result && result.action === "copy-to-clipboard") {
+          this.updateStatus("Copied pipeline output.");
+          return;
+        }
+        this.updateUi();
+        this.updateStatus("Pipeline complete.");
+      } catch (error) {
+        this.updateStatus(error && error.message ? error.message : String(error));
+      }
+    }
+
+    async executePipeline(pipelineOrId) {
+      return this.pipelineExecutor.execute(pipelineOrId, this.document);
+    }
+
+    downloadExportResult(result) {
+      if (!result) {
+        throw new Error("Exporter returned no result.");
+      }
+      var content = result.content || result.blob;
+      var fileName = result.fileName || "export.bin";
+      var blob = content instanceof Blob ? content : new Blob([content], { type: result.mimeType || "application/octet-stream" });
+      downloadBlob(fileName, blob);
+      this.updateStatus("Exported " + fileName + ".");
     }
 
     togglePluginManagerPanel(open) {
@@ -342,13 +526,18 @@
       }
 
       var languageId = this.document.languageId;
-      this.applyEditorLanguage();
+      if (this.editor) {
+        this.editor.applyLanguage(languageId);
+      }
       this.toolbar.update({
         languageId: languageId,
         languages: this.languageRegistry.list(),
+        editorId: this.editor ? this.editor.getActiveEditorId() : "",
+        editors: this.editor ? this.editor.listEditors(languageId) : [],
         transformers: this.transformManager.list(languageId),
         renderers: this.renderManager.list(languageId),
         exporters: this.exportManager.list(languageId),
+        pipelines: this.pipelineRegistry.list(languageId),
         autoRefreshEnabled: this.autoRefreshEnabled,
         hasRenderSessions: this.hasOpenRenderSessions()
       });
@@ -365,51 +554,11 @@
         return;
       }
 
-      this.pluginRegistry.getLanguageDefinitions().forEach((definition) => {
+      this.pluginRegistry.getLanguages().forEach((definition) => {
         if (definition && definition.id && !this.languageRegistry.get(definition.id)) {
           this.languageRegistry.register(definition);
         }
       });
-    }
-
-    async applyEditorLanguage() {
-      if (!this.editor || !this.pluginRegistry) {
-        return;
-      }
-
-      var languageId = this.document.languageId;
-      var requestId = this.editorLanguageRequestId + 1;
-      this.editorLanguageRequestId = requestId;
-      var extensions = [];
-      var providers = this.pluginRegistry.getHighlighters(languageId);
-      for (var index = 0; index < providers.length; index += 1) {
-        var provider = providers[index];
-        if (typeof provider.getCodeMirrorExtensions !== "function") {
-          continue;
-        }
-
-        try {
-          var result = provider.getCodeMirrorExtensions({
-            languageId: languageId,
-            runtime: this.runtimeLoader
-          });
-          if (result && typeof result.then === "function") {
-            result = await result;
-          }
-          if (requestId !== this.editorLanguageRequestId || this.document.languageId !== languageId) {
-            return;
-          }
-          if (Array.isArray(result)) {
-            extensions = extensions.concat(result);
-          }
-        } catch (error) {
-          continue;
-        }
-      }
-      if (requestId !== this.editorLanguageRequestId || this.document.languageId !== languageId) {
-        return;
-      }
-      this.editor.setLanguage(languageId, extensions);
     }
 
     scheduleAutosave() {

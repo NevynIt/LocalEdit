@@ -11,17 +11,28 @@
       return this.registry.getExporters(languageId);
     }
 
-    async export(exporterId, input) {
+    async export(exporterId, input, params) {
       var documentModel = input && input.sourceDocument;
       var languageId = documentModel ? documentModel.languageId : "plain-text";
-      var exporter = this.registry.getExporter(exporterId, languageId);
+      var exporter = this.registry.getContribution("exporter", exporterId);
       if (!exporter) {
         throw new Error("Exporter was not found.");
       }
 
-      return exporter.export(input, {
-        suggestedFileName: documentModel && documentModel.fileName,
-        runtime: this.runtime
+      var resolvedParams = global.ParameterSchema
+        ? global.ParameterSchema.applyDefaults(exporter.parameters, params || {}, exporter.id)
+        : Object.assign({}, params || {});
+
+      return exporter.export({
+        text: documentModel ? documentModel.text || "" : "",
+        languageId: languageId,
+        params: resolvedParams,
+        document: documentModel,
+        renderedResult: input && input.renderedResult,
+        context: {
+          suggestedFileName: documentModel && documentModel.fileName,
+          runtime: this.runtime
+        }
       });
     }
   }

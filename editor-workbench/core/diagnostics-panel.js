@@ -82,7 +82,10 @@
   }
 
   function formatLocation(diagnostic, sourceText) {
-    var location = offsetToLineColumn(sourceText, diagnostic && diagnostic.from);
+    var start = diagnostic && diagnostic.range && diagnostic.range.start;
+    var location = start && Number.isFinite(start.line) && Number.isFinite(start.column)
+      ? start
+      : offsetToLineColumn(sourceText, diagnostic && diagnostic.from);
     return "Line " + location.line + ", column " + location.column;
   }
 

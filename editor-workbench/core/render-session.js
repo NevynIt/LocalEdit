@@ -2,11 +2,13 @@
   "use strict";
 
   class RenderSession {
-    constructor(windowRef, rendererId, pluginPaths, pluginLoadSpecs) {
+    constructor(windowRef, rendererId, pluginPaths, pluginLoadSpecs, params, metadata) {
       this.windowRef = windowRef;
       this.rendererId = rendererId;
       this.pluginPaths = Array.isArray(pluginPaths) ? pluginPaths.slice() : [];
       this.pluginLoadSpecs = Array.isArray(pluginLoadSpecs) ? pluginLoadSpecs.slice() : [];
+      this.params = Object.assign({}, params || {});
+      this.metadata = Object.assign({}, metadata || {});
     }
 
     send(documentModel) {
@@ -15,7 +17,9 @@
         rendererId: this.rendererId,
         document: documentModel,
         pluginPaths: this.pluginPaths,
-        pluginLoadSpecs: this.pluginLoadSpecs
+        pluginLoadSpecs: this.pluginLoadSpecs,
+        params: this.params,
+        metadata: this.metadata
       };
 
       global.setTimeout(() => {

@@ -161,7 +161,7 @@
   }
 
   global.EditorPlugins = global.EditorPlugins || [];
-  global.EditorPlugins.push({
+  global.EditorPlugins.push(global.EditorPluginContracts.fromLegacy({
     id: "xml-core",
     name: "XML",
     version: "0.1.0",
@@ -241,5 +241,5 @@
       }
     ],
     exporters: []
-  });
+  }));
 })(window);

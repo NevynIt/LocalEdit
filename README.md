@@ -4,15 +4,18 @@ Editor Workbench is a local-first structured text editor that runs from disk or 
 
 ## Features
 
-- CodeMirror editor with local syntax-highlighting bundles.
+- CodeMirror editor contribution with local syntax-highlighting bundles and textarea fallback editor contribution.
 - IndexedDB autosave, selected-language persistence, file open, and source download.
 - Plugin manager with packaged plugins and local `.js` plugin upload in local mode.
 - Diagnostics panel, transformer menu, preview/render windows, exporter menu, manual refresh, and 3-second stable-source auto-refresh.
+- Pipeline-backed transform, render, export, editor, clipboard, and document actions.
+- Pipeline JSON documents for defining and running custom data-only pipelines.
 - Markdown preview/export with sanitized HTML and inline Mermaid/Graphviz fenced diagrams.
 - Mermaid and Graphviz standalone SVG preview/export.
 - SVG preview/export, sanitized SVG-to-PNG export, and pan/zoom for standalone SVG previews.
 - JSON and XML linting, tree previews, prettify, and compact transforms.
 - Indented Tree parsing, linting, outline preview, Cytoscape preview, and JSON/Cytoscape export.
+- Read-only jsMind rendering from Indented Tree through a local pinned jsMind bundle.
 - Cytoscape JSON linting, graph preview, formatting, and compacting.
 - JavaScript formatting through local Prettier.
 - CSV row-width linting and scrollable table preview.
@@ -48,6 +51,7 @@ Requires Node.js and npm for development-time vendoring only.
 npm install
 npm run build:libs
 npm run verify:syntax
+npm run verify:contracts
 ```
 
 `npm run build:libs` creates:
@@ -57,6 +61,8 @@ npm run verify:syntax
 - Plugin-owned runtime bundles under `editor-workbench/plugins/**/runtime/`.
 
 The app does not load from npm, a CDN, or a server at runtime.
+
+`npm run verify:contracts` checks packaged plugin registration, contribution lookup, parameter defaults, canonical diagnostic normalization, and basic pipeline execution.
 
 ## Packaged Plugins
 
@@ -73,17 +79,28 @@ The app does not load from npm, a CDN, or a server at runtime.
 | JavaScript | `javascript` | Syntax, Prettier format |
 | CSV | `csv` | Row-width linting, scrollable table preview |
 | Python | `python` | Syntax, Ruff WASM format |
+| Pipeline JSON | `localedit-pipeline-json` | Pipeline document linting, flow preview, and registration |
+| jsMind | `jsmind-json` | Indented Tree to jsMind JSON transform and read-only mind-map preview |
 
 ## Plugin Runtime Model
 
-Plugins are classic JavaScript files that register on `window.EditorPlugins`. They can contribute:
+Plugins are classic JavaScript files that register on `window.EditorPlugins`. The public plugin API is intentionally breaking as of the Big Refactor: plugins must expose a `contributes` object. Legacy top-level provider arrays are no longer a supported plugin interface for third-party plugins.
 
-- `languageDefinitions`
-- `highlighters`
-- `linters`
-- `transformers`
-- `renderers`
-- `exporters`
+Supported contribution collections:
+
+- `contributes.languages`
+- `contributes.editors`
+- `contributes.editorExtensions`
+- `contributes.transformers`
+- `contributes.renderers`
+- `contributes.exporters`
+- `contributes.linters`
+- `contributes.terminalSteps`
+- `contributes.pipelines`
+
+Language records use `{ id, name, fileExtensions, mediaType, description }`. Diagnostics use `{ source, severity, message, languageId, range, target, step }`; legacy `{ from, to }` offsets are normalized inside core services, but they are not the plugin-facing contract.
+
+Contribution parameters are schema records and every parameter must include a `default`. Pipelines are data-only JSON documents that reference contribution ids with optional parameter overrides; the final pipeline step determines the user-visible action.
 
 Providers receive a `context.runtime` loader and can call `ensureScripts(...)` to load local runtime bundles only when needed. This keeps startup small and avoids eager loading large libraries such as Mermaid, Graphviz, Prettier, PapaParse, and Ruff WASM.
 
@@ -104,6 +121,7 @@ editor-workbench/
 
 scripts/
   build-libs.js          # esbuild bundling for local runtime files
+  verify-core-contracts.js # contribution, diagnostic, and pipeline contract checks
   verify-js-syntax.js    # JS syntax verification
 
 tools/bundle-src/        # Source entrypoints for generated bundles
@@ -120,6 +138,7 @@ All runtime dependencies are bundled locally. Key dependencies include:
 - Prettier and `@prettier/plugin-xml` for JavaScript/XML formatting.
 - PapaParse for CSV parsing.
 - Ruff WASM for Python formatting.
+- jsMind for read-only mind-map rendering.
 
 See `editor-workbench/libs/THIRD_PARTY.md` for attribution notes.
 

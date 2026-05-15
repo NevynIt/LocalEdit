@@ -108,7 +108,7 @@
       grid.appendChild(this.metaRow("ID", registered ? registered.id : config.id || ""));
       grid.appendChild(this.metaRow("Version", registered ? registered.version : ""));
       grid.appendChild(this.metaRow("Languages", registered && registered.languages.length ? registered.languages.join(", ") : ""));
-      grid.appendChild(this.metaRow("Engines", registered ? this.engineSummary(registered.plugin) : ""));
+      grid.appendChild(this.metaRow("Contributions", registered ? this.engineSummary(registered.plugin) : ""));
       if (registered && registered.description) {
         grid.appendChild(this.metaRow("About", registered.description));
       }
@@ -228,15 +228,19 @@
     }
 
     engineSummary(plugin) {
+      var contributes = plugin && plugin.contributes ? plugin.contributes : {};
       var parts = [];
       [
-        ["highlighters", "highlighter"],
+        ["editors", "editor"],
+        ["editorExtensions", "editor extension"],
         ["linters", "linter"],
         ["transformers", "transformer"],
         ["renderers", "renderer"],
-        ["exporters", "exporter"]
+        ["exporters", "exporter"],
+        ["terminalSteps", "terminal step"],
+        ["pipelines", "pipeline"]
       ].forEach(function (entry) {
-        var values = Array.isArray(plugin[entry[0]]) ? plugin[entry[0]] : [];
+        var values = Array.isArray(contributes[entry[0]]) ? contributes[entry[0]] : [];
         if (values.length) {
           parts.push(values.length + " " + entry[1] + (values.length === 1 ? "" : "s"));
         }

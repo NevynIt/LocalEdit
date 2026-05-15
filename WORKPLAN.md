@@ -2,7 +2,67 @@
 
 ## Current Status
 
-Implementation completed for the v1 shell, plugin infrastructure, dependency vendoring workflow, CodeMirror editor integration, Markdown plugin, Mermaid plugin, Graphviz plugin, SVG plugin, Markdown inline diagram rendering, lazy plugin-owned runtime bundles, JSON/XML/JavaScript/CSV/Python plugins, SVG PNG export, and standalone SVG pan/zoom. Static checks and local Edge smoke verification passed on 2026-05-14. Manual unpacked extension testing remains pending.
+Implementation completed for the v1 shell, plugin infrastructure, dependency vendoring workflow, CodeMirror editor integration, Markdown plugin, Mermaid plugin, Graphviz plugin, SVG plugin, Markdown inline diagram rendering, lazy plugin-owned runtime bundles, JSON/XML/JavaScript/CSV/Python plugins, SVG PNG export, and standalone SVG pan/zoom. The Big Refactor implementation has migrated packaged plugins to contribution records, added editor contributions, pipelines, pipeline documents, canonical diagnostics, and read-only jsMind rendering. Static and contract verification passed on 2026-05-15; browser smoke was attempted but blocked by the available browser tool/client policy, and manual unpacked extension testing remains pending.
+
+## Big Refactor Tracker
+
+This tracker covers the breaking migration from legacy plugin arrays to a text-centered language workbench with contribution records, editor contributions, pipelines, terminal steps, pipeline documents, and read-only jsMind rendering.
+
+### Big Refactor Phase Checklist
+
+- [x] Phase 25: Record workplan, baseline, dependency policy, and known breakage.
+- [x] Phase 26: Add new core contracts for contributions, parameters, diagnostics, languages, and plugin loading.
+- [x] Phase 27: Migrate packaged plugins to the breaking `contributes` API.
+- [x] Phase 28: Extract editors behind `EditorManager` with CodeMirror and textarea editor contributions.
+- [x] Phase 29: Add pipeline registry, executor, validation, and terminal steps.
+- [x] Phase 30: Add pipeline-as-document language, linter, renderer, storage, and intermediate-result opening.
+- [x] Phase 31: Add npm-installed, locally vendored read-only jsMind support and the Indented Tree mind-map pipeline.
+- [ ] Phase 32: Update documentation, remove obsolete legacy API references, and complete non-regression verification. Static/contract verification is complete; browser and extension smoke remain blocked or pending.
+
+### Big Refactor Verification Log
+
+- [x] Baseline git status captured on 2026-05-15: only `Big refactor instructions.md` was untracked before implementation.
+- [x] Baseline syntax check passed on 2026-05-15 with `node scripts\verify-js-syntax.js`; 73 JavaScript files checked.
+- [x] Baseline toolchain captured on 2026-05-15: `node` resolves to `C:\Users\argio\AppData\Local\OpenAI\Codex\bin\node.exe`; `npm` is not currently on PATH.
+- [x] Dependency policy updated: npm dependency installation is allowed for this refactor; if `npm` is unavailable, expose or install a standard npm toolchain before dependency changes.
+- [x] Local npm toolchain exposed under `.tools\node\node-v24.15.0-win-x64`; `.tools/` is ignored by git.
+- [x] `npm install` completed after dependency changes.
+- [x] `npm run build:libs` completed after dependency or bundle-source changes.
+- [x] Final syntax check passed on 2026-05-15 with `node scripts\verify-js-syntax.js`; 84 JavaScript files checked.
+- [x] Contract verification passed on 2026-05-15 with `node scripts\verify-core-contracts.js`.
+- [x] JSON parse checks passed for `editor-workbench/manifest.json` and `package-lock.json`.
+- [x] Static no-network/no-dynamic-code scans passed outside vendored bundles.
+- [x] Refined remote load-surface scan passed with no remote `src`, `href`, `ensureScripts`, dynamic import, or `importScripts` matches outside vendored bundles.
+- [ ] Local browser smoke passed for core editing, plugins, pipelines, and jsMind rendering. Attempted on 2026-05-15, but Browser Use rejected direct `file://` access and blocked local `localhost`/`127.0.0.1` static-server URLs with `ERR_BLOCKED_BY_CLIENT`.
+- [ ] Extension smoke passed for unpacked Edge/Chrome extension mode. Still requires manual browser testing.
+
+### Big Refactor Non-Regression Matrix
+
+- [ ] Local mode opens `editor-workbench/index.html` from disk.
+- [ ] Extension mode opens `editor.html` from the extension action.
+- [ ] CodeMirror editor contribution loads and textarea fallback remains usable.
+- [ ] Autosave, selected-language persistence, file open, and source download still work.
+- [ ] Plugin manager still lists packaged plugins and blocks upload in extension mode.
+- [ ] Diagnostics panel handles canonical diagnostics and navigates to text ranges.
+- [ ] Markdown, Mermaid, Graphviz, SVG, JSON, XML, JavaScript, CSV, Python, Cytoscape JSON, and Indented Tree representative flows still work.
+- [ ] Pipeline-backed transform, render, export, replace-current-text, open-new-document, copy-to-clipboard, and open-editor actions work.
+- [ ] Pipeline JSON documents lint and render.
+- [ ] Indented Tree can render as a read-only jsMind mind map.
+
+### Big Refactor Automated Coverage
+
+- [x] Packaged plugins register with `contributes` and no legacy top-level provider arrays.
+- [x] Contribution registration and lookup pass for languages, transformers, renderers, linters, terminal steps, and pipelines.
+- [x] Parameter schema defaulting and validation pass.
+- [x] Canonical diagnostic normalization, publication path, and legacy offset normalization pass.
+- [x] Pipeline validation and execution pass with fake transformer, renderer, exporter, and terminal-step contributions.
+- [x] Packaged `localedit-pipeline-json` and `jsmind-json` languages are registered.
+
+### Known Intentional Breakage
+
+- Legacy third-party plugins using top-level `languageDefinitions`, `highlighters`, `linters`, `transformers`, `renderers`, or `exporters` are not supported after this refactor.
+- Packaged plugins must expose `contributes` records before they are usable.
+- Plugin diagnostics must use the canonical diagnostic shape; legacy `{ from, to }` offsets may only be used inside core migration helpers while packaged plugins are converted.
 
 ## Phase Checklist
 

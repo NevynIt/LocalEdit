@@ -2,7 +2,7 @@
   "use strict";
 
   window.EditorPlugins = window.EditorPlugins || [];
-  window.EditorPlugins.push({
+  window.EditorPlugins.push(window.EditorPluginContracts.fromLegacy({
     id: "example-smoke",
     name: "Example Smoke Plugin",
     version: "0.1.0",
@@ -52,6 +52,6 @@
         }
       }
     ]
-  });
+  }));
 })();
 

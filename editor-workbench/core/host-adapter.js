@@ -31,57 +31,67 @@
       {
         path: "plugins/markdown/markdown.plugin.js",
         known: true,
-        autoLoad: false
+        autoLoad: true
       },
       {
         path: "plugins/mermaid/mermaid.plugin.js",
         known: true,
-        autoLoad: false
+        autoLoad: true
       },
       {
         path: "plugins/graphviz/graphviz.plugin.js",
         known: true,
-        autoLoad: false
+        autoLoad: true
       },
       {
         path: "plugins/svg/svg.plugin.js",
         known: true,
-        autoLoad: false
+        autoLoad: true
       },
       {
         path: "plugins/json/json.plugin.js",
         known: true,
-        autoLoad: false
+        autoLoad: true
       },
       {
         path: "plugins/cytoscape/cytoscape.plugin.js",
         known: true,
-        autoLoad: false
+        autoLoad: true
       },
       {
         path: "plugins/indented-tree/indented-tree.plugin.js",
         known: true,
-        autoLoad: false
+        autoLoad: true
+      },
+      {
+        path: "plugins/pipeline/pipeline.plugin.js",
+        known: true,
+        autoLoad: true
+      },
+      {
+        path: "plugins/jsmind/jsmind.plugin.js",
+        known: true,
+        autoLoad: true
       },
       {
         path: "plugins/xml/xml.plugin.js",
         known: true,
-        autoLoad: false
+        autoLoad: true
       },
       {
         path: "plugins/javascript/javascript.plugin.js",
         known: true,
-        autoLoad: false
+        autoLoad: true
       },
       {
         path: "plugins/csv/csv.plugin.js",
         known: true,
-        autoLoad: false
+        autoLoad: true
       },
       {
         path: "plugins/python/python.plugin.js",
         known: true,
-        autoLoad: false
+        autoLoad: true
       }
     ];
   }

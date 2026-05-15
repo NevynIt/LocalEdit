@@ -31,7 +31,7 @@
   }
 
   global.EditorPlugins = global.EditorPlugins || [];
-  global.EditorPlugins.push({
+  global.EditorPlugins.push(global.EditorPluginContracts.fromLegacy({
     id: "mermaid-core",
     name: "Mermaid",
     version: "0.1.0",
@@ -99,5 +99,5 @@
         }
       }
     ]
-  });
+  }));
 })(window);

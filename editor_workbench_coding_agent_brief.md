@@ -201,16 +201,22 @@ Plugins are classic scripts that push plugin objects into `window.EditorPlugins`
     id: "plugin-id",
     name: "Plugin Name",
     version: "0.1.0",
-    languages: [],
-    languageDefinitions: [],
-    highlighters: [],
-    linters: [],
-    transformers: [],
-    renderers: [],
-    exporters: []
+    contributes: {
+      languages: [],
+      editors: [],
+      editorExtensions: [],
+      linters: [],
+      transformers: [],
+      renderers: [],
+      exporters: [],
+      terminalSteps: [],
+      pipelines: []
+    }
   });
 })();
 ```
+
+The Big Refactor intentionally breaks the legacy top-level plugin API. Third-party plugins must expose `contributes`; top-level `languageDefinitions`, `highlighters`, `linters`, `transformers`, `renderers`, and `exporters` are no longer public contracts.
 
 The plugin loader must not use `eval`, `new Function`, dynamic import, or remote script URLs.
 
@@ -219,44 +225,78 @@ The plugin loader must not use `eval`, `new Function`, dynamic import, or remote
 Providers may be synchronous or asynchronous where already supported by core managers.
 
 ```ts
-interface HighlighterProvider {
+interface LanguageContribution {
   id: string
   name: string
+  fileExtensions: string[]
+  mediaType: string
+  description?: string
+}
+
+interface EditorContribution {
+  id: string
+  name: string
+  accepts: string[]
+  createEditor(context: EditorContext): EditorInstance
+}
+
+interface EditorExtensionContribution {
+  id: string
+  name: string
+  editor: string
   languages: string[]
-  getCodeMirrorExtensions(context: HighlighterContext): unknown[] | Promise<unknown[]>
+  createExtension(context: EditorExtensionContext): unknown[] | Promise<unknown[]>
 }
 
-interface LinterProvider {
+interface LinterContribution {
   id: string
   name: string
-  languages: string[]
-  lint(document: DocumentModel, context: LinterContext): Diagnostic[] | Promise<Diagnostic[]>
+  accepts: string[]
+  parameters?: ParameterSchema
+  lint(input: ContributionInput): Diagnostic[] | Promise<Diagnostic[]>
 }
 
-interface TransformerProvider {
+interface TransformerContribution {
   id: string
   name: string
-  inputLanguages: string[]
-  outputLanguage?: string
-  transform(document: DocumentModel, context: TransformerContext): TransformResult | Promise<TransformResult>
+  inputLanguage: string
+  outputLanguage: string
+  parameters?: ParameterSchema
+  transform(input: ContributionInput): TransformResult | Promise<TransformResult>
 }
 
-interface RendererProvider {
+interface RendererContribution {
   id: string
   name: string
-  inputLanguages: string[]
+  accepts: string[]
   outputKind: "html" | "svg" | "text" | "image" | "custom"
-  render(document: DocumentModel, context: RendererContext): RenderResult | Promise<RenderResult>
+  parameters?: ParameterSchema
+  render(input: ContributionInput): RenderResult | Promise<RenderResult>
 }
 
-interface ExporterProvider {
+interface ExporterContribution {
   id: string
   name: string
-  languages?: string[]
-  inputKinds: Array<"source" | "rendered">
+  accepts: string[]
   outputFileExtension: string
   mimeType: string
-  export(input: ExportInput, context: ExporterContext): ExportResult | Promise<ExportResult>
+  parameters?: ParameterSchema
+  export(input: ContributionInput): ExportResult | Promise<ExportResult>
+}
+
+interface TerminalStepContribution {
+  id: string
+  name: string
+  accepts: string[]
+  parameters?: ParameterSchema
+  run(input: ContributionInput): PipelineResult | Promise<PipelineResult>
+}
+
+interface PipelineContribution {
+  id: string
+  name: string
+  inputLanguage: string
+  steps: Array<{ use: string, params?: object }>
 }
 ```
 
@@ -264,11 +304,16 @@ Diagnostics use:
 
 ```ts
 interface Diagnostic {
-  from: number
-  to: number
-  severity: "error" | "warning" | "observation"
-  message: string
   source?: string
+  severity: "error" | "warning" | "information" | "observation"
+  message: string
+  languageId: string
+  range?: {
+    start: { line: number, column: number, offset?: number }
+    end: { line: number, column: number, offset?: number }
+  }
+  target?: object
+  step?: string
 }
 ```
 
@@ -279,11 +324,11 @@ interface TransformResult {
   text: string
   languageId?: string
   fileName?: string
-  mode: "replace-current" | "new-document" | "download"
+  diagnostics?: Diagnostic[]
 }
 ```
 
-Render/export results use string, Blob, or ArrayBuffer content as documented in `core/plugin-types.js`.
+Render/export results use string, Blob, or ArrayBuffer content as documented in `core/plugin-types.js`. Contribution parameters are schema objects; every parameter must include a `default`. Pipelines are data-only JSON documents that reference contribution ids and optional parameter overrides.
 
 ## 8. Default Packaged Plugins
 
@@ -299,6 +344,8 @@ plugins/xml/xml.plugin.js
 plugins/javascript/javascript.plugin.js
 plugins/csv/csv.plugin.js
 plugins/python/python.plugin.js
+plugins/pipeline/pipeline.plugin.js
+plugins/jsmind/jsmind.plugin.js
 ```
 
 ## 9. Render Shell Requirements
@@ -359,6 +406,7 @@ Before marking implementation complete, run:
 npm install
 npm run build:libs
 npm run verify:syntax
+npm run verify:contracts
 ```
 
 Also verify:

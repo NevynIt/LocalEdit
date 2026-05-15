@@ -7,15 +7,16 @@
     }
 
     register(language) {
-      if (!language || !language.id || !language.label) {
-        throw new Error("Language definitions require id and label.");
+      if (!language || !language.id || !language.name) {
+        throw new Error("Language definitions require id and name.");
       }
 
       this.languages.set(language.id, {
         id: language.id,
-        label: language.label,
-        extensions: Array.isArray(language.extensions) ? language.extensions.slice() : [],
-        mimeTypes: Array.isArray(language.mimeTypes) ? language.mimeTypes.slice() : []
+        name: language.name,
+        fileExtensions: Array.isArray(language.fileExtensions) ? language.fileExtensions.slice() : [],
+        mediaType: language.mediaType || "",
+        description: language.description || ""
       });
     }
 
@@ -25,7 +26,7 @@
 
     list() {
       return Array.from(this.languages.values()).sort(function (a, b) {
-        return a.label.localeCompare(b.label);
+        return a.name.localeCompare(b.name);
       });
     }
 
@@ -38,8 +39,11 @@
       var found;
       var foundLength = 0;
       this.languages.forEach(function (language) {
-        language.extensions.forEach(function (extension) {
+        language.fileExtensions.forEach(function (extension) {
           var normalized = String(extension || "").toLowerCase();
+          if (normalized.charAt(0) === ".") {
+            normalized = normalized.slice(1);
+          }
           if (normalized && lowerName.endsWith("." + normalized) && normalized.length > foundLength) {
             found = language.id;
             foundLength = normalized.length;

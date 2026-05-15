@@ -39,7 +39,7 @@
   }
 
   global.EditorPlugins = global.EditorPlugins || [];
-  global.EditorPlugins.push({
+  global.EditorPlugins.push(global.EditorPluginContracts.fromLegacy({
     id: "graphviz-core",
     name: "Graphviz",
     version: "0.1.0",
@@ -117,5 +117,5 @@
         }
       }
     ]
-  });
+  }));
 })(window);

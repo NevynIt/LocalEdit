@@ -355,15 +355,24 @@
       setText("Rendering...");
       await loadPluginSpecs(message.pluginLoadSpecs, message.pluginPaths);
       var documentModel = new DocumentModel(message.document);
-      var renderer = registry.getRenderer(message.rendererId, documentModel.languageId);
+      var renderer = registry.getContribution("renderer", message.rendererId);
       if (!renderer) {
         throw new Error("Renderer was not found.");
       }
 
-      var result = await renderer.render(documentModel, {
+      var params = global.ParameterSchema
+        ? global.ParameterSchema.applyDefaults(renderer.parameters, message.params || {}, renderer.id)
+        : Object.assign({}, message.params || {});
+      var result = await renderer.render({
+        text: documentModel.text || "",
         languageId: documentModel.languageId,
-        options: message.options || {},
-        runtime: runtime
+        params: params,
+        document: documentModel,
+        context: {
+          languageId: documentModel.languageId,
+          metadata: message.metadata || {},
+          runtime: runtime
+        }
       });
       displayResult(result);
     } catch (error) {

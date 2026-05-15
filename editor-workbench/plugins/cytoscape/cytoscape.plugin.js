@@ -353,7 +353,7 @@
   }
 
   global.EditorPlugins = global.EditorPlugins || [];
-  global.EditorPlugins.push({
+  global.EditorPlugins.push(global.EditorPluginContracts.fromLegacy({
     id: "cytoscape-core",
     name: "Cytoscape JSON",
     version: "0.1.0",
@@ -445,5 +445,5 @@
       }
     ],
     exporters: []
-  });
+  }));
 })(window);

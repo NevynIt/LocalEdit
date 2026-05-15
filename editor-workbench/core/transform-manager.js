@@ -11,15 +11,25 @@
       return this.registry.getTransformers(languageId);
     }
 
-    async run(transformerId, documentModel) {
-      var transformer = this.registry.getTransformer(transformerId, documentModel.languageId);
+    async run(transformerId, documentModel, params) {
+      var transformer = this.registry.getContribution("transformer", transformerId);
       if (!transformer) {
         throw new Error("Transformer was not found.");
       }
 
-      return transformer.transform(documentModel, {
+      var resolvedParams = global.ParameterSchema
+        ? global.ParameterSchema.applyDefaults(transformer.parameters, params || {}, transformer.id)
+        : Object.assign({}, params || {});
+
+      return transformer.transform({
+        text: documentModel.text || "",
         languageId: documentModel.languageId,
-        runtime: this.runtime
+        params: resolvedParams,
+        document: documentModel,
+        context: {
+          languageId: documentModel.languageId,
+          runtime: this.runtime
+        }
       });
     }
   }
