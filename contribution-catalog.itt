@@ -1,0 +1,1522 @@
+&catalog Contribution catalog
+ | generated at: 2026-05-15T21:29:17.307Z
+ | note: languages define the tree; transformer cross links show produced formats
+  &lang-text [language] Text
+   | id: text
+   | media types: text/plain
+    &lang-text-csv [language] CSV/TSV
+     | id: text.csv
+     | aliases: csv
+     | extensions: .csv, .tsv
+     | media types: text/csv, text/tab-separated-values
+      &contrib-csv-core-csv-width-linter-text-csv [linter] CSV row width
+       | id: csv-width-linter
+       | plugin: CSV
+       | consumes: text.csv
+       | parameters: none
+      &contrib-data-profile-csv-profile-report-text-csv [pipeline] CSV Profile Report
+       | id: csv-profile-report
+       | plugin: Data Profile
+       | consumes: text.csv
+       | steps: 1. csv-to-json-table -> 2. json-table-to-profile -> 3. json-profile-to-markdown
+       | parameters: none
+      &contrib-gephi-gexf-convert-csv-relations-to-gephi-gexf-text-csv [pipeline] CSV Relations to Gephi GEXF
+       | id: convert-csv-relations-to-gephi-gexf
+       | plugin: Gephi GEXF
+       | consumes: text.csv
+       | steps: 1. csv-to-json-table -> 2. json-table-to-architecture-graph -> 3. model-graph-to-gephi-gexf
+       | parameters: none
+      &contrib-architecture-model-csv-to-architecture-graph-text-csv [pipeline] CSV to Architecture Graph
+       | id: csv-to-architecture-graph
+       | plugin: Architecture Model
+       | consumes: text.csv
+       | steps: 1. csv-to-json-table -> 2. json-table-to-architecture-graph -> 3. model-graph-to-cytoscape -> 4. cytoscape-graph-preview
+       | parameters: none
+      &contrib-sigma-graphology-explorer-view-csv-relations-sigma-text-csv [pipeline] Explore CSV Relations
+       | id: view-csv-relations-sigma
+       | plugin: Sigma Graph Explorer
+       | consumes: text.csv
+       | steps: 1. csv-to-json-table -> 2. json-table-to-architecture-graph -> 3. sigma-graphology-renderer
+       | parameters: none
+      &contrib-foundation-dialects-export-csv-as-json-table-text-csv [pipeline] Export as JSON Table
+       | id: export-csv-as-json-table
+       | plugin: Foundation Dialects
+       | consumes: text.csv
+       | steps: 1. csv-to-json-table -> 2. json-dialect-export
+       | parameters: none
+      &contrib-data-profile-export-csv-chart-png-text-csv [pipeline] Export CSV Chart as PNG
+       | id: export-csv-chart-png
+       | plugin: Data Profile
+       | consumes: text.csv
+       | steps: 1. csv-to-json-table -> 2. json-table-to-chart -> 3. json-chart-to-svg -> 4. svg-png-export
+       | parameters: none
+      &contrib-foundation-dialects-view-csv-as-table-text-csv [pipeline] View as Table
+       | id: view-csv-as-table
+       | plugin: Foundation Dialects
+       | consumes: text.csv
+       | steps: 1. csv-to-json-table -> 2. json-table-renderer
+       | parameters: none
+      &contrib-data-profile-view-csv-chart-text-csv [pipeline] View CSV Chart
+       | id: view-csv-chart
+       | plugin: Data Profile
+       | consumes: text.csv
+       | steps: 1. csv-to-json-table -> 2. json-table-to-chart -> 3. json-chart-to-svg -> 4. svg-preview
+       | parameters: none
+      &contrib-foundation-dialects-csv-to-json-table-text-csv [transformer] CSV to JSON Table @produces:lang-json-table
+       | id: csv-to-json-table
+       | plugin: Foundation Dialects
+       | consumes: text.csv
+       | produces: json.table
+       | parameters: none
+    &lang-text-graphviz-dot [language] Graphviz DOT
+     | id: text.graphviz-dot
+     | aliases: graphviz.dot, graphviz
+     | extensions: .dot, .gv
+     | media types: text/vnd.graphviz
+      &contrib-graphviz-core-graphviz-codemirror-text-graphviz-dot [editor-extension] DOT syntax
+       | id: graphviz-codemirror
+       | plugin: Graphviz
+       | consumes: text.graphviz-dot
+       | parameters: none
+      &contrib-graphviz-core-export-graphviz-as-png-text-graphviz-dot [pipeline] Export as PNG
+       | id: export-graphviz-as-png
+       | plugin: Graphviz
+       | consumes: text.graphviz-dot
+       | steps: 1. graphviz-to-svg -> 2. svg-png-export
+       | parameters: none
+      &contrib-graphviz-core-export-graphviz-as-svg-text-graphviz-dot [pipeline] Export as SVG
+       | id: export-graphviz-as-svg
+       | plugin: Graphviz
+       | consumes: text.graphviz-dot
+       | steps: 1. graphviz-to-svg -> 2. svg-sanitized-export
+       | parameters: none
+      &contrib-gephi-gexf-convert-graphviz-to-gephi-gexf-text-graphviz-dot [pipeline] Graphviz DOT to Gephi GEXF
+       | id: convert-graphviz-to-gephi-gexf
+       | plugin: Gephi GEXF
+       | consumes: text.graphviz-dot
+       | steps: 1. graphviz-to-gephi-gexf
+       | parameters: none
+      &contrib-graphviz-core-view-graphviz-as-svg-text-graphviz-dot [pipeline] View as SVG
+       | id: view-graphviz-as-svg
+       | plugin: Graphviz
+       | consumes: text.graphviz-dot
+       | steps: 1. graphviz-to-svg -> 2. svg-preview
+       | parameters: none
+      &contrib-gephi-gexf-graphviz-to-gephi-gexf-text-graphviz-dot [transformer] Graphviz DOT to Gephi GEXF @produces:lang-xml-gexf
+       | id: graphviz-to-gephi-gexf
+       | plugin: Gephi GEXF
+       | consumes: text.graphviz-dot
+       | produces: xml.gexf
+       | parameters: none
+      &contrib-graphviz-core-graphviz-to-svg-text-graphviz-dot [transformer] Graphviz to SVG @produces:lang-xml-svg
+       | id: graphviz-to-svg
+       | plugin: Graphviz
+       | consumes: text.graphviz-dot
+       | produces: xml.svg
+       | parameters: none
+    &lang-text-indented-tree [language] Indented Tree
+     | id: text.indented-tree
+     | aliases: indented-tree
+     | extensions: .itt, .itree
+     | media types: text/x-indented-tree
+      &contrib-indented-tree-core-indented-tree-codemirror-text-indented-tree [editor-extension] Indented Tree syntax
+       | id: indented-tree-codemirror
+       | plugin: Indented Tree
+       | consumes: text.indented-tree
+       | parameters: none
+      &contrib-indented-tree-core-indented-tree-linter-text-indented-tree [linter] Indented Tree parser
+       | id: indented-tree-linter
+       | plugin: Indented Tree
+       | consumes: text.indented-tree
+       | parameters: none
+      &contrib-sigma-graphology-explorer-view-indented-tree-sigma-text-indented-tree [pipeline] Explore Indented Tree
+       | id: view-indented-tree-sigma
+       | plugin: Sigma Graph Explorer
+       | consumes: text.indented-tree
+       | steps: 1. indented-tree-to-json -> 2. indented-tree-json-to-model-graph -> 3. sigma-graphology-renderer
+       | parameters: none
+      &contrib-foundation-dialects-export-indented-tree-cytoscape-json-text-indented-tree [pipeline] Export as Cytoscape JSON
+       | id: export-indented-tree-cytoscape-json
+       | plugin: Foundation Dialects
+       | consumes: text.indented-tree
+       | steps: 1. indented-tree-to-json -> 2. indented-tree-json-to-model-graph -> 3. model-graph-to-cytoscape -> 4. json-dialect-export
+       | parameters: none
+      &contrib-foundation-dialects-export-indented-tree-json-text-indented-tree [pipeline] Export as Indented Tree JSON
+       | id: export-indented-tree-json
+       | plugin: Foundation Dialects
+       | consumes: text.indented-tree
+       | steps: 1. indented-tree-to-json -> 2. json-dialect-export
+       | parameters: none
+      &contrib-structured-docs-export-indented-tree-as-opml-text-indented-tree [pipeline] Export Indented Tree as OPML
+       | id: export-indented-tree-as-opml
+       | plugin: Structured Docs
+       | consumes: text.indented-tree
+       | steps: 1. indented-tree-to-json -> 2. indented-tree-json-to-opml -> 3. opml-source-export
+       | parameters: none
+      &contrib-structured-docs-indented-tree-actions-report-text-indented-tree [pipeline] Indented Tree Actions Report
+       | id: indented-tree-actions-report
+       | plugin: Structured Docs
+       | consumes: text.indented-tree
+       | steps: 1. indented-tree-to-json -> 2. indented-tree-json-to-action-list -> 3. json-table-to-markdown-report
+       | parameters: none
+      &contrib-process-model-indented-tree-process-mermaid-text-indented-tree [pipeline] Indented Tree Process Mermaid
+       | id: indented-tree-process-mermaid
+       | plugin: Process Model
+       | consumes: text.indented-tree
+       | steps: 1. indented-tree-to-json -> 2. indented-tree-json-to-process-graph -> 3. process-graph-to-mermaid
+       | parameters: none
+      &contrib-gephi-gexf-convert-indented-tree-to-gephi-gexf-text-indented-tree [pipeline] Indented Tree to Gephi GEXF
+       | id: convert-indented-tree-to-gephi-gexf
+       | plugin: Gephi GEXF
+       | consumes: text.indented-tree
+       | steps: 1. indented-tree-to-json -> 2. indented-tree-json-to-model-graph -> 3. model-graph-to-gephi-gexf
+       | parameters: none
+      &contrib-foundation-dialects-view-indented-tree-as-graph-text-indented-tree [pipeline] View as Graph
+       | id: view-indented-tree-as-graph
+       | plugin: Foundation Dialects
+       | consumes: text.indented-tree
+       | steps: 1. indented-tree-to-json -> 2. indented-tree-json-to-model-graph -> 3. model-graph-to-cytoscape -> 4. cytoscape-graph-preview
+       | parameters: none
+      &contrib-jsmind-core-view-indented-tree-as-mindmap-text-indented-tree [pipeline] View as Mind Map
+       | id: view-indented-tree-as-mindmap
+       | plugin: jsMind
+       | consumes: text.indented-tree
+       | steps: 1. indented-tree-to-jsmind-json -> 2. jsmind-renderer
+       | parameters: none
+      &contrib-foundation-dialects-view-indented-tree-as-tree-text-indented-tree [pipeline] View as Tree
+       | id: view-indented-tree-as-tree
+       | plugin: Foundation Dialects
+       | consumes: text.indented-tree
+       | steps: 1. indented-tree-to-json -> 2. indented-tree-json-to-tree -> 3. json-tree-renderer
+       | parameters: none
+      &contrib-structured-docs-view-indented-tree-as-action-list-text-indented-tree [pipeline] View Indented Tree as Action List
+       | id: view-indented-tree-as-action-list
+       | plugin: Structured Docs
+       | consumes: text.indented-tree
+       | steps: 1. indented-tree-to-json -> 2. indented-tree-json-to-action-list -> 3. json-table-renderer
+       | parameters: none
+      &contrib-process-model-view-indented-tree-as-process-graph-text-indented-tree [pipeline] View Indented Tree as Process Graph
+       | id: view-indented-tree-as-process-graph
+       | plugin: Process Model
+       | consumes: text.indented-tree
+       | steps: 1. indented-tree-to-json -> 2. indented-tree-json-to-process-graph -> 3. model-graph-to-cytoscape -> 4. cytoscape-graph-preview
+       | parameters: none
+      &contrib-jsmind-core-indented-tree-to-jsmind-json-text-indented-tree [transformer] Indented Tree to jsMind JSON @produces:lang-json-jsmind
+       | id: indented-tree-to-jsmind-json
+       | plugin: jsMind
+       | consumes: text.indented-tree
+       | produces: json.jsmind
+       | parameters: none
+      &contrib-foundation-dialects-indented-tree-to-json-text-indented-tree [transformer] Indented Tree to JSON @produces:lang-json-indented-tree
+       | id: indented-tree-to-json
+       | plugin: Foundation Dialects
+       | consumes: text.indented-tree
+       | produces: json.indented-tree
+       | parameters: none
+    &lang-text-javascript [language] JavaScript
+     | id: text.javascript
+     | aliases: javascript
+     | extensions: .js, .mjs, .cjs
+     | media types: text/javascript, application/javascript
+      &contrib-javascript-core-javascript-codemirror-text-javascript [editor-extension] JavaScript syntax
+       | id: javascript-codemirror
+       | plugin: JavaScript
+       | consumes: text.javascript
+       | parameters: none
+      &contrib-sigma-graphology-explorer-view-javascript-imports-sigma-text-javascript [pipeline] Explore JavaScript Imports
+       | id: view-javascript-imports-sigma
+       | plugin: Sigma Graph Explorer
+       | consumes: text.javascript
+       | steps: 1. javascript-imports-to-dependency-graph -> 2. sigma-graphology-renderer
+       | parameters: none
+      &contrib-code-analysis-javascript-import-report-text-javascript [pipeline] JavaScript Import Report
+       | id: javascript-import-report
+       | plugin: Code and API Analysis
+       | consumes: text.javascript
+       | steps: 1. javascript-imports-to-dependency-graph -> 2. model-graph-to-markdown-report
+       | parameters: none
+      &contrib-gephi-gexf-convert-javascript-imports-to-gephi-gexf-text-javascript [pipeline] JavaScript Imports to Gephi GEXF
+       | id: convert-javascript-imports-to-gephi-gexf
+       | plugin: Gephi GEXF
+       | consumes: text.javascript
+       | steps: 1. javascript-imports-to-dependency-graph -> 2. model-graph-to-gephi-gexf
+       | parameters: none
+      &contrib-code-analysis-view-javascript-import-graph-text-javascript [pipeline] View JavaScript Import Graph
+       | id: view-javascript-import-graph
+       | plugin: Code and API Analysis
+       | consumes: text.javascript
+       | steps: 1. javascript-imports-to-dependency-graph -> 2. model-graph-to-cytoscape -> 3. cytoscape-graph-preview
+       | parameters: none
+      &contrib-code-analysis-view-javascript-outline-text-javascript [pipeline] View JavaScript Outline
+       | id: view-javascript-outline
+       | plugin: Code and API Analysis
+       | consumes: text.javascript
+       | steps: 1. javascript-to-outline-tree -> 2. json-tree-renderer
+       | parameters: none
+      &contrib-javascript-core-javascript-format-text-javascript [transformer] Format JavaScript @produces:lang-text-javascript
+       | id: javascript-format
+       | plugin: JavaScript
+       | consumes: text.javascript
+       | produces: text.javascript
+       | parameters: none
+      &contrib-code-analysis-javascript-imports-to-dependency-graph-text-javascript [transformer] JavaScript Imports to Dependency Graph @produces:lang-json-model-graph-dependency
+       | id: javascript-imports-to-dependency-graph
+       | plugin: Code and API Analysis
+       | consumes: text.javascript
+       | produces: json.model-graph.dependency
+       | parameters: none
+      &contrib-code-analysis-javascript-to-outline-tree-text-javascript [transformer] JavaScript Outline @produces:lang-json-tree
+       | id: javascript-to-outline-tree
+       | plugin: Code and API Analysis
+       | consumes: text.javascript
+       | produces: json.tree
+       | parameters: none
+    &lang-text-json [language] JSON
+     | id: text.json
+     | aliases: json
+     | extensions: .json
+     | media types: application/json
+      &lang-json-cytoscape [language] Cytoscape JSON
+       | id: json.cytoscape
+       | aliases: cytoscape
+       | extensions: .cy.json, .cytoscape.json, .cyjs
+       | media types: application/vnd.cytoscape+json
+        &contrib-cytoscape-core-cytoscape-json-codemirror-json-cytoscape [editor-extension] Cytoscape JSON syntax
+         | id: cytoscape-json-codemirror
+         | plugin: Cytoscape JSON
+         | consumes: json.cytoscape
+         | parameters: none
+        &contrib-cytoscape-core-cytoscape-json-linter-json-cytoscape [linter] Cytoscape JSON shape
+         | id: cytoscape-json-linter
+         | plugin: Cytoscape JSON
+         | consumes: json.cytoscape
+         | parameters: none
+        &contrib-gephi-gexf-convert-cytoscape-to-gephi-gexf-json-cytoscape [pipeline] Cytoscape JSON to Gephi GEXF
+         | id: convert-cytoscape-to-gephi-gexf
+         | plugin: Gephi GEXF
+         | consumes: json.cytoscape
+         | steps: 1. cytoscape-to-gephi-gexf
+         | parameters: none
+        &contrib-sigma-graphology-explorer-view-cytoscape-sigma-json-cytoscape [pipeline] Explore Cytoscape JSON
+         | id: view-cytoscape-sigma
+         | plugin: Sigma Graph Explorer
+         | consumes: json.cytoscape
+         | steps: 1. sigma-graphology-renderer
+         | parameters: none
+        &contrib-cytoscape-core-cytoscape-graph-preview-json-cytoscape [renderer] Cytoscape Graph Preview
+         | id: cytoscape-graph-preview
+         | plugin: Cytoscape JSON
+         | consumes: json.cytoscape
+         | parameters: none
+        &contrib-sigma-graphology-explorer-sigma-graphology-renderer-json-cytoscape [renderer] Sigma Graph Explorer
+         | id: sigma-graphology-renderer
+         | plugin: Sigma Graph Explorer
+         | consumes: json.cytoscape
+         | parameters: colorMode [enum=community|type|none] default="community", edgeLabels [boolean] default=false, iterations [integer] default=120, labels [enum=auto|all|none] default="auto", layout [enum=forceatlas2|noverlap|circular|random] default="forceatlas2", sizeMetric [enum=degree|pagerank|fixed] default="degree"
+        &contrib-cytoscape-core-cytoscape-json-compact-json-cytoscape [transformer] Compact Cytoscape JSON @produces:lang-json-cytoscape
+         | id: cytoscape-json-compact
+         | plugin: Cytoscape JSON
+         | consumes: json.cytoscape
+         | produces: json.cytoscape
+         | parameters: none
+        &contrib-gephi-gexf-cytoscape-to-gephi-gexf-json-cytoscape [transformer] Cytoscape JSON to Gephi GEXF @produces:lang-xml-gexf
+         | id: cytoscape-to-gephi-gexf
+         | plugin: Gephi GEXF
+         | consumes: json.cytoscape
+         | produces: xml.gexf
+         | parameters: none
+        &contrib-cytoscape-core-cytoscape-json-format-json-cytoscape [transformer] Format Cytoscape JSON @produces:lang-json-cytoscape
+         | id: cytoscape-json-format
+         | plugin: Cytoscape JSON
+         | consumes: json.cytoscape
+         | produces: json.cytoscape
+         | parameters: none
+      &lang-json-indented-tree [language] Indented Tree JSON
+       | id: json.indented-tree
+       | extensions: .indented-tree.json
+       | media types: application/json
+        &contrib-structured-docs-indented-tree-json-to-action-list-json-indented-tree [transformer] Indented Tree JSON to Action List @produces:lang-json-table-action-list
+         | id: indented-tree-json-to-action-list
+         | plugin: Structured Docs
+         | consumes: json.indented-tree
+         | produces: json.table.action-list
+         | parameters: none
+        &contrib-foundation-dialects-indented-tree-json-to-model-graph-json-indented-tree [transformer] Indented Tree JSON to Model Graph @produces:lang-json-model-graph
+         | id: indented-tree-json-to-model-graph
+         | plugin: Foundation Dialects
+         | consumes: json.indented-tree
+         | produces: json.model-graph
+         | parameters: none
+        &contrib-structured-docs-indented-tree-json-to-opml-json-indented-tree [transformer] Indented Tree JSON to OPML @produces:lang-xml-opml
+         | id: indented-tree-json-to-opml
+         | plugin: Structured Docs
+         | consumes: json.indented-tree
+         | produces: xml.opml
+         | parameters: none
+        &contrib-process-model-indented-tree-json-to-process-graph-json-indented-tree [transformer] Indented Tree JSON to Process Graph @produces:lang-json-model-graph-process
+         | id: indented-tree-json-to-process-graph
+         | plugin: Process Model
+         | consumes: json.indented-tree
+         | produces: json.model-graph.process
+         | parameters: none
+        &contrib-foundation-dialects-indented-tree-json-to-tree-json-indented-tree [transformer] Indented Tree JSON to Tree @produces:lang-json-tree
+         | id: indented-tree-json-to-tree
+         | plugin: Foundation Dialects
+         | consumes: json.indented-tree
+         | produces: json.tree
+         | parameters: none
+      &lang-json-jsmind [language] jsMind JSON
+       | id: json.jsmind
+       | aliases: jsmind-json
+       | extensions: .jm.json, .jsmind.json
+       | media types: application/vnd.jsmind+json
+        &contrib-jsmind-core-jsmind-json-codemirror-json-jsmind [editor-extension] jsMind JSON syntax
+         | id: jsmind-json-codemirror
+         | plugin: jsMind
+         | consumes: json.jsmind
+         | parameters: none
+        &contrib-jsmind-core-jsmind-json-linter-json-jsmind [linter] jsMind JSON parser
+         | id: jsmind-json-linter
+         | plugin: jsMind
+         | consumes: json.jsmind
+         | parameters: none
+        &contrib-sigma-graphology-explorer-view-jsmind-sigma-json-jsmind [pipeline] Explore jsMind
+         | id: view-jsmind-sigma
+         | plugin: Sigma Graph Explorer
+         | consumes: json.jsmind
+         | steps: 1. sigma-graphology-renderer
+         | parameters: none
+        &contrib-gephi-gexf-convert-jsmind-to-gephi-gexf-json-jsmind [pipeline] jsMind to Gephi GEXF
+         | id: convert-jsmind-to-gephi-gexf
+         | plugin: Gephi GEXF
+         | consumes: json.jsmind
+         | steps: 1. jsmind-to-gephi-gexf
+         | parameters: none
+        &contrib-jsmind-core-jsmind-renderer-json-jsmind [renderer] jsMind Mind Map
+         | id: jsmind-renderer
+         | plugin: jsMind
+         | consumes: json.jsmind
+         | parameters: initialDepth [enum=collapsed|depth2|all] default="collapsed", initialZoom [enum=fit|100] default="fit", mode [enum=full|side] default="full", textScale [number] default=1, theme [string] default="localedit"
+        &contrib-sigma-graphology-explorer-sigma-graphology-renderer-json-jsmind [renderer] Sigma Graph Explorer
+         | id: sigma-graphology-renderer
+         | plugin: Sigma Graph Explorer
+         | consumes: json.jsmind
+         | parameters: colorMode [enum=community|type|none] default="community", edgeLabels [boolean] default=false, iterations [integer] default=120, labels [enum=auto|all|none] default="auto", layout [enum=forceatlas2|noverlap|circular|random] default="forceatlas2", sizeMetric [enum=degree|pagerank|fixed] default="degree"
+        &contrib-gephi-gexf-jsmind-to-gephi-gexf-json-jsmind [transformer] jsMind to Gephi GEXF @produces:lang-xml-gexf
+         | id: jsmind-to-gephi-gexf
+         | plugin: Gephi GEXF
+         | consumes: json.jsmind
+         | produces: xml.gexf
+         | parameters: none
+      &lang-json-chart [language] JSON Chart
+       | id: json.chart
+       | extensions: .chart.json
+       | media types: application/json
+        &contrib-data-profile-json-chart-linter-json-chart [linter] JSON Chart shape
+         | id: json-chart-linter
+         | plugin: Data Profile
+         | consumes: json.chart
+         | parameters: none
+        &contrib-data-profile-export-json-chart-as-svg-json-chart [pipeline] Export JSON Chart as SVG
+         | id: export-json-chart-as-svg
+         | plugin: Data Profile
+         | consumes: json.chart
+         | steps: 1. json-chart-to-svg -> 2. svg-sanitized-export
+         | parameters: none
+        &contrib-data-profile-view-json-chart-as-svg-json-chart [pipeline] View JSON Chart as SVG
+         | id: view-json-chart-as-svg
+         | plugin: Data Profile
+         | consumes: json.chart
+         | steps: 1. json-chart-to-svg -> 2. svg-preview
+         | parameters: none
+        &contrib-data-profile-json-chart-to-svg-json-chart [transformer] JSON Chart to SVG @produces:lang-xml-svg
+         | id: json-chart-to-svg
+         | plugin: Data Profile
+         | consumes: json.chart
+         | produces: xml.svg
+         | parameters: none
+      &lang-json-model-graph [language] JSON Model Graph
+       | id: json.model-graph
+       | extensions: .model-graph.json
+       | media types: application/json
+        &lang-json-model-graph-architecture [language] Architecture Model Graph
+         | id: json.model-graph.architecture
+         | extensions: .architecture.model-graph.json
+         | media types: application/json
+          &contrib-architecture-model-architecture-graph-linter-json-model-graph-architecture [linter] Architecture Graph shape
+           | id: architecture-graph-linter
+           | plugin: Architecture Model
+           | consumes: json.model-graph.architecture
+           | parameters: none
+          &contrib-architecture-model-architecture-report-json-model-graph-architecture [pipeline] Architecture Markdown Report
+           | id: architecture-report
+           | plugin: Architecture Model
+           | consumes: json.model-graph.architecture
+           | steps: 1. model-graph-to-markdown-report
+           | parameters: none
+          &contrib-architecture-model-architecture-traceability-graph-json-model-graph-architecture [pipeline] Architecture Traceability Graph
+           | id: architecture-traceability-graph
+           | plugin: Architecture Model
+           | consumes: json.model-graph.architecture
+           | steps: 1. architecture-graph-to-traceability-graph -> 2. model-graph-to-cytoscape -> 3. cytoscape-graph-preview
+           | parameters: none
+          &contrib-architecture-model-architecture-traceability-table-json-model-graph-architecture [pipeline] Architecture Traceability Table
+           | id: architecture-traceability-table
+           | plugin: Architecture Model
+           | consumes: json.model-graph.architecture
+           | steps: 1. architecture-graph-to-traceability-table -> 2. json-table-renderer
+           | parameters: none
+          &contrib-architecture-model-export-architecture-archimate-json-model-graph-architecture [pipeline] Export Architecture as ArchiMate
+           | id: export-architecture-archimate
+           | plugin: Architecture Model
+           | consumes: json.model-graph.architecture
+           | steps: 1. architecture-graph-to-archimate -> 2. archimate-source-export
+           | parameters: none
+          &contrib-architecture-model-view-architecture-graph-json-model-graph-architecture [pipeline] View Architecture Graph
+           | id: view-architecture-graph
+           | plugin: Architecture Model
+           | consumes: json.model-graph.architecture
+           | steps: 1. model-graph-to-cytoscape -> 2. cytoscape-graph-preview
+           | parameters: none
+          &contrib-architecture-model-architecture-graph-to-archimate-json-model-graph-architecture [transformer] Architecture Graph to ArchiMate @produces:lang-xml-archimate-exchange
+           | id: architecture-graph-to-archimate
+           | plugin: Architecture Model
+           | consumes: json.model-graph.architecture
+           | produces: xml.archimate-exchange
+           | parameters: none
+          &contrib-architecture-model-architecture-graph-to-traceability-graph-json-model-graph-architecture [transformer] Architecture Graph to Traceability Graph @produces:lang-json-model-graph-traceability
+           | id: architecture-graph-to-traceability-graph
+           | plugin: Architecture Model
+           | consumes: json.model-graph.architecture
+           | produces: json.model-graph.traceability
+           | parameters: none
+          &contrib-architecture-model-architecture-graph-to-traceability-table-json-model-graph-architecture [transformer] Architecture Graph to Traceability Table @produces:lang-json-table-traceability-matrix
+           | id: architecture-graph-to-traceability-table
+           | plugin: Architecture Model
+           | consumes: json.model-graph.architecture
+           | produces: json.table.traceability-matrix
+           | parameters: none
+        &lang-json-model-graph-dependency [language] Dependency Model Graph
+         | id: json.model-graph.dependency
+         | extensions: .dependency.model-graph.json
+         | media types: application/json
+          &contrib-code-analysis-dependency-graph-linter-json-model-graph-dependency [linter] Dependency Graph shape
+           | id: dependency-graph-linter
+           | plugin: Code and API Analysis
+           | consumes: json.model-graph.dependency
+           | parameters: none
+        &lang-json-model-graph-process [language] Process Model Graph
+         | id: json.model-graph.process
+         | extensions: .process.model-graph.json
+         | media types: application/json
+          &contrib-process-model-process-graph-linter-json-model-graph-process [linter] Process Graph shape
+           | id: process-graph-linter
+           | plugin: Process Model
+           | consumes: json.model-graph.process
+           | parameters: none
+          &contrib-process-model-export-process-bpmn-json-model-graph-process [pipeline] Export Process as BPMN
+           | id: export-process-bpmn
+           | plugin: Process Model
+           | consumes: json.model-graph.process
+           | steps: 1. process-graph-to-bpmn -> 2. bpmn-source-export
+           | parameters: none
+          &contrib-process-model-process-to-dot-json-model-graph-process [pipeline] Process Graph to DOT
+           | id: process-to-dot
+           | plugin: Process Model
+           | consumes: json.model-graph.process
+           | steps: 1. process-graph-to-dot
+           | parameters: none
+          &contrib-process-model-process-report-json-model-graph-process [pipeline] Process Markdown Report
+           | id: process-report
+           | plugin: Process Model
+           | consumes: json.model-graph.process
+           | steps: 1. model-graph-to-markdown-report
+           | parameters: none
+          &contrib-process-model-process-role-activity-table-json-model-graph-process [pipeline] Process Role Activity Table
+           | id: process-role-activity-table
+           | plugin: Process Model
+           | consumes: json.model-graph.process
+           | steps: 1. process-graph-to-role-activity-table -> 2. json-table-renderer
+           | parameters: none
+          &contrib-process-model-view-process-as-mermaid-svg-json-model-graph-process [pipeline] View Process as Mermaid SVG
+           | id: view-process-as-mermaid-svg
+           | plugin: Process Model
+           | consumes: json.model-graph.process
+           | steps: 1. process-graph-to-mermaid -> 2. mermaid-to-svg -> 3. svg-preview
+           | parameters: none
+          &contrib-process-model-view-process-graph-json-model-graph-process [pipeline] View Process Graph
+           | id: view-process-graph
+           | plugin: Process Model
+           | consumes: json.model-graph.process
+           | steps: 1. model-graph-to-cytoscape -> 2. cytoscape-graph-preview
+           | parameters: none
+          &contrib-process-model-process-graph-to-bpmn-json-model-graph-process [transformer] Process Graph to BPMN @produces:lang-xml-bpmn
+           | id: process-graph-to-bpmn
+           | plugin: Process Model
+           | consumes: json.model-graph.process
+           | produces: xml.bpmn
+           | parameters: none
+          &contrib-process-model-process-graph-to-dot-json-model-graph-process [transformer] Process Graph to DOT @produces:lang-text-graphviz-dot
+           | id: process-graph-to-dot
+           | plugin: Process Model
+           | consumes: json.model-graph.process
+           | produces: text.graphviz-dot
+           | parameters: none
+          &contrib-process-model-process-graph-to-mermaid-json-model-graph-process [transformer] Process Graph to Mermaid @produces:lang-text-mermaid
+           | id: process-graph-to-mermaid
+           | plugin: Process Model
+           | consumes: json.model-graph.process
+           | produces: text.mermaid
+           | parameters: none
+          &contrib-process-model-process-graph-to-role-activity-table-json-model-graph-process [transformer] Process Graph to Role Activity Table @produces:lang-json-table-role-activity
+           | id: process-graph-to-role-activity-table
+           | plugin: Process Model
+           | consumes: json.model-graph.process
+           | produces: json.table.role-activity
+           | parameters: none
+        &lang-json-model-graph-traceability [language] Traceability Model Graph
+         | id: json.model-graph.traceability
+         | extensions: .traceability.model-graph.json
+         | media types: application/json
+        &contrib-foundation-dialects-json-model-graph-linter-json-model-graph [linter] Model Graph shape
+         | id: json-model-graph-linter
+         | plugin: Foundation Dialects
+         | consumes: json.model-graph
+         | parameters: none
+        &contrib-sigma-graphology-explorer-view-model-graph-sigma-json-model-graph [pipeline] Explore Model Graph
+         | id: view-model-graph-sigma
+         | plugin: Sigma Graph Explorer
+         | consumes: json.model-graph
+         | steps: 1. sigma-graphology-renderer
+         | parameters: none
+        &contrib-structured-docs-model-graph-markdown-report-json-model-graph [pipeline] Model Graph Markdown Report
+         | id: model-graph-markdown-report
+         | plugin: Structured Docs
+         | consumes: json.model-graph
+         | steps: 1. model-graph-to-markdown-report
+         | parameters: none
+        &contrib-gephi-gexf-convert-model-graph-to-gephi-gexf-json-model-graph [pipeline] Model Graph to Gephi GEXF
+         | id: convert-model-graph-to-gephi-gexf
+         | plugin: Gephi GEXF
+         | consumes: json.model-graph
+         | steps: 1. model-graph-to-gephi-gexf
+         | parameters: none
+        &contrib-sigma-graphology-explorer-sigma-graphology-renderer-json-model-graph [renderer] Sigma Graph Explorer
+         | id: sigma-graphology-renderer
+         | plugin: Sigma Graph Explorer
+         | consumes: json.model-graph
+         | parameters: colorMode [enum=community|type|none] default="community", edgeLabels [boolean] default=false, iterations [integer] default=120, labels [enum=auto|all|none] default="auto", layout [enum=forceatlas2|noverlap|circular|random] default="forceatlas2", sizeMetric [enum=degree|pagerank|fixed] default="degree"
+        &contrib-foundation-dialects-model-graph-to-cytoscape-json-model-graph [transformer] Model Graph to Cytoscape JSON @produces:lang-json-cytoscape
+         | id: model-graph-to-cytoscape
+         | plugin: Foundation Dialects
+         | consumes: json.model-graph
+         | produces: json.cytoscape
+         | parameters: none
+        &contrib-gephi-gexf-model-graph-to-gephi-gexf-json-model-graph [transformer] Model Graph to Gephi GEXF @produces:lang-xml-gexf
+         | id: model-graph-to-gephi-gexf
+         | plugin: Gephi GEXF
+         | consumes: json.model-graph
+         | produces: xml.gexf
+         | parameters: none
+        &contrib-structured-docs-model-graph-to-markdown-report-json-model-graph [transformer] Model Graph to Markdown Report @produces:lang-text-markdown
+         | id: model-graph-to-markdown-report
+         | plugin: Structured Docs
+         | consumes: json.model-graph
+         | produces: text.markdown
+         | parameters: none
+      &lang-json-profile [language] JSON Profile
+       | id: json.profile
+       | extensions: .profile.json
+       | media types: application/json
+        &contrib-data-profile-json-profile-linter-json-profile [linter] JSON Profile shape
+         | id: json-profile-linter
+         | plugin: Data Profile
+         | consumes: json.profile
+         | parameters: none
+        &contrib-data-profile-json-profile-to-markdown-json-profile [transformer] JSON Profile to Markdown @produces:lang-text-markdown
+         | id: json-profile-to-markdown
+         | plugin: Data Profile
+         | consumes: json.profile
+         | produces: text.markdown
+         | parameters: none
+      &lang-json-table [language] JSON Table
+       | id: json.table
+       | extensions: .table.json
+       | media types: application/json
+        &lang-json-table-action-list [language] Action List Table
+         | id: json.table.action-list
+         | extensions: .actions.table.json
+         | media types: application/json
+          &contrib-structured-docs-action-list-table-linter-json-table-action-list [linter] Action List columns
+           | id: action-list-table-linter
+           | plugin: Structured Docs
+           | consumes: json.table.action-list
+           | parameters: none
+        &lang-json-table-endpoint-list [language] Endpoint List Table
+         | id: json.table.endpoint-list
+         | extensions: .endpoints.table.json
+         | media types: application/json
+        &lang-json-table-risk-register [language] Risk Register Table
+         | id: json.table.risk-register
+         | extensions: .risks.table.json
+         | media types: application/json
+          &contrib-structured-docs-risk-register-table-linter-json-table-risk-register [linter] Risk Register columns
+           | id: risk-register-table-linter
+           | plugin: Structured Docs
+           | consumes: json.table.risk-register
+           | parameters: none
+        &lang-json-table-role-activity [language] Role Activity Table
+         | id: json.table.role-activity
+         | extensions: .role-activity.table.json
+         | media types: application/json
+        &lang-json-table-traceability-matrix [language] Traceability Matrix
+         | id: json.table.traceability-matrix
+         | extensions: .traceability.table.json
+         | media types: application/json
+          &contrib-structured-docs-traceability-matrix-linter-json-table-traceability-matrix [linter] Traceability Matrix columns
+           | id: traceability-matrix-linter
+           | plugin: Structured Docs
+           | consumes: json.table.traceability-matrix
+           | parameters: none
+        &contrib-foundation-dialects-json-table-csv-export-json-table [exporter] CSV
+         | id: json-table-csv-export
+         | plugin: Foundation Dialects
+         | consumes: json.table
+         | parameters: none
+        &contrib-foundation-dialects-json-table-linter-json-table [linter] JSON Table shape
+         | id: json-table-linter
+         | plugin: Foundation Dialects
+         | consumes: json.table
+         | parameters: none
+        &contrib-sigma-graphology-explorer-view-json-table-relations-sigma-json-table [pipeline] Explore Table Relations
+         | id: view-json-table-relations-sigma
+         | plugin: Sigma Graph Explorer
+         | consumes: json.table
+         | steps: 1. json-table-to-architecture-graph -> 2. sigma-graphology-renderer
+         | parameters: none
+        &contrib-data-profile-export-json-table-chart-png-json-table [pipeline] Export Table Chart as PNG
+         | id: export-json-table-chart-png
+         | plugin: Data Profile
+         | consumes: json.table
+         | steps: 1. json-table-to-chart -> 2. json-chart-to-svg -> 3. svg-png-export
+         | parameters: none
+        &contrib-data-profile-export-json-table-chart-svg-json-table [pipeline] Export Table Chart as SVG
+         | id: export-json-table-chart-svg
+         | plugin: Data Profile
+         | consumes: json.table
+         | steps: 1. json-table-to-chart -> 2. json-chart-to-svg -> 3. svg-sanitized-export
+         | parameters: none
+        &contrib-gephi-gexf-convert-json-table-relations-to-gephi-gexf-json-table [pipeline] JSON Table Relations to Gephi GEXF
+         | id: convert-json-table-relations-to-gephi-gexf
+         | plugin: Gephi GEXF
+         | consumes: json.table
+         | steps: 1. json-table-to-architecture-graph -> 2. model-graph-to-gephi-gexf
+         | parameters: none
+        &contrib-data-profile-profile-json-table-json-table [pipeline] Profile Table
+         | id: profile-json-table
+         | plugin: Data Profile
+         | consumes: json.table
+         | steps: 1. json-table-to-profile
+         | parameters: none
+        &contrib-structured-docs-json-table-markdown-report-json-table [pipeline] Table Markdown Report
+         | id: json-table-markdown-report
+         | plugin: Structured Docs
+         | consumes: json.table
+         | steps: 1. json-table-to-markdown-report
+         | parameters: none
+        &contrib-data-profile-json-table-profile-report-json-table [pipeline] Table Profile Report
+         | id: json-table-profile-report
+         | plugin: Data Profile
+         | consumes: json.table
+         | steps: 1. json-table-to-profile -> 2. json-profile-to-markdown
+         | parameters: none
+        &contrib-architecture-model-table-to-architecture-graph-json-table [pipeline] Table to Architecture Graph
+         | id: table-to-architecture-graph
+         | plugin: Architecture Model
+         | consumes: json.table
+         | steps: 1. json-table-to-architecture-graph -> 2. model-graph-to-cytoscape -> 3. cytoscape-graph-preview
+         | parameters: none
+        &contrib-data-profile-view-json-table-chart-json-table [pipeline] View Table Chart
+         | id: view-json-table-chart
+         | plugin: Data Profile
+         | consumes: json.table
+         | steps: 1. json-table-to-chart -> 2. json-chart-to-svg -> 3. svg-preview
+         | parameters: none
+        &contrib-foundation-dialects-json-table-renderer-json-table [renderer] Table Preview
+         | id: json-table-renderer
+         | plugin: Foundation Dialects
+         | consumes: json.table
+         | parameters: none
+        &contrib-architecture-model-json-table-to-architecture-graph-json-table [transformer] JSON Table to Architecture Graph @produces:lang-json-model-graph-architecture
+         | id: json-table-to-architecture-graph
+         | plugin: Architecture Model
+         | consumes: json.table
+         | produces: json.model-graph.architecture
+         | parameters: none
+        &contrib-data-profile-json-table-to-chart-json-table [transformer] JSON Table to Chart @produces:lang-json-chart
+         | id: json-table-to-chart
+         | plugin: Data Profile
+         | consumes: json.table
+         | produces: json.chart
+         | parameters: none
+        &contrib-structured-docs-json-table-to-markdown-report-json-table [transformer] JSON Table to Markdown Report @produces:lang-text-markdown
+         | id: json-table-to-markdown-report
+         | plugin: Structured Docs
+         | consumes: json.table
+         | produces: text.markdown
+         | parameters: none
+        &contrib-data-profile-json-table-to-profile-json-table [transformer] JSON Table to Profile @produces:lang-json-profile
+         | id: json-table-to-profile
+         | plugin: Data Profile
+         | consumes: json.table
+         | produces: json.profile
+         | parameters: none
+      &lang-json-tree [language] JSON Tree
+       | id: json.tree
+       | extensions: .tree.json
+       | media types: application/json
+        &contrib-foundation-dialects-json-tree-linter-json-tree [linter] JSON Tree shape
+         | id: json-tree-linter
+         | plugin: Foundation Dialects
+         | consumes: json.tree
+         | parameters: none
+        &contrib-sigma-graphology-explorer-view-json-tree-sigma-json-tree [pipeline] Explore JSON Tree
+         | id: view-json-tree-sigma
+         | plugin: Sigma Graph Explorer
+         | consumes: json.tree
+         | steps: 1. sigma-graphology-renderer
+         | parameters: none
+        &contrib-gephi-gexf-convert-json-tree-to-gephi-gexf-json-tree [pipeline] JSON Tree to Gephi GEXF
+         | id: convert-json-tree-to-gephi-gexf
+         | plugin: Gephi GEXF
+         | consumes: json.tree
+         | steps: 1. json-tree-to-gephi-gexf
+         | parameters: none
+        &contrib-sigma-graphology-explorer-sigma-graphology-renderer-json-tree [renderer] Sigma Graph Explorer
+         | id: sigma-graphology-renderer
+         | plugin: Sigma Graph Explorer
+         | consumes: json.tree
+         | parameters: colorMode [enum=community|type|none] default="community", edgeLabels [boolean] default=false, iterations [integer] default=120, labels [enum=auto|all|none] default="auto", layout [enum=forceatlas2|noverlap|circular|random] default="forceatlas2", sizeMetric [enum=degree|pagerank|fixed] default="degree"
+        &contrib-foundation-dialects-json-tree-renderer-json-tree [renderer] Tree Preview
+         | id: json-tree-renderer
+         | plugin: Foundation Dialects
+         | consumes: json.tree
+         | parameters: none
+        &contrib-gephi-gexf-json-tree-to-gephi-gexf-json-tree [transformer] JSON Tree to Gephi GEXF @produces:lang-xml-gexf
+         | id: json-tree-to-gephi-gexf
+         | plugin: Gephi GEXF
+         | consumes: json.tree
+         | produces: xml.gexf
+         | parameters: none
+        &contrib-foundation-dialects-json-tree-to-cytoscape-json-tree [transformer] Tree to Cytoscape JSON @produces:lang-json-cytoscape
+         | id: json-tree-to-cytoscape
+         | plugin: Foundation Dialects
+         | consumes: json.tree
+         | produces: json.cytoscape
+         | parameters: none
+      &lang-localedit-pipeline-json [language] LocalEdit Pipeline JSON
+       | id: localedit.pipeline-json
+       | aliases: localedit-pipeline-json
+       | extensions: .pipeline.json
+       | media types: application/vnd.localedit.pipeline+json
+        &contrib-pipeline-core-pipeline-json-codemirror-localedit-pipeline-json [editor-extension] Pipeline JSON syntax
+         | id: pipeline-json-codemirror
+         | plugin: Pipeline JSON
+         | consumes: localedit.pipeline-json
+         | parameters: none
+        &contrib-pipeline-core-pipeline-json-linter-localedit-pipeline-json [linter] Pipeline JSON validator
+         | id: pipeline-json-linter
+         | plugin: Pipeline JSON
+         | consumes: localedit.pipeline-json
+         | parameters: none
+        &contrib-pipeline-core-pipeline-flow-renderer-localedit-pipeline-json [renderer] Pipeline Flow
+         | id: pipeline-flow-renderer
+         | plugin: Pipeline JSON
+         | consumes: localedit.pipeline-json
+         | parameters: none
+      &lang-json-openapi [language] OpenAPI JSON
+       | id: json.openapi
+       | extensions: .openapi.json
+       | media types: application/vnd.oai.openapi+json
+        &contrib-code-analysis-openapi-json-linter-json-openapi [linter] OpenAPI JSON shape
+         | id: openapi-json-linter
+         | plugin: Code and API Analysis
+         | consumes: json.openapi
+         | parameters: none
+        &contrib-sigma-graphology-explorer-view-openapi-sigma-json-openapi [pipeline] Explore OpenAPI Graph
+         | id: view-openapi-sigma
+         | plugin: Sigma Graph Explorer
+         | consumes: json.openapi
+         | steps: 1. openapi-to-dependency-graph -> 2. sigma-graphology-renderer
+         | parameters: none
+        &contrib-code-analysis-openapi-endpoint-report-json-openapi [pipeline] OpenAPI Endpoint Report
+         | id: openapi-endpoint-report
+         | plugin: Code and API Analysis
+         | consumes: json.openapi
+         | steps: 1. openapi-to-endpoint-table -> 2. json-table-to-markdown-report
+         | parameters: none
+        &contrib-code-analysis-openapi-markdown-report-json-openapi [pipeline] OpenAPI Markdown Report
+         | id: openapi-markdown-report
+         | plugin: Code and API Analysis
+         | consumes: json.openapi
+         | steps: 1. openapi-to-markdown-report
+         | parameters: none
+        &contrib-gephi-gexf-convert-openapi-to-gephi-gexf-json-openapi [pipeline] OpenAPI to Gephi GEXF
+         | id: convert-openapi-to-gephi-gexf
+         | plugin: Gephi GEXF
+         | consumes: json.openapi
+         | steps: 1. openapi-to-dependency-graph -> 2. model-graph-to-gephi-gexf
+         | parameters: none
+        &contrib-code-analysis-view-openapi-endpoints-json-openapi [pipeline] View OpenAPI Endpoints
+         | id: view-openapi-endpoints
+         | plugin: Code and API Analysis
+         | consumes: json.openapi
+         | steps: 1. openapi-to-endpoint-table -> 2. json-table-renderer
+         | parameters: none
+        &contrib-code-analysis-view-openapi-graph-json-openapi [pipeline] View OpenAPI Graph
+         | id: view-openapi-graph
+         | plugin: Code and API Analysis
+         | consumes: json.openapi
+         | steps: 1. openapi-to-dependency-graph -> 2. model-graph-to-cytoscape -> 3. cytoscape-graph-preview
+         | parameters: none
+        &contrib-code-analysis-openapi-to-dependency-graph-json-openapi [transformer] OpenAPI to Dependency Graph @produces:lang-json-model-graph-dependency
+         | id: openapi-to-dependency-graph
+         | plugin: Code and API Analysis
+         | consumes: json.openapi
+         | produces: json.model-graph.dependency
+         | parameters: none
+        &contrib-code-analysis-openapi-to-endpoint-table-json-openapi [transformer] OpenAPI to Endpoint Table @produces:lang-json-table-endpoint-list
+         | id: openapi-to-endpoint-table
+         | plugin: Code and API Analysis
+         | consumes: json.openapi
+         | produces: json.table.endpoint-list
+         | parameters: none
+        &contrib-code-analysis-openapi-to-markdown-report-json-openapi [transformer] OpenAPI to Markdown Report @produces:lang-text-markdown
+         | id: openapi-to-markdown-report
+         | plugin: Code and API Analysis
+         | consumes: json.openapi
+         | produces: text.markdown
+         | parameters: none
+      &contrib-json-core-json-codemirror-text-json [editor-extension] JSON syntax
+       | id: json-codemirror
+       | plugin: JSON
+       | consumes: text.json
+       | parameters: none
+      &contrib-foundation-dialects-json-dialect-export-text-json [exporter] JSON
+       | id: json-dialect-export
+       | plugin: Foundation Dialects
+       | consumes: text.json
+       | parameters: none
+      &contrib-json-core-json-parse-linter-text-json [linter] JSON parser
+       | id: json-parse-linter
+       | plugin: JSON
+       | consumes: text.json
+       | parameters: none
+      &contrib-yaml-core-convert-json-to-yaml-text-json [pipeline] Convert to YAML
+       | id: convert-json-to-yaml
+       | plugin: YAML
+       | consumes: text.json
+       | steps: 1. json-to-yaml
+       | parameters: none
+      &contrib-sigma-graphology-explorer-view-json-sigma-text-json [pipeline] Explore JSON Tree Projection
+       | id: view-json-sigma
+       | plugin: Sigma Graph Explorer
+       | consumes: text.json
+       | steps: 1. json-to-tree -> 2. sigma-graphology-renderer
+       | parameters: none
+      &contrib-sigma-graphology-explorer-view-package-json-sigma-text-json [pipeline] Explore package.json Dependencies
+       | id: view-package-json-sigma
+       | plugin: Sigma Graph Explorer
+       | consumes: text.json
+       | steps: 1. package-json-to-dependency-graph -> 2. sigma-graphology-renderer
+       | parameters: none
+      &contrib-gephi-gexf-convert-json-to-gephi-gexf-text-json [pipeline] JSON Tree Projection to Gephi GEXF
+       | id: convert-json-to-gephi-gexf
+       | plugin: Gephi GEXF
+       | consumes: text.json
+       | steps: 1. json-to-tree -> 2. json-tree-to-gephi-gexf
+       | parameters: none
+      &contrib-code-analysis-package-dependency-graph-text-json [pipeline] Package Dependency Graph
+       | id: package-dependency-graph
+       | plugin: Code and API Analysis
+       | consumes: text.json
+       | steps: 1. package-json-to-dependency-graph -> 2. model-graph-to-cytoscape -> 3. cytoscape-graph-preview
+       | parameters: none
+      &contrib-code-analysis-package-dependency-report-text-json [pipeline] Package Dependency Report
+       | id: package-dependency-report
+       | plugin: Code and API Analysis
+       | consumes: text.json
+       | steps: 1. package-json-to-dependency-graph -> 2. model-graph-to-markdown-report
+       | parameters: none
+      &contrib-gephi-gexf-convert-package-json-to-gephi-gexf-text-json [pipeline] package.json Dependencies to Gephi GEXF
+       | id: convert-package-json-to-gephi-gexf
+       | plugin: Gephi GEXF
+       | consumes: text.json
+       | steps: 1. package-json-to-dependency-graph -> 2. model-graph-to-gephi-gexf
+       | parameters: none
+      &contrib-foundation-dialects-view-json-as-graph-text-json [pipeline] View as Graph
+       | id: view-json-as-graph
+       | plugin: Foundation Dialects
+       | consumes: text.json
+       | steps: 1. json-to-tree -> 2. json-tree-to-cytoscape -> 3. cytoscape-graph-preview
+       | parameters: none
+      &contrib-foundation-dialects-view-json-as-tree-text-json [pipeline] View as Tree
+       | id: view-json-as-tree
+       | plugin: Foundation Dialects
+       | consumes: text.json
+       | steps: 1. json-to-tree -> 2. json-tree-renderer
+       | parameters: none
+      &contrib-json-core-json-compact-text-json [transformer] Compact JSON @produces:lang-text-json
+       | id: json-compact
+       | plugin: JSON
+       | consumes: text.json
+       | produces: text.json
+       | parameters: none
+      &contrib-json-core-json-format-text-json [transformer] Format JSON @produces:lang-text-json
+       | id: json-format
+       | plugin: JSON
+       | consumes: text.json
+       | produces: text.json
+       | parameters: none
+      &contrib-foundation-dialects-json-to-tree-text-json [transformer] JSON to Tree @produces:lang-json-tree
+       | id: json-to-tree
+       | plugin: Foundation Dialects
+       | consumes: text.json
+       | produces: json.tree
+       | parameters: none
+      &contrib-yaml-core-json-to-yaml-text-json [transformer] JSON to YAML @produces:lang-text-yaml
+       | id: json-to-yaml
+       | plugin: YAML
+       | consumes: text.json
+       | produces: text.yaml
+       | parameters: none
+      &contrib-code-analysis-package-json-to-dependency-graph-text-json [transformer] package.json to Dependency Graph @produces:lang-json-model-graph-dependency
+       | id: package-json-to-dependency-graph
+       | plugin: Code and API Analysis
+       | consumes: text.json
+       | produces: json.model-graph.dependency
+       | parameters: none
+    &lang-text-markdown [language] Markdown
+     | id: text.markdown
+     | aliases: markdown
+     | extensions: .md, .markdown, .mdown, .mkd
+     | media types: text/markdown
+      &contrib-markdown-core-markdown-codemirror-text-markdown [editor-extension] Markdown syntax
+       | id: markdown-codemirror
+       | plugin: Markdown
+       | consumes: text.markdown
+       | parameters: none
+      &contrib-markdown-core-markdown-html-export-text-markdown [exporter] Markdown HTML
+       | id: markdown-html-export
+       | plugin: Markdown
+       | consumes: text.markdown
+       | parameters: none
+      &contrib-structured-docs-convert-markdown-outline-to-opml-text-markdown [pipeline] Convert Markdown Outline to OPML
+       | id: convert-markdown-outline-to-opml
+       | plugin: Structured Docs
+       | consumes: text.markdown
+       | steps: 1. markdown-to-outline-indented-tree -> 2. indented-tree-to-json -> 3. indented-tree-json-to-opml
+       | parameters: none
+      &contrib-sigma-graphology-explorer-view-markdown-outline-sigma-text-markdown [pipeline] Explore Markdown Outline
+       | id: view-markdown-outline-sigma
+       | plugin: Sigma Graph Explorer
+       | consumes: text.markdown
+       | steps: 1. markdown-to-outline-tree -> 2. sigma-graphology-renderer
+       | parameters: none
+      &contrib-gephi-gexf-convert-markdown-outline-to-gephi-gexf-text-markdown [pipeline] Markdown Outline to Gephi GEXF
+       | id: convert-markdown-outline-to-gephi-gexf
+       | plugin: Gephi GEXF
+       | consumes: text.markdown
+       | steps: 1. markdown-to-outline-tree -> 2. json-tree-to-gephi-gexf
+       | parameters: none
+      &contrib-structured-docs-markdown-actions-report-text-markdown [pipeline] Markdown Tasks Report
+       | id: markdown-actions-report
+       | plugin: Structured Docs
+       | consumes: text.markdown
+       | steps: 1. markdown-tasks-to-action-list -> 2. json-table-to-markdown-report
+       | parameters: none
+      &contrib-structured-docs-view-markdown-outline-as-tree-text-markdown [pipeline] View Markdown Outline as Tree
+       | id: view-markdown-outline-as-tree
+       | plugin: Structured Docs
+       | consumes: text.markdown
+       | steps: 1. markdown-to-outline-tree -> 2. json-tree-renderer
+       | parameters: none
+      &contrib-structured-docs-view-markdown-table-text-markdown [pipeline] View Markdown Table
+       | id: view-markdown-table
+       | plugin: Structured Docs
+       | consumes: text.markdown
+       | steps: 1. markdown-to-json-table -> 2. json-table-renderer
+       | parameters: none
+      &contrib-structured-docs-view-markdown-tasks-as-action-list-text-markdown [pipeline] View Markdown Tasks as Action List
+       | id: view-markdown-tasks-as-action-list
+       | plugin: Structured Docs
+       | consumes: text.markdown
+       | steps: 1. markdown-tasks-to-action-list -> 2. json-table-renderer
+       | parameters: none
+      &contrib-markdown-core-markdown-html-preview-text-markdown [renderer] Markdown HTML Preview
+       | id: markdown-html-preview
+       | plugin: Markdown
+       | consumes: text.markdown
+       | parameters: none
+      &contrib-structured-docs-markdown-to-outline-indented-tree-text-markdown [transformer] Markdown Outline to Indented Tree @produces:lang-text-indented-tree
+       | id: markdown-to-outline-indented-tree
+       | plugin: Structured Docs
+       | consumes: text.markdown
+       | produces: text.indented-tree
+       | parameters: none
+      &contrib-structured-docs-markdown-to-outline-tree-text-markdown [transformer] Markdown Outline to Tree @produces:lang-json-tree
+       | id: markdown-to-outline-tree
+       | plugin: Structured Docs
+       | consumes: text.markdown
+       | produces: json.tree
+       | parameters: none
+      &contrib-structured-docs-markdown-to-json-table-text-markdown [transformer] Markdown Table to JSON Table @produces:lang-json-table
+       | id: markdown-to-json-table
+       | plugin: Structured Docs
+       | consumes: text.markdown
+       | produces: json.table
+       | parameters: none
+      &contrib-structured-docs-markdown-tasks-to-action-list-text-markdown [transformer] Markdown Tasks to Action List @produces:lang-json-table-action-list
+       | id: markdown-tasks-to-action-list
+       | plugin: Structured Docs
+       | consumes: text.markdown
+       | produces: json.table.action-list
+       | parameters: none
+    &lang-text-mermaid [language] Mermaid
+     | id: text.mermaid
+     | aliases: mermaid
+     | extensions: .mmd, .mermaid
+     | media types: text/x-mermaid
+      &contrib-mermaid-core-export-mermaid-as-png-text-mermaid [pipeline] Export as PNG
+       | id: export-mermaid-as-png
+       | plugin: Mermaid
+       | consumes: text.mermaid
+       | steps: 1. mermaid-to-svg -> 2. svg-png-export
+       | parameters: none
+      &contrib-mermaid-core-export-mermaid-as-svg-text-mermaid [pipeline] Export as SVG
+       | id: export-mermaid-as-svg
+       | plugin: Mermaid
+       | consumes: text.mermaid
+       | steps: 1. mermaid-to-svg -> 2. svg-sanitized-export
+       | parameters: none
+      &contrib-gephi-gexf-convert-mermaid-flowchart-to-gephi-gexf-text-mermaid [pipeline] Mermaid Flowchart to Gephi GEXF
+       | id: convert-mermaid-flowchart-to-gephi-gexf
+       | plugin: Gephi GEXF
+       | consumes: text.mermaid
+       | steps: 1. mermaid-flowchart-to-gephi-gexf
+       | parameters: none
+      &contrib-mermaid-core-view-mermaid-as-svg-text-mermaid [pipeline] View as SVG
+       | id: view-mermaid-as-svg
+       | plugin: Mermaid
+       | consumes: text.mermaid
+       | steps: 1. mermaid-to-svg -> 2. svg-preview
+       | parameters: none
+      &contrib-gephi-gexf-mermaid-flowchart-to-gephi-gexf-text-mermaid [transformer] Mermaid Flowchart to Gephi GEXF @produces:lang-xml-gexf
+       | id: mermaid-flowchart-to-gephi-gexf
+       | plugin: Gephi GEXF
+       | consumes: text.mermaid
+       | produces: xml.gexf
+       | parameters: none
+      &contrib-mermaid-core-mermaid-to-svg-text-mermaid [transformer] Mermaid to SVG @produces:lang-xml-svg
+       | id: mermaid-to-svg
+       | plugin: Mermaid
+       | consumes: text.mermaid
+       | produces: xml.svg
+       | parameters: none
+    &lang-text-plain [language] Plain Text
+     | id: text.plain
+     | aliases: plain-text
+     | extensions: .txt, .text, .log
+     | media types: text/plain
+    &lang-text-python [language] Python
+     | id: text.python
+     | aliases: python
+     | extensions: .py, .pyw
+     | media types: text/x-python
+      &contrib-python-core-python-codemirror-text-python [editor-extension] Python syntax
+       | id: python-codemirror
+       | plugin: Python
+       | consumes: text.python
+       | parameters: none
+      &contrib-sigma-graphology-explorer-view-python-imports-sigma-text-python [pipeline] Explore Python Imports
+       | id: view-python-imports-sigma
+       | plugin: Sigma Graph Explorer
+       | consumes: text.python
+       | steps: 1. python-imports-to-dependency-graph -> 2. sigma-graphology-renderer
+       | parameters: none
+      &contrib-code-analysis-python-import-report-text-python [pipeline] Python Import Report
+       | id: python-import-report
+       | plugin: Code and API Analysis
+       | consumes: text.python
+       | steps: 1. python-imports-to-dependency-graph -> 2. model-graph-to-markdown-report
+       | parameters: none
+      &contrib-gephi-gexf-convert-python-imports-to-gephi-gexf-text-python [pipeline] Python Imports to Gephi GEXF
+       | id: convert-python-imports-to-gephi-gexf
+       | plugin: Gephi GEXF
+       | consumes: text.python
+       | steps: 1. python-imports-to-dependency-graph -> 2. model-graph-to-gephi-gexf
+       | parameters: none
+      &contrib-code-analysis-view-python-import-graph-text-python [pipeline] View Python Import Graph
+       | id: view-python-import-graph
+       | plugin: Code and API Analysis
+       | consumes: text.python
+       | steps: 1. python-imports-to-dependency-graph -> 2. model-graph-to-cytoscape -> 3. cytoscape-graph-preview
+       | parameters: none
+      &contrib-code-analysis-view-python-outline-text-python [pipeline] View Python Outline
+       | id: view-python-outline
+       | plugin: Code and API Analysis
+       | consumes: text.python
+       | steps: 1. python-to-outline-tree -> 2. json-tree-renderer
+       | parameters: none
+      &contrib-python-core-python-format-text-python [transformer] Format Python @produces:lang-text-python
+       | id: python-format
+       | plugin: Python
+       | consumes: text.python
+       | produces: text.python
+       | parameters: none
+      &contrib-code-analysis-python-imports-to-dependency-graph-text-python [transformer] Python Imports to Dependency Graph @produces:lang-json-model-graph-dependency
+       | id: python-imports-to-dependency-graph
+       | plugin: Code and API Analysis
+       | consumes: text.python
+       | produces: json.model-graph.dependency
+       | parameters: none
+      &contrib-code-analysis-python-to-outline-tree-text-python [transformer] Python Outline @produces:lang-json-tree
+       | id: python-to-outline-tree
+       | plugin: Code and API Analysis
+       | consumes: text.python
+       | produces: json.tree
+       | parameters: none
+    &lang-text-xml [language] XML
+     | id: text.xml
+     | aliases: xml
+     | extensions: .xml, .xsd, .xsl, .rss, .atom
+     | media types: application/xml, text/xml
+      &lang-xml-archimate-exchange [language] ArchiMate Exchange XML
+       | id: xml.archimate-exchange
+       | extensions: .archimate, .archimate.xml
+       | media types: application/xml
+        &contrib-architecture-model-archimate-source-export-xml-archimate-exchange [exporter] ArchiMate Exchange XML
+         | id: archimate-source-export
+         | plugin: Architecture Model
+         | consumes: xml.archimate-exchange
+         | parameters: none
+        &contrib-architecture-model-archimate-architecture-report-xml-archimate-exchange [pipeline] ArchiMate Architecture Report
+         | id: archimate-architecture-report
+         | plugin: Architecture Model
+         | consumes: xml.archimate-exchange
+         | steps: 1. archimate-to-architecture-graph -> 2. model-graph-to-markdown-report
+         | parameters: none
+        &contrib-gephi-gexf-convert-archimate-to-gephi-gexf-xml-archimate-exchange [pipeline] ArchiMate to Gephi GEXF
+         | id: convert-archimate-to-gephi-gexf
+         | plugin: Gephi GEXF
+         | consumes: xml.archimate-exchange
+         | steps: 1. archimate-to-architecture-graph -> 2. model-graph-to-gephi-gexf
+         | parameters: none
+        &contrib-sigma-graphology-explorer-view-archimate-sigma-xml-archimate-exchange [pipeline] Explore ArchiMate Graph
+         | id: view-archimate-sigma
+         | plugin: Sigma Graph Explorer
+         | consumes: xml.archimate-exchange
+         | steps: 1. archimate-to-architecture-graph -> 2. sigma-graphology-renderer
+         | parameters: none
+        &contrib-architecture-model-view-archimate-as-architecture-graph-xml-archimate-exchange [pipeline] View ArchiMate as Architecture Graph
+         | id: view-archimate-as-architecture-graph
+         | plugin: Architecture Model
+         | consumes: xml.archimate-exchange
+         | steps: 1. archimate-to-architecture-graph -> 2. model-graph-to-cytoscape -> 3. cytoscape-graph-preview
+         | parameters: none
+        &contrib-architecture-model-archimate-to-architecture-graph-xml-archimate-exchange [transformer] ArchiMate to Architecture Graph @produces:lang-json-model-graph-architecture
+         | id: archimate-to-architecture-graph
+         | plugin: Architecture Model
+         | consumes: xml.archimate-exchange
+         | produces: json.model-graph.architecture
+         | parameters: none
+      &lang-xml-bpmn [language] BPMN XML
+       | id: xml.bpmn
+       | extensions: .bpmn, .bpmn20.xml
+       | media types: application/xml
+        &contrib-process-model-bpmn-source-export-xml-bpmn [exporter] BPMN XML
+         | id: bpmn-source-export
+         | plugin: Process Model
+         | consumes: xml.bpmn
+         | parameters: none
+        &contrib-process-model-bpmn-process-report-xml-bpmn [pipeline] BPMN Process Report
+         | id: bpmn-process-report
+         | plugin: Process Model
+         | consumes: xml.bpmn
+         | steps: 1. bpmn-to-process-graph -> 2. model-graph-to-markdown-report
+         | parameters: none
+        &contrib-process-model-bpmn-role-activity-table-xml-bpmn [pipeline] BPMN Role Activity Table
+         | id: bpmn-role-activity-table
+         | plugin: Process Model
+         | consumes: xml.bpmn
+         | steps: 1. bpmn-to-process-graph -> 2. process-graph-to-role-activity-table -> 3. json-table-renderer
+         | parameters: none
+        &contrib-gephi-gexf-convert-bpmn-to-gephi-gexf-xml-bpmn [pipeline] BPMN to Gephi GEXF
+         | id: convert-bpmn-to-gephi-gexf
+         | plugin: Gephi GEXF
+         | consumes: xml.bpmn
+         | steps: 1. bpmn-to-process-graph -> 2. model-graph-to-gephi-gexf
+         | parameters: none
+        &contrib-sigma-graphology-explorer-view-bpmn-sigma-xml-bpmn [pipeline] Explore BPMN Process Graph
+         | id: view-bpmn-sigma
+         | plugin: Sigma Graph Explorer
+         | consumes: xml.bpmn
+         | steps: 1. bpmn-to-process-graph -> 2. sigma-graphology-renderer
+         | parameters: none
+        &contrib-process-model-view-bpmn-as-process-graph-xml-bpmn [pipeline] View BPMN as Process Graph
+         | id: view-bpmn-as-process-graph
+         | plugin: Process Model
+         | consumes: xml.bpmn
+         | steps: 1. bpmn-to-process-graph -> 2. model-graph-to-cytoscape -> 3. cytoscape-graph-preview
+         | parameters: none
+        &contrib-process-model-bpmn-to-process-graph-xml-bpmn [transformer] BPMN to Process Graph @produces:lang-json-model-graph-process
+         | id: bpmn-to-process-graph
+         | plugin: Process Model
+         | consumes: xml.bpmn
+         | produces: json.model-graph.process
+         | parameters: none
+      &lang-xml-gexf [language] Gephi GEXF
+       | id: xml.gexf
+       | aliases: gephi, gexf
+       | extensions: .gexf
+       | media types: application/gexf+xml, application/xml, text/xml
+        &contrib-gephi-gexf-gephi-gexf-source-export-xml-gexf [exporter] Gephi GEXF
+         | id: gephi-gexf-source-export
+         | plugin: Gephi GEXF
+         | consumes: xml.gexf
+         | parameters: none
+        &contrib-gephi-gexf-gephi-gexf-linter-xml-gexf [linter] Gephi GEXF shape
+         | id: gephi-gexf-linter
+         | plugin: Gephi GEXF
+         | consumes: xml.gexf
+         | parameters: none
+        &contrib-sigma-graphology-explorer-view-gephi-gexf-sigma-xml-gexf [pipeline] Explore Gephi GEXF
+         | id: view-gephi-gexf-sigma
+         | plugin: Sigma Graph Explorer
+         | consumes: xml.gexf
+         | steps: 1. sigma-graphology-renderer
+         | parameters: none
+        &contrib-sigma-graphology-explorer-sigma-graphology-renderer-xml-gexf [renderer] Sigma Graph Explorer
+         | id: sigma-graphology-renderer
+         | plugin: Sigma Graph Explorer
+         | consumes: xml.gexf
+         | parameters: colorMode [enum=community|type|none] default="community", edgeLabels [boolean] default=false, iterations [integer] default=120, labels [enum=auto|all|none] default="auto", layout [enum=forceatlas2|noverlap|circular|random] default="forceatlas2", sizeMetric [enum=degree|pagerank|fixed] default="degree"
+      &lang-xml-opml [language] OPML
+       | id: xml.opml
+       | extensions: .opml
+       | media types: text/x-opml
+        &contrib-structured-docs-opml-source-export-xml-opml [exporter] OPML
+         | id: opml-source-export
+         | plugin: Structured Docs
+         | consumes: xml.opml
+         | parameters: none
+        &contrib-structured-docs-convert-opml-to-indented-tree-xml-opml [pipeline] Convert OPML to Indented Tree
+         | id: convert-opml-to-indented-tree
+         | plugin: Structured Docs
+         | consumes: xml.opml
+         | steps: 1. opml-to-indented-tree
+         | parameters: none
+        &contrib-sigma-graphology-explorer-view-opml-sigma-xml-opml [pipeline] Explore OPML
+         | id: view-opml-sigma
+         | plugin: Sigma Graph Explorer
+         | consumes: xml.opml
+         | steps: 1. opml-to-tree -> 2. sigma-graphology-renderer
+         | parameters: none
+        &contrib-gephi-gexf-convert-opml-to-gephi-gexf-xml-opml [pipeline] OPML to Gephi GEXF
+         | id: convert-opml-to-gephi-gexf
+         | plugin: Gephi GEXF
+         | consumes: xml.opml
+         | steps: 1. opml-to-tree -> 2. json-tree-to-gephi-gexf
+         | parameters: none
+        &contrib-structured-docs-view-opml-as-mind-map-xml-opml [pipeline] View OPML as Mind Map
+         | id: view-opml-as-mind-map
+         | plugin: Structured Docs
+         | consumes: xml.opml
+         | steps: 1. opml-to-indented-tree -> 2. indented-tree-to-jsmind-json -> 3. jsmind-renderer
+         | parameters: none
+        &contrib-structured-docs-view-opml-as-tree-xml-opml [pipeline] View OPML as Tree
+         | id: view-opml-as-tree
+         | plugin: Structured Docs
+         | consumes: xml.opml
+         | steps: 1. opml-to-tree -> 2. json-tree-renderer
+         | parameters: none
+        &contrib-structured-docs-opml-to-indented-tree-xml-opml [transformer] OPML to Indented Tree @produces:lang-text-indented-tree
+         | id: opml-to-indented-tree
+         | plugin: Structured Docs
+         | consumes: xml.opml
+         | produces: text.indented-tree
+         | parameters: none
+        &contrib-structured-docs-opml-to-tree-xml-opml [transformer] OPML to Tree @produces:lang-json-tree
+         | id: opml-to-tree
+         | plugin: Structured Docs
+         | consumes: xml.opml
+         | produces: json.tree
+         | parameters: none
+      &lang-xml-svg [language] SVG
+       | id: xml.svg
+       | aliases: svg
+       | extensions: .svg
+       | media types: image/svg+xml
+        &contrib-svg-core-svg-codemirror-xml-svg [editor-extension] SVG syntax
+         | id: svg-codemirror
+         | plugin: SVG
+         | consumes: xml.svg
+         | parameters: none
+        &contrib-svg-core-svg-sanitized-export-xml-svg [exporter] Sanitized SVG
+         | id: svg-sanitized-export
+         | plugin: SVG
+         | consumes: xml.svg
+         | parameters: none
+        &contrib-svg-core-svg-png-export-xml-svg [exporter] SVG PNG
+         | id: svg-png-export
+         | plugin: SVG
+         | consumes: xml.svg
+         | parameters: none
+        &contrib-svg-core-svg-preview-xml-svg [renderer] SVG Preview
+         | id: svg-preview
+         | plugin: SVG
+         | consumes: xml.svg
+         | parameters: none
+      &contrib-xml-core-xml-codemirror-text-xml [editor-extension] XML syntax
+       | id: xml-codemirror
+       | plugin: XML
+       | consumes: text.xml
+       | parameters: none
+      &contrib-xml-core-xml-parser-linter-text-xml [linter] XML parser
+       | id: xml-parser-linter
+       | plugin: XML
+       | consumes: text.xml
+       | parameters: none
+      &contrib-foundation-dialects-view-xml-as-tree-text-xml [pipeline] View as Tree
+       | id: view-xml-as-tree
+       | plugin: Foundation Dialects
+       | consumes: text.xml
+       | steps: 1. xml-to-tree -> 2. json-tree-renderer
+       | parameters: none
+      &contrib-xml-core-xml-compact-text-xml [transformer] Compact XML @produces:lang-text-xml
+       | id: xml-compact
+       | plugin: XML
+       | consumes: text.xml
+       | produces: text.xml
+       | parameters: none
+      &contrib-xml-core-xml-format-text-xml [transformer] Format XML @produces:lang-text-xml
+       | id: xml-format
+       | plugin: XML
+       | consumes: text.xml
+       | produces: text.xml
+       | parameters: none
+      &contrib-foundation-dialects-xml-to-tree-text-xml [transformer] XML to Tree @produces:lang-json-tree
+       | id: xml-to-tree
+       | plugin: Foundation Dialects
+       | consumes: text.xml
+       | produces: json.tree
+       | parameters: none
+    &lang-text-yaml [language] YAML
+     | id: text.yaml
+     | aliases: yaml
+     | extensions: .yaml, .yml
+     | media types: application/yaml, text/yaml, application/x-yaml
+      &lang-yaml-openapi [language] OpenAPI YAML
+       | id: yaml.openapi
+       | extensions: .openapi.yaml, .openapi.yml
+       | media types: application/vnd.oai.openapi+yaml
+        &contrib-sigma-graphology-explorer-view-openapi-yaml-sigma-yaml-openapi [pipeline] Explore OpenAPI YAML Graph
+         | id: view-openapi-yaml-sigma
+         | plugin: Sigma Graph Explorer
+         | consumes: yaml.openapi
+         | steps: 1. yaml-openapi-to-json-openapi -> 2. openapi-to-dependency-graph -> 3. sigma-graphology-renderer
+         | parameters: none
+        &contrib-yaml-core-normalize-openapi-yaml-to-json-yaml-openapi [pipeline] Normalize OpenAPI YAML to JSON
+         | id: normalize-openapi-yaml-to-json
+         | plugin: YAML
+         | consumes: yaml.openapi
+         | steps: 1. yaml-openapi-to-json-openapi
+         | parameters: none
+        &contrib-gephi-gexf-convert-openapi-yaml-to-gephi-gexf-yaml-openapi [pipeline] OpenAPI YAML to Gephi GEXF
+         | id: convert-openapi-yaml-to-gephi-gexf
+         | plugin: Gephi GEXF
+         | consumes: yaml.openapi
+         | steps: 1. yaml-openapi-to-json-openapi -> 2. openapi-to-dependency-graph -> 3. model-graph-to-gephi-gexf
+         | parameters: none
+        &contrib-code-analysis-view-openapi-yaml-endpoints-yaml-openapi [pipeline] View OpenAPI YAML Endpoints
+         | id: view-openapi-yaml-endpoints
+         | plugin: Code and API Analysis
+         | consumes: yaml.openapi
+         | steps: 1. yaml-openapi-to-json-openapi -> 2. openapi-to-endpoint-table -> 3. json-table-renderer
+         | parameters: none
+        &contrib-code-analysis-view-openapi-yaml-graph-yaml-openapi [pipeline] View OpenAPI YAML Graph
+         | id: view-openapi-yaml-graph
+         | plugin: Code and API Analysis
+         | consumes: yaml.openapi
+         | steps: 1. yaml-openapi-to-json-openapi -> 2. openapi-to-dependency-graph -> 3. model-graph-to-cytoscape -> 4. cytoscape-graph-preview
+         | parameters: none
+        &contrib-yaml-core-yaml-openapi-to-json-openapi-yaml-openapi [transformer] OpenAPI YAML to OpenAPI JSON @produces:lang-json-openapi
+         | id: yaml-openapi-to-json-openapi
+         | plugin: YAML
+         | consumes: yaml.openapi
+         | produces: json.openapi
+         | parameters: none
+      &lang-yaml-config [language] YAML Config
+       | id: yaml.config
+       | extensions: .config.yaml, .config.yml
+       | media types: application/yaml
+      &lang-yaml-frontmatter [language] YAML Front Matter
+       | id: yaml.frontmatter
+       | extensions: .frontmatter.yaml, .frontmatter.yml
+       | media types: application/yaml
+      &contrib-yaml-core-yaml-codemirror-text-yaml [editor-extension] YAML syntax
+       | id: yaml-codemirror
+       | plugin: YAML
+       | consumes: text.yaml
+       | parameters: none
+      &contrib-yaml-core-yaml-parse-linter-text-yaml [linter] YAML parser
+       | id: yaml-parse-linter
+       | plugin: YAML
+       | consumes: text.yaml
+       | parameters: none
+      &contrib-yaml-core-convert-yaml-to-json-text-yaml [pipeline] Convert to JSON
+       | id: convert-yaml-to-json
+       | plugin: YAML
+       | consumes: text.yaml
+       | steps: 1. yaml-to-json
+       | parameters: none
+      &contrib-sigma-graphology-explorer-view-yaml-sigma-text-yaml [pipeline] Explore YAML Tree Projection
+       | id: view-yaml-sigma
+       | plugin: Sigma Graph Explorer
+       | consumes: text.yaml
+       | steps: 1. yaml-to-tree -> 2. sigma-graphology-renderer
+       | parameters: none
+      &contrib-yaml-core-view-yaml-as-tree-text-yaml [pipeline] View as Tree
+       | id: view-yaml-as-tree
+       | plugin: YAML
+       | consumes: text.yaml
+       | steps: 1. yaml-to-tree -> 2. json-tree-renderer
+       | parameters: none
+      &contrib-gephi-gexf-convert-yaml-to-gephi-gexf-text-yaml [pipeline] YAML Tree Projection to Gephi GEXF
+       | id: convert-yaml-to-gephi-gexf
+       | plugin: Gephi GEXF
+       | consumes: text.yaml
+       | steps: 1. yaml-to-tree -> 2. json-tree-to-gephi-gexf
+       | parameters: none
+      &contrib-yaml-core-yaml-to-json-text-yaml [transformer] YAML to JSON @produces:lang-text-json
+       | id: yaml-to-json
+       | plugin: YAML
+       | consumes: text.yaml
+       | produces: text.json
+       | parameters: none
+      &contrib-yaml-core-yaml-to-tree-text-yaml [transformer] YAML to Tree @produces:lang-json-tree
+       | id: yaml-to-tree
+       | plugin: YAML
+       | consumes: text.yaml
+       | produces: json.tree
+       | parameters: none
+  &global [group] Global contributions
+   | consumes: any language or runtime-only context
+    &contrib-localedit-core-codemirror-global [editor] CodeMirror
+     | id: codemirror
+     | plugin: LocalEdit Core
+     | parameters: none
+    &contrib-localedit-core-textarea-global [editor] Textarea
+     | id: textarea
+     | plugin: LocalEdit Core
+     | parameters: none

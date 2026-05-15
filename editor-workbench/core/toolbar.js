@@ -36,10 +36,41 @@
     current.children.push(item);
   }
 
+  var MENU_GROUP_ORDER = [
+    "Preview",
+    "Graphs",
+    "Tables",
+    "Convert",
+    "Export",
+    "Reports",
+    "Analyze",
+    "Text & Documents",
+    "Data",
+    "Code & APIs",
+    "Markup & Media",
+    "Graphs & Diagrams",
+    "Process & Architecture",
+    "LocalEdit",
+    "Editors",
+    "Recently closed"
+  ];
+
+  function menuGroupRank(label) {
+    var index = MENU_GROUP_ORDER.indexOf(String(label || ""));
+    return index === -1 ? MENU_GROUP_ORDER.length : index;
+  }
+
   function sortMenuNodes(nodes) {
     nodes.sort(function (a, b) {
       if (a.type !== b.type) {
         return a.type === "group" ? -1 : 1;
+      }
+      if (a.type === "group") {
+        var rankA = menuGroupRank(a.label);
+        var rankB = menuGroupRank(b.label);
+        if (rankA !== rankB) {
+          return rankA - rankB;
+        }
       }
       return String(a.label || "").localeCompare(String(b.label || ""));
     });
@@ -49,6 +80,84 @@
       }
     });
     return nodes;
+  }
+
+  function compactMenuNode(node) {
+    if (!node || node.type !== "group") {
+      return node;
+    }
+    node.children = compactMenuNodes(node.children, false);
+    while (node.children.length === 1 && node.children[0].type === "group") {
+      node.children = node.children[0].children;
+    }
+    return node;
+  }
+
+  function compactMenuNodes(nodes, isRoot) {
+    var compacted = list(nodes).map(compactMenuNode);
+    while (isRoot && compacted.length === 1 && compacted[0].type === "group") {
+      compacted = compacted[0].children;
+    }
+    return compacted;
+  }
+
+  function inferLanguageMenuPath(language) {
+    var id = String(language && language.id || "");
+    if (!id || id === "text" || id === "text.plain" || id === "text.markdown" || id === "text.indented-tree" || id === "xml.opml") {
+      return ["Text & Documents"];
+    }
+    if (
+      id === "text.javascript"
+      || id === "text.python"
+      || id === "json.openapi"
+      || id === "json.table.endpoint-list"
+      || id === "yaml.openapi"
+    ) {
+      return ["Code & APIs"];
+    }
+    if (
+      id === "json.model-graph.process"
+      || id === "json.model-graph.architecture"
+      || id === "json.model-graph.traceability"
+      || id === "json.table.role-activity"
+      || id === "json.table.traceability-matrix"
+      || id === "xml.bpmn"
+      || id === "xml.archimate-exchange"
+    ) {
+      return ["Process & Architecture"];
+    }
+    if (
+      id === "text.csv"
+      || id === "text.json"
+      || id === "text.yaml"
+      || id === "json.tree"
+      || id === "json.table"
+      || id.indexOf("json.table.") === 0
+      || id === "json.profile"
+      || id === "json.chart"
+      || id === "json.indented-tree"
+      || id.indexOf("yaml.") === 0
+    ) {
+      return ["Data"];
+    }
+    if (
+      id === "text.mermaid"
+      || id === "text.graphviz-dot"
+      || id === "json.cytoscape"
+      || id === "json.jsmind"
+      || id === "json.model-graph"
+      || id === "json.model-graph.dependency"
+      || id === "xml.gexf"
+    ) {
+      return ["Graphs & Diagrams"];
+    }
+    if (id === "text.xml" || id === "xml.svg") {
+      return ["Markup & Media"];
+    }
+    if (id === "localedit.pipeline-json") {
+      return ["LocalEdit"];
+    }
+    return language && language.category ? [language.category] : [];
   }
 
   class MenuButton {
@@ -120,7 +229,7 @@
         empty.textContent = emptyLabel || "No items";
         this.panel.appendChild(empty);
       } else {
-        this.panel.appendChild(this.renderNodes(sortMenuNodes(this.buildTree(this.items)), 0, null));
+        this.panel.appendChild(this.renderNodes(sortMenuNodes(compactMenuNodes(this.buildTree(this.items), true)), 0, null));
       }
       this.updateButton();
     }
@@ -395,29 +504,12 @@
     }
 
     buildLanguageItems(languages) {
-      var byId = new Map();
-      list(languages).forEach(function (language) {
-        byId.set(language.id, language);
-      });
       function languagePath(language) {
         var explicit = normalizePath(language.menuPath, []);
         if (explicit.length) {
           return explicit;
         }
-        var path = [];
-        var current = language;
-        var guard = 0;
-        while (current && current.parentLanguageId && byId.has(current.parentLanguageId) && guard < 12) {
-          current = byId.get(current.parentLanguageId);
-          if (current.id !== "text") {
-            path.unshift(current.name || current.id);
-          }
-          guard += 1;
-        }
-        if (!path.length && language.category) {
-          path.push(language.category);
-        }
-        return path;
+        return inferLanguageMenuPath(language);
       }
       return list(languages).map(function (language) {
         return {

@@ -1649,7 +1649,7 @@
       name: name,
       inputLanguage: inputLanguage,
       category: "Graphs",
-      menuPath: ["Graphs", "Sigma", group || name],
+      menuPath: ["Graphs", group || "Explore"],
       steps: steps.map(function (step) {
         return typeof step === "string" ? { use: step, params: {} } : step;
       })
@@ -1675,7 +1675,7 @@
           outputKind: "custom",
           visibility: "internal",
           category: "Graphs",
-          menuPath: ["Graphs", "Sigma", "Explore"],
+          menuPath: ["Graphs", "Explore"],
           parameters: {
             layout: { type: "enum", values: ["forceatlas2", "noverlap", "circular", "random"], default: "forceatlas2" },
             iterations: { type: "integer", default: 120 },

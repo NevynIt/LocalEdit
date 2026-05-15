@@ -77,11 +77,11 @@ Extension mode:
 
 ## Pipeline UX
 
-- The toolbar exposes multilevel menus for Language, Editor, Reopen, and Actions so large language and pipeline inventories remain grouped and readable.
+- The toolbar exposes multilevel menus for Language, Editor, Reopen, and Actions, with dead-end submenu chains collapsed so commands do not require unnecessary navigation.
 - The Actions menu is one pipeline surface instead of separate transform, render, export, and pipeline menus.
 - Registered transformers, renderers, and exporters are surfaced automatically as synthetic single-step pipeline actions for the current language.
 - User-defined and packaged multi-step pipelines appear in the same list.
-- Contributions can provide `category` or `menuPath` metadata to place commands intentionally; unannotated actions are grouped from their kind, language, and action name.
+- Contributions can provide `category` or `menuPath` metadata to place commands intentionally; unannotated actions are grouped from their kind and action name.
 - The `Discover` action opens an `.itt` contribution catalog organized by the language hierarchy, with consuming contributions nested under each format and transformer cross links pointing to produced formats.
 - Preview refresh and auto-refresh continue to operate on preview windows bound to the active document.
 - Render windows show the bound document name in the window title, display the last update timestamp in the render chrome, and can request a targeted refresh from inside the render window.

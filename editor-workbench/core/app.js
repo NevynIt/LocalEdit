@@ -870,7 +870,7 @@
         }
         pushAction({
           id: "synthetic:transformer:" + transformer.id,
-          name: "Transform: " + (transformer.name || transformer.id),
+          name: transformer.name || transformer.id,
           category: transformer.category || "Convert",
           menuPath: actionMenuPath(transformer, "Transform", "Convert"),
           pipeline: {
@@ -890,7 +890,7 @@
         }
         pushAction({
           id: "synthetic:renderer:" + renderer.id,
-          name: "Preview: " + (renderer.name || renderer.id),
+          name: renderer.name || renderer.id,
           category: renderer.category || "Preview",
           menuPath: actionMenuPath(renderer, "Preview", "Preview"),
           pipeline: {
@@ -910,7 +910,7 @@
         }
         pushAction({
           id: "synthetic:exporter:" + exporter.id,
-          name: "Export: " + (exporter.name || exporter.id),
+          name: exporter.name || exporter.id,
           category: exporter.category || "Export",
           menuPath: actionMenuPath(exporter, "Export", "Export"),
           pipeline: {

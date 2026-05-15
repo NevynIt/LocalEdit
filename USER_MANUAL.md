@@ -274,9 +274,9 @@ If the wrong language is selected:
 
 ### The Language menu
 
-The **Language** menu is hierarchical. LocalEdit groups languages according to their parent formats or explicit menu paths.
+The **Language** menu is grouped by user-facing format families such as documents, data, code/API formats, graph/diagram formats, markup/media, and process/architecture models. Plugins can still provide explicit menu paths when a language needs a custom location.
 
-This means you do not need to memorize every exact language identifier to work effectively. You can usually find a format near its parent family.
+This means you do not need to memorize every exact language identifier to work effectively. Inheritance still controls tool compatibility, but the menu is organized around how users look for formats.
 
 ### The Editor menu
 
@@ -534,7 +534,7 @@ Use **Steps** when working with:
 
 ## 10. Language Hierarchy and Format Families
 
-This is the deeper explanation of the Language menu behavior introduced earlier.
+This is the deeper explanation of language compatibility behind the Language menu.
 
 ### The basic idea
 

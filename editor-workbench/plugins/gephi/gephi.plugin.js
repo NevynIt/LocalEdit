@@ -909,7 +909,7 @@
       name: name,
       inputLanguage: inputLanguage,
       category: "Convert",
-      menuPath: ["Convert", "Gephi GEXF", menuGroup || menuLeaf || name],
+      menuPath: ["Convert", menuGroup || menuLeaf || "Gephi GEXF"],
       steps: steps.map(function (step) {
         return typeof step === "string" ? { use: step, params: {} } : step;
       })
