@@ -92,7 +92,7 @@
         if (index !== pipeline.steps.length - 1) {
           throw new Error("Pipeline " + pipeline.id + " has a non-transformer before the final step.");
         }
-        if (["renderer", "exporter", "editor", "terminal-step"].indexOf(contribution.kind) === -1) {
+        if (["renderer", "exporter", "editor"].indexOf(contribution.kind) === -1) {
           throw new Error("Pipeline " + pipeline.id + " final step is not terminal-capable.");
         }
       }

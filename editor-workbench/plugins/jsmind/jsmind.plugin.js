@@ -60,6 +60,7 @@
       ".jsmind-map-host > .jsmind-inner:active { cursor: grabbing; }",
       ".jsmind-render-shell svg.jsmind { opacity: 0; pointer-events: none; }",
       ".jsmind-manual-lines { position: absolute; left: 0; top: 0; z-index: 1; overflow: visible; pointer-events: none; }",
+      ".jsmind-cross-link-label { fill: #831843; font-size: 11px; font-weight: 700; }",
       ".jsmind-render-shell jmnodes { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif; }",
       ".jsmind-render-shell jmnodes { z-index: 2; }",
       ".jsmind-render-shell jmnode { z-index: 2; box-sizing: border-box; width: max-content; min-width: 54px; max-width: 260px; min-height: 34px; padding: 8px 10px; border: 1px solid #c8d1df; border-radius: 6px; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.11); cursor: grab; font-size: calc(13px * var(--jsmind-node-scale)); font-weight: 650; line-height: 1.35; white-space: normal; overflow: visible; overflow-wrap: anywhere; text-overflow: clip; }",
@@ -123,28 +124,49 @@
     return text;
   }
 
-  function buildTreeNode(node, nodeByInternalId, usedIds) {
-    var baseId = sanitizeId(node.id || node.internalId, node.internalId);
-    var id = baseId;
-    var suffix = 2;
-    while (usedIds.has(id)) {
-      id = baseId + "-" + suffix;
-      suffix += 1;
-    }
-    usedIds.add(id);
+  function assignNodeIds(parsed) {
+    var usedIds = new Set(["root"]);
+    var nodeIds = new Map();
+    parsed.nodes.forEach(function (node) {
+      var baseId = sanitizeId(node.id || node.internalId, node.internalId);
+      var id = baseId;
+      var suffix = 2;
+      while (usedIds.has(id)) {
+        id = baseId + "-" + suffix;
+        suffix += 1;
+      }
+      usedIds.add(id);
+      nodeIds.set(node.internalId, id);
+    });
+    return nodeIds;
+  }
 
-    var data = {};
+  function buildTreeNode(node, nodeByInternalId, nodeIds) {
+    var id = nodeIds.get(node.internalId);
+
+    var fields = {};
     if (node.type) {
-      data.type = node.type;
+      fields.type = node.type;
     }
     if (node.tags && node.tags.length) {
-      data.tags = node.tags.slice();
+      fields.tags = node.tags.slice();
     }
     if (node.details) {
-      data.details = node.details;
+      fields.details = node.details;
     }
     if (node.attributes && Object.keys(node.attributes).length) {
-      data.attributes = node.attributes;
+      fields.attributes = node.attributes;
+    }
+    if (node.links && node.links.length) {
+      fields.links = node.links.filter(function (link) {
+        return Boolean(link && link.targetInternalId && nodeIds.get(link.targetInternalId));
+      }).map(function (link) {
+        return {
+          type: link.type || "related-to",
+          target: link.target,
+          targetNodeId: nodeIds.get(link.targetInternalId)
+        };
+      });
     }
 
     var output = {
@@ -152,12 +174,12 @@
       topic: node.label || id,
       expanded: true
     };
-    if (Object.keys(data).length) {
-      output.data = data;
+    if (Object.keys(fields).length) {
+      Object.assign(output, fields);
     }
 
     var children = (node.children || []).map(function (childId) {
-      return buildTreeNode(nodeByInternalId.get(childId), nodeByInternalId, usedIds);
+      return buildTreeNode(nodeByInternalId.get(childId), nodeByInternalId, nodeIds);
     }).filter(Boolean);
     if (children.length) {
       output.children = children;
@@ -173,9 +195,9 @@
       nodeByInternalId.set(node.internalId, node);
     });
 
-    var usedIds = new Set(["root"]);
+    var nodeIds = assignNodeIds(parsed);
     var rootChildren = parsed.roots.map(function (rootId) {
-      return buildTreeNode(nodeByInternalId.get(rootId), nodeByInternalId, usedIds);
+      return buildTreeNode(nodeByInternalId.get(rootId), nodeByInternalId, nodeIds);
     }).filter(Boolean);
 
     var rootTopic = parsed.metadata && parsed.metadata.title ? String(parsed.metadata.title) : "Mind Map";
@@ -476,6 +498,57 @@
               overlay.appendChild(path);
             }
 
+            function getNodeLinks(node) {
+              if (!node || !node.data) {
+                return [];
+              }
+              if (Array.isArray(node.data.links)) {
+                return node.data.links;
+              }
+              if (node.data.data && Array.isArray(node.data.data.links)) {
+                return node.data.data.links;
+              }
+              return [];
+            }
+
+            function drawCrossLink(sourceNode, targetNode, link) {
+              var overlay = ensureLineOverlay();
+              if (!overlay || !isVisibleNode(sourceNode) || !isVisibleNode(targetNode)) {
+                return;
+              }
+              var source = getNodePosition(sourceNode);
+              var target = getNodePosition(targetNode);
+              var startX = source.left + source.width / 2;
+              var startY = source.top + source.height / 2;
+              var endX = target.left + target.width / 2;
+              var endY = target.top + target.height / 2;
+              var handleY = Math.min(startY, endY) - Math.max(28, Math.abs(endX - startX) * 0.12);
+              var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+              path.setAttribute("d", [
+                "M", startX, startY,
+                "C", startX, handleY,
+                endX, handleY,
+                endX, endY
+              ].join(" "));
+              path.setAttribute("fill", "none");
+              path.setAttribute("stroke", "#be185d");
+              path.setAttribute("stroke-width", "1.75");
+              path.setAttribute("stroke-linecap", "round");
+              path.setAttribute("stroke-dasharray", "7 5");
+              path.setAttribute("opacity", "0.9");
+              overlay.appendChild(path);
+
+              if (link && link.type) {
+                var label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                label.setAttribute("class", "jsmind-cross-link-label");
+                label.setAttribute("text-anchor", "middle");
+                label.setAttribute("x", String(Math.round((startX + endX) / 2)));
+                label.setAttribute("y", String(Math.round(handleY - 6)));
+                label.textContent = link.type;
+                overlay.appendChild(label);
+              }
+            }
+
             function redrawLines() {
               var overlay = ensureLineOverlay();
               if (!overlay) {
@@ -490,6 +563,15 @@
                   return;
                 }
                 drawConnection(node.parent, node);
+              });
+              listNodes().forEach(function (node) {
+                getNodeLinks(node).forEach(function (link) {
+                  var targetNode = link && link.targetNodeId ? getNodeMap()[link.targetNodeId] : null;
+                  if (!targetNode || targetNode === node) {
+                    return;
+                  }
+                  drawCrossLink(node, targetNode, link);
+                });
               });
               updateAllExpanders();
             }
@@ -1059,7 +1141,6 @@
           }
         }
       ],
-      terminalSteps: [],
       pipelines: [
         {
           id: "view-indented-tree-as-mindmap",

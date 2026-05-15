@@ -326,33 +326,22 @@ registry.registerPlugin({
         }
       }
     ],
-    terminalSteps: [
-      {
-        id: "capture",
-        name: "Capture",
-        accepts: ["beta"],
-        run(input) {
-          return { action: "capture", text: input.text, languageId: input.languageId, diagnostics: input.diagnostics };
-        }
-      }
-    ],
     pipelines: [
       {
-        id: "alpha-capture",
-        name: "Alpha Capture",
+        id: "alpha-open",
+        name: "Alpha Open",
         inputLanguage: "alpha",
         steps: [
-          { use: "alpha-to-beta", params: { suffix: "?" } },
-          { use: "capture", params: {} }
+          { use: "alpha-to-beta", params: { suffix: "?" } }
         ]
       },
       {
-        id: "alpha-child-capture",
-        name: "Alpha Child Capture",
+        id: "alpha-child-preview",
+        name: "Alpha Child Preview",
         inputLanguage: "alpha.child",
         steps: [
           { use: "alpha-to-beta", params: { suffix: "!" } },
-          { use: "capture", params: {} }
+          { use: "beta-renderer", params: {} }
         ]
       }
     ]
@@ -391,6 +380,26 @@ registry.registerPlugin({
 });
 assert.equal(registry.getAvailability(registry.getContribution("transformer", "requires-missing-runtime")).state, "unavailable");
 
+assert.throws(() => {
+  registry.registerPlugin({
+    id: "missing-output-language-plugin",
+    name: "Missing Output Language Plugin",
+    version: "1.0.0",
+    contributes: {
+      transformers: [
+        {
+          id: "alpha-missing-output",
+          name: "Alpha Missing Output",
+          inputLanguage: "alpha",
+          transform() {
+            return { text: "", languageId: "alpha" };
+          }
+        }
+      ]
+    }
+  });
+}, /must declare outputLanguage/);
+
 const diagnostics = new context.DiagnosticsService(registry, {});
 const documentModel = new context.DocumentModel({ text: "abc", languageId: "alpha" });
 diagnostics.runLinters(documentModel, "doc-1").then(async (items) => {
@@ -406,15 +415,27 @@ diagnostics.runLinters(documentModel, "doc-1").then(async (items) => {
   assert.equal(diagnostics.list().length, 2);
 
   const pipelineRegistry = new context.PipelineRegistry(registry);
-  const pipeline = pipelineRegistry.get("alpha-capture");
+  const pipeline = pipelineRegistry.get("alpha-open");
   assert.equal(pipelineRegistry.validate(pipeline), true);
-  const childPipeline = pipelineRegistry.get("alpha-child-capture");
+  const childPipeline = pipelineRegistry.get("alpha-child-preview");
   assert.equal(pipelineRegistry.validate(childPipeline), true);
-  const executor = new context.PipelineExecutor(registry, pipelineRegistry, {});
-  const result = await executor.execute("alpha-capture", documentModel);
-  assert.equal(result.action, "capture");
-  assert.equal(result.text, "abc?");
-  assert.equal(result.languageId, "beta");
+  const executor = new context.PipelineExecutor(registry, pipelineRegistry, {
+    renderManager: {
+      openContribution(contribution, previewDocument) {
+        return {
+          rendererId: contribution.id,
+          previewDocument,
+          isOpen() {
+            return true;
+          }
+        };
+      }
+    }
+  });
+  const result = await executor.execute("alpha-open", documentModel);
+  assert.equal(result.action, "open-new-document");
+  assert.equal(result.document.text, "abc?");
+  assert.equal(result.document.languageId, "beta");
   assert.equal(result.diagnostics.length, 1);
   assert.equal(result.intermediateResults.length, 1);
 
@@ -432,10 +453,9 @@ diagnostics.runLinters(documentModel, "doc-1").then(async (items) => {
   assert.equal(preparedRenderInput.input.languageId, "beta");
 
   const childDocumentModel = new context.DocumentModel({ text: "xyz", languageId: "alpha.child" });
-  const childResult = await executor.execute("alpha-child-capture", childDocumentModel);
-  assert.equal(childResult.action, "capture");
-  assert.equal(childResult.text, "xyz!");
-  assert.equal(childResult.languageId, "beta");
+  const childResult = await executor.execute("alpha-child-preview", childDocumentModel);
+  assert.equal(childResult.action, "render");
+  assert.equal(childResult.diagnostics.length, 1);
 
   const editorManager = new context.EditorManager(registry, {});
   const container = { textContent: "", mounted: "" };

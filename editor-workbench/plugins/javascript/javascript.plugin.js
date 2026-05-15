@@ -86,6 +86,7 @@
         id: "javascript-format",
         name: "Format JavaScript",
         inputLanguages: ["javascript"],
+        outputLanguage: "javascript",
         transform: formatJavaScript
       }
     ],

@@ -369,6 +369,7 @@
         id: "json-format",
         name: "Format JSON",
         inputLanguages: ["json"],
+        outputLanguage: "json",
         transform: function (documentModel) {
           return formatJson(documentModel, false);
         }
@@ -377,6 +378,7 @@
         id: "json-compact",
         name: "Compact JSON",
         inputLanguages: ["json"],
+        outputLanguage: "json",
         transform: function (documentModel) {
           return formatJson(documentModel, true);
         }

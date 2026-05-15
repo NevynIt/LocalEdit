@@ -84,6 +84,7 @@
         id: "python-format",
         name: "Format Python",
         inputLanguages: ["python"],
+        outputLanguage: "python",
         transform: formatPython
       }
     ],

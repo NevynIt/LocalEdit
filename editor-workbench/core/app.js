@@ -171,67 +171,6 @@
           renderers: [],
           exporters: [],
           linters: [],
-          terminalSteps: [
-            {
-              id: "replace-current-text",
-              name: "Replace Current Text",
-              accepts: ["*"],
-              run: function (input) {
-                var app = input.context.services.app;
-                var record = app.openPipelineDocument(new DocumentModel({
-                  text: input.text,
-                  languageId: input.languageId,
-                  fileName: app.buildDerivedDocumentName(input.sourceDocument, input.languageId, input.step && input.step.use),
-                  mimeType: app.getLanguageMediaType(input.languageId) || input.sourceDocument && input.sourceDocument.mimeType || "text/plain"
-                }), {
-                  source: "pipeline-legacy-replace"
-                });
-                return { action: "open-new-document", documentId: record.id, document: record.document, diagnostics: input.diagnostics || [], intermediateResults: (input.intermediateResults || []).slice() };
-              }
-            },
-            {
-              id: "open-new-document",
-              name: "Open New Document",
-              accepts: ["*"],
-              run: function (input) {
-                var app = input.context.services.app;
-                var record = app.openPipelineDocument(new DocumentModel({
-                  text: input.text,
-                  languageId: input.languageId,
-                  fileName: app.buildDerivedDocumentName(input.sourceDocument, input.languageId, input.step && input.step.use),
-                  mimeType: app.getLanguageMediaType(input.languageId) || input.sourceDocument && input.sourceDocument.mimeType || "text/plain"
-                }), {
-                  source: "pipeline-output"
-                });
-                return { action: "open-new-document", documentId: record.id, document: record.document, diagnostics: input.diagnostics || [], intermediateResults: (input.intermediateResults || []).slice() };
-              }
-            },
-            {
-              id: "copy-to-clipboard",
-              name: "Copy To Clipboard",
-              accepts: ["*"],
-              run: async function (input) {
-                if (!global.navigator || !global.navigator.clipboard || typeof global.navigator.clipboard.writeText !== "function") {
-                  throw new Error("Clipboard API is not available.");
-                }
-                await global.navigator.clipboard.writeText(input.text || "");
-                return { action: "copy-to-clipboard", diagnostics: input.diagnostics || [] };
-              }
-            },
-            {
-              id: "open-editor",
-              name: "Open Editor",
-              accepts: ["*"],
-              parameters: {
-                editorId: { type: "string", default: "codemirror" }
-              },
-              run: async function (input) {
-                var editorManager = input.context.services.editorManager;
-                await editorManager.switchEditor(input.params.editorId, input.text, input.languageId);
-                return { action: "open-editor", diagnostics: input.diagnostics || [] };
-              }
-            }
-          ],
           pipelines: []
         }
       }, { path: "" });
@@ -707,6 +646,165 @@
       this.updateUi();
     }
 
+    declaredContributionLanguages(contribution) {
+      if (!contribution) {
+        return [];
+      }
+      if (contribution.kind === "pipeline") {
+        return contribution.inputLanguage ? [contribution.inputLanguage] : [];
+      }
+      if (contribution.kind === "transformer") {
+        return contribution.inputLanguage ? [contribution.inputLanguage] : Array.isArray(contribution.inputLanguages) ? contribution.inputLanguages.slice() : [];
+      }
+      if (contribution.kind === "editor-extension") {
+        return Array.isArray(contribution.languages) ? contribution.languages.slice() : [];
+      }
+      return Array.isArray(contribution.accepts) ? contribution.accepts.slice() : Array.isArray(contribution.languages) ? contribution.languages.slice() : [];
+    }
+
+    sanitizeContributionNodeId(value) {
+      return String(value || "item").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "item";
+    }
+
+    summarizeParameters(parameters) {
+      var schema = parameters && typeof parameters === "object" ? parameters : {};
+      var keys = Object.keys(schema).sort();
+      if (!keys.length) {
+        return "none";
+      }
+      return keys.map(function (key) {
+        var definition = schema[key] || {};
+        var type = definition.type || "value";
+        if (type === "enum" && Array.isArray(definition.values) && definition.values.length) {
+          type += "=" + definition.values.join("|");
+        }
+        return key + " [" + type + "] default=" + JSON.stringify(definition.default);
+      }).join(", ");
+    }
+
+    summarizePipelineSteps(pipeline) {
+      var steps = Array.isArray(pipeline && pipeline.steps) ? pipeline.steps : [];
+      if (!steps.length) {
+        return "none";
+      }
+      return steps.map(function (step, index) {
+        return (index + 1) + ". " + (step && step.use || "unknown");
+      }).join(" -> ");
+    }
+
+    buildContributionCatalogDocument() {
+      var self = this;
+      var groupedByLanguage = new Map();
+      var globalContributions = [];
+
+      ["editor", "editor-extension", "linter", "transformer", "renderer", "exporter", "pipeline"].forEach(function (kind) {
+        self.pluginRegistry.getContributions(kind).forEach(function (contribution) {
+          var inputs = self.declaredContributionLanguages(contribution).filter(Boolean);
+          if (!inputs.length || inputs.indexOf("*") !== -1) {
+            globalContributions.push(contribution);
+            return;
+          }
+          inputs.forEach(function (languageId) {
+            var canonicalId = self.languageRegistry.getCanonicalId(languageId) || languageId;
+            if (!groupedByLanguage.has(canonicalId)) {
+              groupedByLanguage.set(canonicalId, []);
+            }
+            groupedByLanguage.get(canonicalId).push(contribution);
+          });
+        });
+      });
+
+      function pushContribution(lines, contribution, baseIndent, languageId) {
+        var nodeId = "contrib-" + self.sanitizeContributionNodeId((contribution.pluginId || "plugin") + "-" + contribution.id + "-" + (languageId || "global"));
+        var linkSuffix = contribution.kind === "transformer" && contribution.outputLanguage
+          ? " @produces:lang-" + self.sanitizeContributionNodeId(contribution.outputLanguage)
+          : "";
+        lines.push(baseIndent + "&" + nodeId + " [" + contribution.kind + "] " + (contribution.name || contribution.id) + linkSuffix);
+        lines.push(baseIndent + " | id: " + contribution.id);
+        lines.push(baseIndent + " | plugin: " + (contribution.pluginName || contribution.pluginId || "local"));
+        if (languageId) {
+          lines.push(baseIndent + " | consumes: " + languageId);
+        }
+        if (contribution.kind === "transformer") {
+          lines.push(baseIndent + " | produces: " + contribution.outputLanguage);
+        }
+        if (contribution.kind === "pipeline") {
+          lines.push(baseIndent + " | steps: " + self.summarizePipelineSteps(contribution));
+        }
+        lines.push(baseIndent + " | parameters: " + self.summarizeParameters(contribution.parameters));
+      }
+
+      function renderLanguage(language, childMap, lines, indent) {
+        var languageIndent = new Array(indent + 1).join("  ");
+        var languageNodeId = "lang-" + self.sanitizeContributionNodeId(language.id);
+        lines.push(languageIndent + "&" + languageNodeId + " [language] " + language.name);
+        lines.push(languageIndent + " | id: " + language.id);
+        if (language.aliases && language.aliases.length) {
+          lines.push(languageIndent + " | aliases: " + language.aliases.join(", "));
+        }
+        if (language.fileExtensions && language.fileExtensions.length) {
+          lines.push(languageIndent + " | extensions: " + language.fileExtensions.join(", "));
+        }
+        if (language.mediaTypes && language.mediaTypes.length) {
+          lines.push(languageIndent + " | media types: " + language.mediaTypes.join(", "));
+        }
+        (childMap.get(language.id) || []).forEach(function (child) {
+          renderLanguage(child, childMap, lines, indent + 1);
+        });
+        (groupedByLanguage.get(language.id) || []).slice().sort(function (a, b) {
+          if (a.kind !== b.kind) {
+            return a.kind.localeCompare(b.kind);
+          }
+          return (a.name || a.id).localeCompare(b.name || b.id);
+        }).forEach(function (contribution) {
+          pushContribution(lines, contribution, languageIndent + "  ", language.id);
+        });
+      }
+
+      var childMap = new Map();
+      this.languageRegistry.list().forEach(function (language) {
+        var parentId = language.parentLanguageId || "";
+        if (!childMap.has(parentId)) {
+          childMap.set(parentId, []);
+        }
+        childMap.get(parentId).push(language);
+      });
+
+      var lines = [
+        "&catalog Contribution catalog",
+        " | generated at: " + new Date().toISOString(),
+        " | note: languages define the tree; transformer cross links show produced formats"
+      ];
+      (childMap.get("") || []).forEach(function (language) {
+        renderLanguage(language, childMap, lines, 1);
+      });
+      lines.push("  &global [group] Global contributions");
+      lines.push("   | consumes: any language or runtime-only context");
+      globalContributions.sort(function (a, b) {
+        if (a.kind !== b.kind) {
+          return a.kind.localeCompare(b.kind);
+        }
+        return (a.name || a.id).localeCompare(b.name || b.id);
+      }).forEach(function (contribution) {
+        pushContribution(lines, contribution, "    ", "");
+      });
+      return lines.join("\n");
+    }
+
+    openContributionCatalogDocument() {
+      var record = this.openDocument(new DocumentModel({
+        text: this.buildContributionCatalogDocument(),
+        languageId: "indented-tree",
+        fileName: "contribution-catalog.itt",
+        mimeType: "text/x-indented-tree"
+      }), {
+        source: "contribution-catalog"
+      });
+      this.persistWorkspace();
+      this.updateStatus("Opened contribution catalog.");
+      return record;
+    }
+
     buildPipelineActions(languageId) {
       var self = this;
       var actions = [];
@@ -726,8 +824,7 @@
             name: "Run " + transformer.id,
             inputLanguage: languageId,
             steps: [
-              { use: transformer.id, params: {} },
-              { use: "open-new-document", params: {} }
+              { use: transformer.id, params: {} }
             ]
           }
         });
@@ -1062,6 +1159,15 @@
       var restoreDocumentId = this.getActiveDocumentId();
       try {
         var result = await this.executePipeline(pipelineId);
+        if (result && result.action === "open-new-document" && result.document && !result.documentId) {
+          var openedRecord = this.openPipelineDocument(new DocumentModel(result.document).cloneWith({
+            fileName: result.document.fileName || this.buildDerivedDocumentName(this.getDocument(), result.document.languageId, result.step && result.step.use)
+          }), {
+            source: "pipeline-output"
+          });
+          result.documentId = openedRecord.id;
+          result.document = openedRecord.document;
+        }
         if (this.openIntermediateDocuments && result && Array.isArray(result.intermediateResults) && result.intermediateResults.length) {
           this.openIntermediateResultDocuments(result.intermediateResults, result.document || null, result.action === "open-new-document" ? result.documentId : restoreDocumentId);
         }
@@ -1085,10 +1191,6 @@
         }
         if (result && result.action === "export") {
           this.downloadExportResult(result.result);
-        }
-        if (result && result.action === "copy-to-clipboard") {
-          this.updateStatus("Copied pipeline output.");
-          return;
         }
         this.updateUi();
         this.updateStatus("Pipeline complete.");
@@ -1215,6 +1317,7 @@
         editors: this.editor ? this.editor.listEditors(languageId) : [],
         closedDocuments: this.listClosedDocuments(),
         pipelineActions: hasDocument ? this.buildPipelineActions(languageId) : [],
+        canDiscoverPipelines: Boolean(this.pipelineRegistry),
         autoRefreshEnabled: this.autoRefreshEnabled,
         openIntermediateDocuments: this.openIntermediateDocuments,
         hasRenderSessions: this.hasOpenRenderSessions()

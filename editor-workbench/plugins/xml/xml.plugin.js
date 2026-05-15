@@ -216,12 +216,14 @@
         id: "xml-format",
         name: "Format XML",
         inputLanguages: ["xml"],
+        outputLanguage: "xml",
         transform: formatXml
       },
       {
         id: "xml-compact",
         name: "Compact XML",
         inputLanguages: ["xml"],
+        outputLanguage: "xml",
         transform: compactXml
       }
     ],

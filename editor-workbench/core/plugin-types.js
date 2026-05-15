@@ -25,9 +25,8 @@
    * @property {LinterContribution[]=} linters
    * @property {TransformerContribution[]=} transformers
    * @property {RendererContribution[]=} renderers
-   * @property {ExporterContribution[]=} exporters
-   * @property {TerminalStepContribution[]=} terminalSteps
-   * @property {PipelineContribution[]=} pipelines
+  * @property {ExporterContribution[]=} exporters
+  * @property {PipelineContribution[]=} pipelines
    */
 
   /**
@@ -125,15 +124,6 @@
    */
 
   /**
-   * @typedef {Object} TerminalStepContribution
-   * @property {string} id
-   * @property {string} name
-   * @property {string[]} accepts
-   * @property {object=} parameters
-   * @property {(input: object) => object | Promise<object>} run
-   */
-
-  /**
    * @typedef {Object} PipelineContribution
    * @property {string} id
    * @property {string} name
@@ -200,7 +190,7 @@
             id: provider.id,
             name: provider.name,
             inputLanguage: inputLanguage,
-            outputLanguage: provider.outputLanguage || inputLanguage,
+            outputLanguage: provider.outputLanguage,
             parameters: provider.parameters || {},
             transform: function (input) {
               return provider.transform(input.document, {
@@ -263,7 +253,6 @@
             }
           };
         })),
-        terminalSteps: list(contributes.terminalSteps),
         pipelines: list(contributes.pipelines)
       }
     };

@@ -11,7 +11,8 @@ Editor Workbench is a local-first structured text editor that runs from disk or 
 - Canonical language hierarchy with inherited tool matching, alias compatibility, and hierarchical language labels.
 - Diagnostics panel, a single pipeline menu, preview/render windows with document-aware titles and metadata, manual refresh, and 3-second stable-source auto-refresh.
 - Document-scoped diagnostics and document-bound preview windows with source metadata chrome.
-- Pipeline-backed transform, render, export, editor, clipboard, and document actions, with automatic single-step pipeline entries for registered transformers, renderers, and exporters.
+- Pipeline-backed transform, render, export, and editor actions, with automatic single-step pipeline entries for registered transformers, renderers, and exporters.
+- Transformers now declare explicit output languages, and transformer-final pipelines automatically open their final text result as a new document.
 - Text-producing pipeline results always open as new documents, and pipeline runs can optionally open intermediate transformer steps as additional documents.
 - Pipeline JSON documents for defining and running custom data-only pipelines.
 - Markdown preview/export with sanitized HTML and inline Mermaid/Graphviz fenced diagrams.
@@ -68,9 +69,11 @@ Extension mode:
 - The toolbar exposes one pipeline surface instead of separate transform, render, export, and pipeline menus.
 - Registered transformers, renderers, and exporters are surfaced automatically as synthetic single-step pipeline actions for the current language.
 - User-defined and packaged multi-step pipelines appear in the same list.
+- The `Discover` action opens an `.itt` contribution catalog organized by the language hierarchy, with consuming contributions nested under each format and transformer cross links pointing to produced formats.
 - Preview refresh and auto-refresh continue to operate on preview windows bound to the active document.
 - Render windows show the bound document name in the window title, display the last update timestamp in the render chrome, and can request a targeted refresh from inside the render window.
 - The optional `Steps` toggle opens intermediate transformer outputs as separate documents so pipeline execution can be inspected step by step.
+- jsMind previews now render Indented Tree cross links with a distinct dashed overlay so relationship links stay visually separate from hierarchy edges.
 
 ## Language Model
 
@@ -119,7 +122,7 @@ The app does not load from npm, a CDN, or a server at runtime.
 | JavaScript | `javascript` | Syntax, Prettier format |
 | CSV | `csv` | Row-width linting, scrollable table preview |
 | Python | `python` | Syntax, Ruff WASM format |
-| Pipeline JSON | `localedit-pipeline-json` | Pipeline document linting, flow preview, and registration |
+| Pipeline JSON | `localedit-pipeline-json` | Pipeline document linting and flow preview |
 | jsMind | `jsmind-json` | Indented Tree to jsMind JSON transform and read-only mind-map preview |
 
 ## Plugin Runtime Model
@@ -135,12 +138,11 @@ Supported contribution collections:
 - `contributes.renderers`
 - `contributes.exporters`
 - `contributes.linters`
-- `contributes.terminalSteps`
 - `contributes.pipelines`
 
 Language records use `{ id, name, parentLanguageId, fileExtensions, mediaTypes, aliases, description }`. Diagnostics use `{ source, severity, message, languageId, range, target, step }`; legacy `{ from, to }` offsets are normalized inside core services, but they are not the plugin-facing contract.
 
-Contribution parameters are schema records and every parameter must include a `default`. Pipelines are data-only JSON documents that reference contribution ids with optional parameter overrides; text-producing terminal steps open new documents rather than replacing the active source document.
+Contribution parameters are schema records and every parameter must include a `default`. Pipelines are data-only JSON documents that reference contribution ids with optional parameter overrides; when a pipeline ends with a transformer, its final text result opens as a new document automatically.
 
 Providers receive a `context.runtime` loader and can call `ensureScripts(...)` to load local runtime bundles only when needed. This keeps startup small and avoids eager loading large libraries such as Mermaid, Graphviz, Prettier, PapaParse, and Ruff WASM.
 

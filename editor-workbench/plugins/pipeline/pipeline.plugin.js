@@ -80,7 +80,7 @@
     id: "pipeline-core",
     name: "Pipeline JSON",
     version: "0.1.0",
-    description: "Pipeline JSON language, validation, visualization, and registration.",
+    description: "Pipeline JSON language, validation, and visualization.",
     getExampleDocument: function () {
       return {
         fileName: "view-indented-tree-as-mindmap.pipeline.json",
@@ -143,28 +143,7 @@
           lint: lintPipeline
         }
       ],
-      terminalSteps: [
-        {
-          id: "register-pipeline-document",
-          name: "Register Pipeline Document",
-          accepts: ["localedit-pipeline-json"],
-          run: async function (input) {
-            var pipeline = parsePipeline(input.text);
-            await input.context.services.app.registerUserPipeline(pipeline);
-            return { action: "register-pipeline-document", diagnostics: input.diagnostics || [] };
-          }
-        }
-      ],
-      pipelines: [
-        {
-          id: "register-current-pipeline-document",
-          name: "Register Current Pipeline",
-          inputLanguage: "localedit-pipeline-json",
-          steps: [
-            { use: "register-pipeline-document", params: {} }
-          ]
-        }
-      ]
+      pipelines: []
     }
   });
 })(window);

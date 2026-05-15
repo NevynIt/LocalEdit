@@ -20,6 +20,19 @@
 
     async execute(pipelineOrId, documentModel) {
       var prepared = await this.prepareTerminalInput(pipelineOrId, documentModel);
+      if (!prepared.contribution) {
+        return {
+          action: "open-new-document",
+          document: makeDocument(prepared.input.text, prepared.input.languageId, {
+            fileName: prepared.input.fileName,
+            mimeType: prepared.input.mimeType,
+            lastModified: documentModel && documentModel.lastModified
+          }),
+          diagnostics: prepared.input.diagnostics.slice(),
+          intermediateResults: prepared.input.intermediateResults.slice(),
+          step: prepared.input.step
+        };
+      }
       return this.executeTerminal(prepared.contribution, prepared.input);
     }
 
@@ -32,6 +45,8 @@
 
       var currentText = documentModel.text || "";
       var currentLanguageId = pipeline.inputLanguage || documentModel.languageId;
+      var currentFileName = documentModel.fileName || "";
+      var currentMimeType = documentModel.mimeType || "";
       var diagnostics = [];
       var intermediateResults = [];
 
@@ -56,6 +71,8 @@
           }
           currentText = result.text;
           currentLanguageId = result.languageId || contribution.outputLanguage;
+          currentFileName = typeof result.fileName === "string" && result.fileName ? result.fileName : currentFileName;
+          currentMimeType = typeof result.mimeType === "string" && result.mimeType ? result.mimeType : currentMimeType;
           diagnostics = diagnostics.concat(result.diagnostics || []);
           intermediateResults.push({
             step: step.use,
@@ -75,6 +92,8 @@
             stepIndex: index,
             text: currentText,
             languageId: currentLanguageId,
+            fileName: currentFileName,
+            mimeType: currentMimeType,
             params: params,
             sourceDocument: documentModel,
             diagnostics: diagnostics,
@@ -83,7 +102,23 @@
         };
       }
 
-      throw new Error("Pipeline " + pipeline.id + " did not end in a terminal step.");
+      return {
+        pipeline: pipeline,
+        contribution: null,
+        input: {
+          pipeline: pipeline,
+          step: pipeline.steps[pipeline.steps.length - 1] || null,
+          stepIndex: pipeline.steps.length - 1,
+          text: currentText,
+          languageId: currentLanguageId,
+          fileName: currentFileName,
+          mimeType: currentMimeType,
+          params: {},
+          sourceDocument: documentModel,
+          diagnostics: diagnostics,
+          intermediateResults: intermediateResults
+        }
+      };
     }
 
     createContext(pipeline, step, stepIndex) {
@@ -127,17 +162,6 @@
         await this.services.editorManager.switchEditor(contribution.id, input.text, input.languageId);
         return { action: "editor", diagnostics: input.diagnostics, intermediateResults: input.intermediateResults.slice() };
       }
-
-      if (contribution.kind === "terminal-step" && typeof contribution.run === "function") {
-        var terminalResult = await contribution.run(Object.assign({}, input, {
-          document: documentModel,
-          context: this.createContext(input.pipeline, input.step, input.stepIndex)
-        }));
-        return Object.assign({}, terminalResult || {}, {
-          intermediateResults: input.intermediateResults.slice()
-        });
-      }
-
       throw new Error("Unsupported terminal contribution " + contribution.id + ".");
     }
   }

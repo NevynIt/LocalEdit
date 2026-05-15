@@ -9,7 +9,6 @@
     renderers: "renderer",
     exporters: "exporter",
     linters: "linter",
-    terminalSteps: "terminal-step",
     pipelines: "pipeline"
   };
 
@@ -85,6 +84,28 @@
     return cloned;
   }
 
+  function hasDeclaredLanguage(contribution) {
+    return Boolean(
+      contribution
+      && (
+        contribution.inputLanguage
+        || (Array.isArray(contribution.inputLanguages) && contribution.inputLanguages.length)
+      )
+    );
+  }
+
+  function validateContributionShape(kind, contribution, pluginId) {
+    if (kind !== "transformer") {
+      return;
+    }
+    if (!hasDeclaredLanguage(contribution)) {
+      throw new Error("Transformer " + contribution.id + " in " + pluginId + " must declare an input language.");
+    }
+    if (!contribution.outputLanguage || typeof contribution.outputLanguage !== "string") {
+      throw new Error("Transformer " + contribution.id + " in " + pluginId + " must declare outputLanguage.");
+    }
+  }
+
   class ContributionRegistry {
     constructor(languageRegistry) {
       this.languageRegistry = languageRegistry || null;
@@ -136,6 +157,8 @@
           if (!contribution || !contribution.id) {
             throw new Error("Contribution in " + plugin.id + " is missing an id.");
           }
+
+          validateContributionShape(kind, contribution, plugin.id);
 
           var byKind = this.contributions.get(kind);
           if (byKind.has(contribution.id)) {
@@ -332,10 +355,6 @@
 
     getExporters(languageId) {
       return this.getContributions("exporter", languageId);
-    }
-
-    getTerminalSteps(languageId) {
-      return this.getContributions("terminal-step", languageId);
     }
 
     getPipelines(languageId) {

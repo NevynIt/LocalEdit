@@ -424,6 +424,7 @@
         id: "cytoscape-json-format",
         name: "Format Cytoscape JSON",
         inputLanguages: ["json.cytoscape"],
+        outputLanguage: "json.cytoscape",
         transform: function (documentModel) {
           return formatJson(documentModel, false);
         }
@@ -432,6 +433,7 @@
         id: "cytoscape-json-compact",
         name: "Compact Cytoscape JSON",
         inputLanguages: ["json.cytoscape"],
+        outputLanguage: "json.cytoscape",
         transform: function (documentModel) {
           return formatJson(documentModel, true);
         }

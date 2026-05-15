@@ -72,7 +72,10 @@
       this.elements.pipelineButton = this.createButton("Run", () => {
         this.app.runPipelineAction(this.elements.pipelineSelect.value);
       });
-      root.appendChild(this.group([this.label("Pipeline"), this.elements.pipelineSelect, this.elements.pipelineButton, this.elements.refreshButton, autoRefreshLabel, intermediateLabel]));
+      this.elements.discoverPipelinesButton = this.createButton("Discover", () => {
+        this.app.openContributionCatalogDocument();
+      });
+      root.appendChild(this.group([this.label("Pipeline"), this.elements.pipelineSelect, this.elements.pipelineButton, this.elements.discoverPipelinesButton, this.elements.refreshButton, autoRefreshLabel, intermediateLabel]));
 
       this.elements.pluginsButton = this.createButton("Plugins", () => this.app.togglePluginManagerPanel());
       root.appendChild(this.group([this.elements.pluginsButton]));
@@ -96,6 +99,7 @@
       this.elements.intermediateToggle.disabled = !state.hasDocument;
       this.elements.intermediateToggle.checked = Boolean(state.openIntermediateDocuments);
       this.elements.pipelineButton.disabled = state.pipelineActions.length === 0;
+      this.elements.discoverPipelinesButton.disabled = !state.canDiscoverPipelines;
     }
 
     populateSelect(select, items, selectedValue, valueKey, labelKey) {

@@ -42,6 +42,15 @@ This tracker also covers the current preview-window polish pass:
 - surface the last refresh timestamp inside the render shell;
 - allow a render window to request a targeted refresh from its owning document binding.
 
+### Follow-Up Pipeline Discovery Pass
+
+This tracker also covers the current pipeline-discovery follow-up:
+
+- require every transformer declaration to state its `outputLanguage` explicitly;
+- remove the terminal-step contribution concept and make transformer-final pipelines open a new document automatically;
+- replace generated pipeline enumeration with an Indented Tree contribution catalog organized by the language hierarchy;
+- render contribution cross-links distinctly in the jsMind viewer so produced-language links remain readable.
+
 ### Execution Rules
 
 - [x] Update this workplan before implementation starts.
@@ -82,6 +91,10 @@ This tracker also covers the current preview-window polish pass:
 - [x] Phase 29: Fix render-window titles and metadata to show the actual source document from first open.
 - [x] Phase 30: Add last-updated metadata plus in-window refresh requests for render bindings.
 - [x] Phase 31: Re-run regression checks and refresh README/workplan for the preview UX fix.
+- [x] Phase 32: Enforce explicit transformer `outputLanguage` declarations across plugin registration and packaged plugins.
+- [x] Phase 33: Remove terminal-step contributions and make transformer-final pipelines open new documents directly.
+- [x] Phase 34: Replace generated pipeline discovery with a language-hierarchy contribution catalog `.itt` document.
+- [x] Phase 35: Add distinct jsMind rendering for Indented Tree cross links and rerun regression/docs updates.
 
 ### Verification Log
 
@@ -103,6 +116,7 @@ This tracker also covers the current preview-window polish pass:
 - [x] UX pass regression coverage reran on 2026-05-15 after the descriptive reopen list, drag-drop/new workflow, disposable blank-tab cleanup, and tab rename changes.
 - [x] Reliability-fix regression coverage reran on 2026-05-15 after removing implicit startup tabs, restoring editor state after reload, and flushing active editor text before persistence writes.
 - [x] Preview UX regression coverage reran on 2026-05-15 after render-window title, timestamp, and in-window refresh-request changes.
+- [x] Pipeline-discovery regression coverage reran on 2026-05-15 after removing terminal-step contributions, switching transformer-final pipelines to direct document outputs, replacing discovery with the contribution catalog `.itt` report, and adding jsMind cross-link rendering.
 
 ### Current Progress Notes
 
@@ -122,6 +136,7 @@ This tracker also covers the current preview-window polish pass:
 - Document file labels can now be renamed directly by double-clicking a tab title.
 - Render windows now receive document-aware metadata on first open, update their window titles and last-refresh timestamps accordingly, and can request a targeted refresh through their owning binding.
 - The app no longer creates an implicit startup document, restored workspace documents are pushed back into the mounted editor after reload, and active editor text is flushed into persistence before storage writes and page unload.
+- Transformer declarations now require explicit `outputLanguage` metadata, transformer-final pipelines open new documents without any terminal-step contribution, the toolbar opens an `.itt` contribution catalog organized by the language hierarchy, and jsMind renders cross links distinctly from tree edges.
 
 ### Known Risks
 
@@ -173,17 +188,17 @@ This tracker covers the breaking migration from legacy plugin arrays to a text-c
 - [ ] Plugin manager still lists packaged plugins and blocks upload in extension mode.
 - [ ] Diagnostics panel handles canonical diagnostics and navigates to text ranges.
 - [ ] Markdown, Mermaid, Graphviz, SVG, JSON, XML, JavaScript, CSV, Python, Cytoscape JSON, and Indented Tree representative flows still work.
-- [ ] Pipeline-backed transform, render, export, replace-current-text, open-new-document, copy-to-clipboard, and open-editor actions work.
+- [ ] Pipeline-backed transform, render, export, and editor actions work, with transformer-final runs opening new documents automatically.
 - [ ] Pipeline JSON documents lint and render.
 - [ ] Indented Tree can render as a read-only jsMind mind map.
 
 ### Big Refactor Automated Coverage
 
 - [x] Packaged plugins register with `contributes` and no legacy top-level provider arrays.
-- [x] Contribution registration and lookup pass for languages, transformers, renderers, linters, terminal steps, and pipelines.
+- [x] Contribution registration and lookup pass for languages, transformers, renderers, linters, editors, and pipelines.
 - [x] Parameter schema defaulting and validation pass.
 - [x] Canonical diagnostic normalization, publication path, and legacy offset normalization pass.
-- [x] Pipeline validation and execution pass with fake transformer, renderer, exporter, and terminal-step contributions.
+- [x] Pipeline validation and execution pass with fake transformer, renderer, exporter, and transformer-final document output coverage.
 - [x] Packaged `localedit-pipeline-json` and `jsmind-json` languages are registered.
 
 ### Known Intentional Breakage

@@ -237,7 +237,6 @@
         ["transformers", "transformer"],
         ["renderers", "renderer"],
         ["exporters", "exporter"],
-        ["terminalSteps", "terminal step"],
         ["pipelines", "pipeline"]
       ].forEach(function (entry) {
         var values = Array.isArray(contributes[entry[0]]) ? contributes[entry[0]] : [];
