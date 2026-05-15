@@ -1,5 +1,7 @@
 # Editor Workbench
 
+For end-user guidance, see [USER_MANUAL.md](USER_MANUAL.md).
+
 Editor Workbench is a local-first structured text editor that runs from disk or as an unpacked Chrome/Edge extension. It has no backend and no runtime network dependency. Runtime libraries are vendored as local bundles and loaded lazily by plugins.
 
 ## Features
